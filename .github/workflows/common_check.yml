@@ -63,6 +63,7 @@ jobs:
           node node_modules/node-qunit-puppeteer/cli.js tests/word/content-control/inline-level/checkbox.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/content-control/inline-level/cursorAndSelection.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/content-control/inline-level/date-time.html 30000 "--no-sandbox"
+          node node_modules/node-qunit-puppeteer/cli.js tests/word/custom-xml/custom-xml.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/floating-position/drawing.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/paragraph.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/table/correctBadTable.html 30000 "--no-sandbox"

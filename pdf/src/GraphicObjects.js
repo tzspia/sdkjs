@@ -1010,9 +1010,6 @@
         return false;
     };
     CGraphicObjects.prototype.selectObject = function (object, pageIndex) {
-        if (object.IsAnnot() && !object.IsShapeBased())
-            return;
-        
         object.select(this, pageIndex);
         if (AscFormat.MoveAnimationDrawObject) {
             if (object instanceof AscFormat.MoveAnimationDrawObject) {
@@ -1203,22 +1200,26 @@
         } else {
             for (i = 0; i < this.selectedObjects.length; ++i) {
                 let oDrawing = this.selectedObjects[i];
-                // if (oDrawing.selectStartPage === pageIndex) {
                 if (oDrawing.selectStartPage === pageIndex && !oDrawing.IsFreeText || (oDrawing.IsFreeText && !oDrawing.IsFreeText())) {
                     let nType = oDrawing.IsAnnot() && oDrawing.IsStamp() ? AscFormat.TYPE_TRACK.ANNOT_STAMP : AscFormat.TYPE_TRACK.SHAPE;
 
-                    drawingDocument.DrawTrack(
-                        nType,
-                        oDrawing.getTransformMatrix(),
-                        0,
-                        0,
-                        oDrawing.extX,
-                        oDrawing.extY,
-                        AscFormat.CheckObjectLine(oDrawing),
-                        oDrawing.canRotate(),
-                        undefined,
-                        (isDrawHandles || this.document.IsViewerObject(oDrawing)) && oDrawing.canEdit()
-                    );
+                    if (oDrawing.IsAnnot() && (oDrawing.IsTextMarkup() || oDrawing.IsComment())) {
+                        oDrawing.DrawSelected(drawingDocument.Overlay);
+                    }
+                    else {
+                        drawingDocument.DrawTrack(
+                            nType,
+                            oDrawing.getTransformMatrix(),
+                            0,
+                            0,
+                            oDrawing.extX,
+                            oDrawing.extY,
+                            AscFormat.CheckObjectLine(oDrawing),
+                            oDrawing.canRotate(),
+                            undefined,
+                            (isDrawHandles || this.document.IsViewerObject(oDrawing)) && oDrawing.canEdit()
+                        );
+                    }
                 }
             }
             if (this.selectedObjects.length === 1 && this.selectedObjects[0].drawAdjustments && this.selectedObjects[0].selectStartPage === pageIndex) {
@@ -1269,6 +1270,21 @@
 
 
     };
+    CGraphicObjects.prototype.deselectObject = function (object) {
+        let oDoc = this.document;
+        for (let i = 0; i < this.selectedObjects.length; ++i) {
+            if (this.selectedObjects[i] === object) {
+                object.selected = false;
+                this.selectedObjects.splice(i, 1);
+                if(this.selectedObjects.length === 0) {
+                    this.lastSelectedObject = object;
+                }
+                this.checkShowMediaControlOnSelect();
+                oDoc.SetMouseDownObject(this.selectedObjects[0], this.selectedObjects.length == 0);
+                return;
+            }
+        }
+    },
     CGraphicObjects.prototype.hyperlinkCanAdd = function (bCheckInHyperlink) {
         var content = this.getTargetDocContent();
         if (content) {

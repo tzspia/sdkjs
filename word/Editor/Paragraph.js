@@ -336,7 +336,11 @@ Paragraph.prototype.Copy = function(Parent, DrawingDocument, oPr)
 	EndRun.Set_Pr(this.TextPr.Value.Copy(undefined, oPr));
 
 	if (oPr && oPr.CopyReviewPr)
-		EndRun.SetReviewTypeWithInfo(this.GetReviewType(), this.GetReviewInfo().Copy(), false);
+	{
+		let reviewType = this.GetReviewType();
+		let reviewInfo = this.GetReviewInfo();
+		EndRun.SetReviewTypeWithInfo(reviewType, reviewInfo ? reviewInfo.Copy() : undefined, false);
+	}
 
 	if(oPr && oPr.Comparison)
 	{
@@ -7408,7 +7412,7 @@ Paragraph.prototype.MoveCursorToDrawing = function(Id, bBefore)
 	this.RemoveSelection();
 	this.Set_ParaContentPos(ContentPos, false, -1, -1);
 
-	this.RecalculateCurPos();
+	this.RecalculateCurPos(true, true, false, false);
 	this.CurPos.RealX = this.CurPos.X;
 	this.CurPos.RealY = this.CurPos.Y;
 };
@@ -14157,8 +14161,6 @@ Paragraph.prototype.Read_FromBinary2 = function(Reader)
 		}
 	}
 
-	AscCommon.CollaborativeEditing.Add_NewObject(this);
-
 	this.bFromDocument = Reader.GetBool();
 	if (!this.bFromDocument)
 	{
@@ -14166,9 +14168,6 @@ Paragraph.prototype.Read_FromBinary2 = function(Reader)
 	}
 	
 	this.PageNum = 0;
-};
-Paragraph.prototype.Load_LinkData = function(LinkData)
-{
 };
 Paragraph.prototype.Get_SelectionState2 = function()
 {
@@ -16321,7 +16320,12 @@ Paragraph.prototype.GetText = function(oPr)
 	var oText = new CParagraphGetText();
 
 	oText.SetBreakOnNonText(false);
-	oText.SetParaEndToSpace(oPr && undefined !== oPr.ParaEndToSpace ? oPr.ParaEndToSpace: true);
+	
+	if (oPr && undefined !== oPr.ParaSeparator)
+		oText.SetParaSeparator(oPr.ParaSeparator);
+	else if (oPr && undefined !== oPr.ParaEndToSpace ? oPr.ParaEndToSpace: true)
+		oText.SetParaSeparator(" ");
+	
 	oText.SetParaNumbering(oPr && undefined !== oPr.Numbering ? oPr.Numbering: true);
 	oText.SetParaMath(oPr && undefined !== oPr.Math ? oPr.Math: true);
 	oText.SetParaTabSymbol(oPr && undefined !== oPr.TabSymbol ? oPr.TabSymbol: " ");
@@ -18462,12 +18466,8 @@ Paragraph.prototype.Document_Is_SelectionLocked = function(CheckType)
 	var arrContentControls = this.GetSelectedContentControls();
 	for (var nIndex = 0, nCount = arrContentControls.length; nIndex < nCount; ++nIndex)
 	{
-		let cc     = arrContentControls[nIndex];
-		let paraCC = cc.GetParagraph();
-		if (!paraCC)
-			continue;
-		
-		if (paraCC !== this)
+		let cc = arrContentControls[nIndex];
+		if (!(cc instanceof AscWord.CInlineLevelSdt) || this !== cc.GetParagraph())
 		{
 			// Проверяем типы, при которых произойдет удаление элемента, содержащего данный контрол
 			if (CheckType !== AscCommon.changestype_Paragraph_AddText
@@ -19692,7 +19692,7 @@ function CParagraphGetText()
     this.Text = "";
 
     this.BreakOnNonText 	= true;
-    this.ParaEndToSpace 	= false;
+	this.ParaSeparator      = undefined;
 	this.Numbering			= false;
 	this.Math				= false;
 	this.TabSymbol			= undefined;
@@ -19707,9 +19707,9 @@ CParagraphGetText.prototype.SetBreakOnNonText = function(bValue)
 {
 	this.BreakOnNonText = bValue;
 };
-CParagraphGetText.prototype.SetParaEndToSpace = function(bValue)
+CParagraphGetText.prototype.SetParaSeparator = function(separator)
 {
-	this.ParaEndToSpace = bValue;
+	this.ParaSeparator = separator;
 };
 CParagraphGetText.prototype.SetParaNewLineSeparator = function(sValue)
 {

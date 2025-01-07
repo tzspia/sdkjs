@@ -705,11 +705,11 @@ function (window, undefined) {
 
 				// ToDo move this code to moveCursor
 
-				this.lastRangePos = this._parseResult && this._parseResult.argPosArr
+				this.lastRangePos = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
 					? this._parseResult.argPosArr[0].start 
 					: this.cursorPos;
 
-				this.lastRangeLength = this._parseResult && this._parseResult.argPosArr
+				this.lastRangeLength = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
 					? this._parseResult.argPosArr[this._parseResult.argPosArr.length - 1].end - this._parseResult.argPosArr[0].start 
 					: 0;
 			}
@@ -2574,16 +2574,6 @@ function (window, undefined) {
 				}
 				t._removeChars(bIsWordRemove ? kPrevWord : kPrevChar);
 				return false;
-
-			case 32:  // "space"
-
-				t._addChars(String.fromCharCode(32));
-				event.stopPropagation();
-				event.preventDefault();
-
-				t._setSkipKeyPress(false);
-				return false;
-
 			case 35:  // "end"
 				if (!this.enableKeyEvents) {
 					break;

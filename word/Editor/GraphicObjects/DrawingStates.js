@@ -1744,6 +1744,7 @@ MoveInGroupState.prototype =
                 this.drawingObjects.document.FinalizeAction();
             }
             else {
+                let oDoc = Asc.editor.getPDFDoc();
                 let oViewer = Asc.editor.getDocumentRenderer();
 
                 let xMin;
@@ -1970,6 +1971,7 @@ MoveInGroupState.prototype =
                 oFreeText.SetRect(aNewRect);
                 oFreeText.onAfterMove();
                 oViewer.DrawingObjects.drawingObjects.length = 0;
+                oDoc.FinalizeAction();
             }
         }
         if (isPdf) {

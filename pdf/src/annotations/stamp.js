@@ -115,13 +115,13 @@
         if (originView) {
             let oXfrm = this.getXfrm();
             
-            let X = oXfrm.offX / g_dKoef_pt_to_mm >> 0;
-            let Y = oXfrm.offY / g_dKoef_pt_to_mm >> 0;
+            let X = oXfrm.offX / g_dKoef_pt_to_mm;
+            let Y = oXfrm.offY / g_dKoef_pt_to_mm;
 
             if (this.IsHighlight())
                 AscPDF.startMultiplyMode(oGraphicsPDF.GetContext());
             
-            oGraphicsPDF.DrawImageXY(originView, X, Y, nRot);
+            oGraphicsPDF.DrawImageXY(originView, X, Y, nRot, true);
             AscPDF.endMultiplyMode(oGraphicsPDF.GetContext());
         }
     };

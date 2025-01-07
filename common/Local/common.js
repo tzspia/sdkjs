@@ -695,7 +695,7 @@ function getBinaryArray(_data, _len)
 }
 
 // encryption ----------------------------------
-var _proto = Asc['asc_docs_api'] ? Asc['asc_docs_api'] : Asc['spreadsheet_api'];
+var _proto = Asc['asc_docs_api'] || Asc['spreadsheet_api'] || Asc['VisioEditorApi'];
 _proto.prototype["pluginMethod_OnEncryption"] = function(obj)
 {
 	var _editor = window["Asc"]["editor"] ? window["Asc"]["editor"] : window.editor;

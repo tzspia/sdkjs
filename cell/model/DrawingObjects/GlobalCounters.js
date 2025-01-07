@@ -129,7 +129,6 @@
     //-----------------------------------------------------------------------------------
     CCollaborativeEditing.prototype.Apply_LinkData = function()
     {
-        AscCommon.CCollaborativeEditingBase.prototype.Apply_LinkData.call(this);
         //stub for asc_nativeApplyChanges2(Load_Images clears m_aNewImages) remove it together with Load_Images above
         if (window["NATIVE_EDITOR_ENJINE"] === true)
         {
@@ -330,14 +329,6 @@
     //-----------------------------------------------------------------------------------
     // Функции для работы с новыми объектами, созданными на других клиентах
     //-----------------------------------------------------------------------------------
-    CCollaborativeEditing.prototype.Clear_NewObjects = function()
-    {
-    };
-
-    CCollaborativeEditing.prototype.Add_NewObject = function(Class)
-    {
-    };
-
     CCollaborativeEditing.prototype.OnEnd_ReadForeignChanges = function()
     {
     };

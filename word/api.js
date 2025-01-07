@@ -1448,31 +1448,11 @@ background-repeat: no-repeat;\
 		}
 	};
 
-	asc_docs_api.prototype.InitViewer = function()
-	{
-		this.WordControl.m_oDrawingDocument.m_oDocumentRenderer = new AscCommonWord.CDocMeta();
-        this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Init();
-		this.WordControl.m_oDrawingDocument.showTarget(false);
-		this.WordControl.HideRulers();
-	};
-
 	asc_docs_api.prototype.isDocumentRenderer = function()
 	{
 		return !!this.WordControl.m_oDrawingDocument.m_oDocumentRenderer;
 	};
 
-	asc_docs_api.prototype.OpenDocument = function(url, gObject)
-	{
-		this.isOnlyReaderMode = false;
-		this.InitViewer();
-		this.LoadedObject         = null;
-		this.DocumentType         = 1;
-		this.ServerIdWaitComplete = true;
-
-		this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Load(url, gObject);
-		this.FontLoader.LoadDocumentFonts(this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Fonts, true);
-	};
-	
 	asc_docs_api.prototype["asc_setViewerThumbnailsZoom"] = function(value) {
 		if (this.WordControl.m_oDrawingDocument.m_oDocumentRenderer &&
 			this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Thumbnails)
@@ -8833,6 +8813,20 @@ background-repeat: no-repeat;\
 		return this.WordControl.m_oLogicDocument.CanUnGroup();
 	};
 
+	asc_docs_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+		return AscFormat.canMergeSelectedShapes(operation);
+	};
+	asc_docs_api.prototype.asc_mergeSelectedShapesAction = function (operation) {
+		const isSelectionLocked = this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_Drawing_Props);
+		const canMerge = this.asc_canMergeSelectedShapes(operation);
+		if (!isSelectionLocked && canMerge) {
+			// Should rename to "AscDFH.historydescription_Common_ShapesMerge"?
+			this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Presentation_ShapesMerge);
+			AscFormat.mergeSelectedShapes(operation);
+			this.WordControl.m_oLogicDocument.FinalizeAction();
+		}
+	};
+
 	asc_docs_api.prototype.CanChangeWrapPolygon = function()
 	{
 		return this.WordControl.m_oLogicDocument.CanChangeWrapPolygon();
@@ -10727,7 +10721,7 @@ background-repeat: no-repeat;\
 					oApi.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Document_ApplyImagePrWithUrl);
 					oApi.WordControl.m_oLogicDocument.SetImageProps(oImagePr);
 					oCC.SetShowingPlcHdr(false);
-
+					
 					if (oCC.IsPictureForm())
 					{
 						oCC.UpdatePictureFormLayout();
@@ -12926,9 +12920,6 @@ background-repeat: no-repeat;\
 		{
 			AscCommon.CollaborativeEditing.m_aChanges = [];
 
-			// У новых элементов выставляем указатели на другие классы
-			AscCommon.CollaborativeEditing.Apply_LinkData();
-
 			// Делаем проверки корректности новых изменений
 			AscCommon.CollaborativeEditing.Check_MergeData();
 
@@ -13795,6 +13786,15 @@ background-repeat: no-repeat;\
 			}
 		};
 
+		let prepareHash = function (_val) {
+			//todo check end of base64
+			//"L6VzBw==d==  d" and "L6VzBw==" in ms equal
+			if (_val && _val.length) {
+				return _val.replace(/\s/g, "");
+			}
+			return _val;
+		};
+
 		let password = props.temporaryPassword;
 		props.temporaryPassword = null;
 		let documentProtection = oDocument.Settings.DocumentProtection;
@@ -13802,7 +13802,7 @@ background-repeat: no-repeat;\
 		let cryptProviderType = AscCommonWord.ECryptAlgType.TypeAny;
 		if (password !== "" && password != null) {
 			if (documentProtection) {
-				salt = documentProtection.saltValue;
+				salt = prepareHash(documentProtection.saltValue);
 				spinCount =  documentProtection.spinCount;
 				alg = documentProtection.cryptAlgorithmSid;
 			}
@@ -13828,7 +13828,8 @@ background-repeat: no-repeat;\
 					callback(true);
 				} else {
 					//пробуем снять защиту
-					if (documentProtection && hash && (hash[0] === documentProtection.hashValue || hash[1] === documentProtection.hashValue)) {
+					let documentHashValue = prepareHash(documentProtection.hashValue);
+					if (documentProtection && hash && (hash[0] === documentHashValue || hash[1] === documentHashValue)) {
 						salt = null;
 						alg = null;
 						spinCount = null;
@@ -14185,7 +14186,6 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['GetCopyPasteDivId']                         = asc_docs_api.prototype.GetCopyPasteDivId;
 	asc_docs_api.prototype['ContentToHTML']                             = asc_docs_api.prototype.ContentToHTML;
 	asc_docs_api.prototype['InitEditor']                                = asc_docs_api.prototype.InitEditor;
-	asc_docs_api.prototype['InitViewer']                                = asc_docs_api.prototype.InitViewer;
 	asc_docs_api.prototype['OpenDocument']                              = asc_docs_api.prototype.OpenDocument;
 	asc_docs_api.prototype['OpenDocumentFromBin']                       = asc_docs_api.prototype.OpenDocumentFromBin;
 	asc_docs_api.prototype['OpenDocumentFromZip']                       = asc_docs_api.prototype.OpenDocumentFromZip;
@@ -14576,7 +14576,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_GetWatermarkProps"]                     = asc_docs_api.prototype.asc_GetWatermarkProps;
 	asc_docs_api.prototype["asc_SetWatermarkProps"]                     = asc_docs_api.prototype.asc_SetWatermarkProps;
 	asc_docs_api.prototype["asc_WatermarkRemove"]                       = asc_docs_api.prototype.asc_WatermarkRemove;
-
+	asc_docs_api.prototype['asc_canMergeSelectedShapes']                = asc_docs_api.prototype.asc_canMergeSelectedShapes;
 	asc_docs_api.prototype['sync_StartAddShapeCallback']                = asc_docs_api.prototype.sync_StartAddShapeCallback;
 	asc_docs_api.prototype['CanGroup']                                  = asc_docs_api.prototype.CanGroup;
 	asc_docs_api.prototype['CanUnGroup']                                = asc_docs_api.prototype.CanUnGroup;

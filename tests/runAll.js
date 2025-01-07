@@ -43,6 +43,7 @@ const allTests = [
 	'word/content-control/inline-level/checkbox.html',
 	'word/content-control/inline-level/cursorAndSelection.html',
 	'word/content-control/inline-level/date-time.html',
+	'word/custom-xml/custom-xml.html',
 	'word/document-calculation/floating-position/drawing.html',
 	'word/document-calculation/paragraph.html',
 	'word/document-calculation/table/correctBadTable.html',

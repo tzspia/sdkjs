@@ -634,9 +634,6 @@ CCellCommentator.prototype.isLockedComment = function(oComment, callbackFunc) {
 			return;
 		}
 
-
-		this.worksheet._startRtlRendering(this.drawingCtx);
-
 		this.drawingCtx.setFillStyle(this.commentIconColor);
 		var commentCell, mergedRange, nCol, nRow, x, y, metrics;
 		var aComments = this.model.aComments;
@@ -676,8 +673,6 @@ CCellCommentator.prototype.isLockedComment = function(oComment, callbackFunc) {
 				}
 			}
 		}
-
-		this.worksheet._endRtlRendering();
 	};
 
 	CCellCommentator.prototype.updateActiveComment = function () {

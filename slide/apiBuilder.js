@@ -358,7 +358,12 @@
 
     /**
      * Any valid drawing element.
-     * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiTable )} Drawing
+     * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiTable | ApiChart )} Drawing
+	 */
+
+    /**
+     * Available drwaing element for grouping
+     * @typedef {(ApiShape | ApiGroup | ApiImage | ApiChart)} DrawingForGroup
 	 */
 
     //------------------------------------------------------------------------------------------------------------------
@@ -723,21 +728,27 @@
      * Creates a group of drawings.
      * @memberof Api
      * @typeofeditors ["CPE"]
-     * @param {Array} aDrawings - The array of drawings.
+     * @param {DrawingForGroup} aDrawings - The array of drawings not in document.
      * @returns {ApiGroup}
      * @see office-js-api/Examples/{Editor}/Api/Methods/CreateGroup.js
 	 */
-    Api.prototype.CreateGroup = function(aDrawings){
-        var oSlide = private_GetCurrentSlide();
-        if(oSlide){
-            var oGroup = AscFormat.builder_CreateGroup(aDrawings, oSlide.graphicObjects);
-            if(oGroup){
+    Api.prototype.CreateGroup = function(aDrawings) {
+        let oSlide = private_GetCurrentSlide();
+        if (oSlide) {
+            if (aDrawings.find(function(drawing) {
+                return drawing.Drawing.IsUseInDocument();
+            }))
+                return null;
+
+            aDrawings.forEach(function(drawing) { drawing.Drawing.recalculate(); })
+
+            let oGroup = AscFormat.builder_CreateGroup(aDrawings, oSlide.graphicObjects);
+            if (oGroup) {
                 return new ApiGroup(oGroup);
             }
         }
         return null;
     };
-
 
     /**
      * Creates a table.
@@ -1785,7 +1796,7 @@
         }
 
         let drawingObjects = this.Master.cSld.spTree;
-        return private_GetApiDrawings(drawingObjects);
+        return AscBuilder.GetApiDrawings(drawingObjects);
     };
 
     /**
@@ -1872,6 +1883,48 @@
         });
     };
 
+    /**
+     * Groups an array of drawings in master slide.
+     * @memberof ApiMaster
+     * @typeofeditors ["CPE"]
+     * @param {DrawingForGroup[]} aDrawings - The array of drawings in master.
+     * @returns {ApiGroup}
+     * @see office-js-api/Examples/{Editor}/ApiMaster/Methods/GroupDrawings.js
+     */
+    ApiMaster.prototype.GroupDrawings = function(aDrawings)
+    {
+        if (!Array.isArray(aDrawings) || aDrawings.length == 0)
+            return null;
+
+        let oMaster = this.Master;
+        if (aDrawings.find(function(drawing) {
+            return drawing.Drawing.parent != oMaster || !drawing.Drawing.IsUseInDocument();
+        }))
+            return null;
+        
+        let oGraphicObjects = oMaster.graphicObjects;
+        oGraphicObjects.resetSelection();
+
+        aDrawings.forEach(function(drawing) {
+            oGraphicObjects.selectObject(drawing.Drawing, drawing.Drawing.Get_AbsolutePage());
+        });
+        
+        let canGroup = oGraphicObjects.canGroup();
+        if (!canGroup)
+            return null;
+
+        aDrawings.forEach(function(drawing) {
+            drawing.Drawing.recalculate();
+        });
+
+        let oGroup = oGraphicObjects.createGroup();
+        if (!oGroup) {
+            return null;
+        }
+
+        return new ApiGroup(oGroup);
+    };
+
     //------------------------------------------------------------------------------------------------------------------
     //
     // ApiLayout
@@ -1904,6 +1957,18 @@
             return false;
         
         return true;
+    };
+
+    /**
+     * Returns the name of the current layout.
+     * @typeofeditors ["CPE"]
+     * @param {string} sName - Layout name to be set.
+     * @returns {boolean}
+     * @see office-js-api/Examples/{Editor}/ApiLayout/Methods/GetName.js
+	 */
+    ApiLayout.prototype.GetName = function(sName)
+    {
+        return this.Layout.getName();
     };
 
     /**
@@ -2109,7 +2174,7 @@
         }
 
         let drawingObjects = this.Layout.cSld.spTree;
-        return private_GetApiDrawings(drawingObjects);
+        return AscBuilder.GetApiDrawings(drawingObjects);
     };
 
     /**
@@ -2211,6 +2276,48 @@
         return aDrawings.filter(function(drawing) {
             return drawing.Drawing.getPlaceholderType() == nType;
         });
+    };
+
+    /**
+     * Groups an array of drawings in layout.
+     * @memberof ApiLayout
+     * @typeofeditors ["CPE"]
+     * @param {DrawingForGroup[]} aDrawings - The array of drawings in layout.
+     * @returns {ApiGroup}
+     * @see office-js-api/Examples/{Editor}/ApiLayout/Methods/GroupDrawings.js
+     */
+    ApiLayout.prototype.GroupDrawings = function(aDrawings)
+    {
+        if (!Array.isArray(aDrawings) || aDrawings.length == 0)
+            return null;
+
+        let oLayout = this.Layout;
+        if (aDrawings.find(function(drawing) {
+            return drawing.Drawing.parent != oLayout || !drawing.Drawing.IsUseInDocument();
+        }))
+            return null;
+        
+        let oGraphicObjects = oLayout.graphicObjects;
+        oGraphicObjects.resetSelection();
+
+        aDrawings.forEach(function(drawing) {
+            oGraphicObjects.selectObject(drawing.Drawing, drawing.Drawing.Get_AbsolutePage());
+        });
+        
+        let canGroup = oGraphicObjects.canGroup();
+        if (!canGroup)
+            return null;
+
+        aDrawings.forEach(function(drawing) {
+            drawing.Drawing.recalculate();
+        });
+
+        let oGroup = oGraphicObjects.createGroup();
+        if (!oGroup) {
+            return null;
+        }
+
+        return new ApiGroup(oGroup);
     };
 
     //------------------------------------------------------------------------------------------------------------------
@@ -3252,7 +3359,7 @@
         }
 
         let drawingObjects = this.Slide.getDrawingObjects();
-        return private_GetApiDrawings(drawingObjects);
+        return AscBuilder.GetApiDrawings(drawingObjects);
     };
 
     /**
@@ -3362,6 +3469,49 @@
 		oThumbnails.SelectSlides([this.GetSlideIndex()], false);
 	};
 
+    /**
+     * Groups an array of drawings in slide.
+     * @memberof ApiSlide
+     * @typeofeditors ["CPE"]
+     * @param {DrawingForGroup[]} aDrawings - The array of drawings in slide.
+     * @returns {ApiGroup}
+     * @see office-js-api/Examples/{Editor}/ApiSlide/Methods/GroupDrawings.js
+     */
+    ApiSlide.prototype.GroupDrawings = function(aDrawings)
+    {
+        if (!Array.isArray(aDrawings) || aDrawings.length == 0)
+            return null;
+
+        let nSlideIdx = this.GetSlideIndex();
+
+        if (aDrawings.find(function(drawing) {
+            return drawing.Drawing.getSlideIndex() !== nSlideIdx || !drawing.Drawing.IsUseInDocument();
+        }))
+            return null;
+        
+        let oSlide = this.Slide;
+        let oGraphicObjects = oSlide.graphicObjects;
+        oGraphicObjects.resetSelection();
+
+        aDrawings.forEach(function(drawing) {
+            oGraphicObjects.selectObject(drawing.Drawing, drawing.Drawing.Get_AbsolutePage());
+        });
+        
+        let canGroup = oGraphicObjects.canGroup();
+        if (!canGroup)
+            return null;
+
+        aDrawings.forEach(function(drawing) {
+            drawing.Drawing.recalculate();
+        });
+
+        let oGroup = oGraphicObjects.createGroup();
+        if (!oGroup) {
+            return null;
+        }
+
+        return new ApiGroup(oGroup);
+    };
     //------------------------------------------------------------------------------------------------------------------
     //
     // ApiDrawing
@@ -3718,6 +3868,54 @@
         oController.updateSelectionState();
         oController.updateOverlay();
 	};
+
+    //------------------------------------------------------------------------------------------------------------------
+    //
+    // ApiGroup
+    //
+    //------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Returns a type of the ApiGroup class.
+     * @memberof ApiGroup
+     * @typeofeditors ["CPE"]
+     * @returns {"group"}
+     * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/GetClassType.js
+     */
+    ApiGroup.prototype.GetClassType = function()
+    {
+        return "group";
+    };
+
+    /**
+     * Ungroups current group drawing.
+     * @memberof ApiGroup
+     * @typeofeditors ["CDE"]
+     * @returns {boolean}
+     * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js
+     */
+    ApiGroup.prototype.Ungroup = function()
+    {
+        let oPresentation = Asc.editor.getLogicDocument();
+        let nSlideIdx = this.Drawing.getSlideIndex();
+        let oSlide = oPresentation.GetSlide(nSlideIdx);
+        if (!oSlide) {
+            return null;
+        }
+
+        let oGraphicObjects = oSlide.graphicObjects;
+
+        oGraphicObjects.resetSelection();
+        oGraphicObjects.selectObject(this.Drawing, this.Drawing.Get_AbsolutePage())
+        
+        let canUngroup = oGraphicObjects.canUnGroup();
+        if (!canUngroup) {
+            return false;
+        }
+
+        oGraphicObjects.unGroupCallback();
+        return true;
+    };
 
     //------------------------------------------------------------------------------------------------------------------
     //
@@ -4648,6 +4846,7 @@
     ApiMaster.prototype["GetAllOleObjects"]               = ApiMaster.prototype.GetAllOleObjects;
     ApiMaster.prototype["ToJSON"]                         = ApiMaster.prototype.ToJSON;
     ApiMaster.prototype["GetDrawingsByPlaceholderType"]   = ApiMaster.prototype.GetDrawingsByPlaceholderType;
+    ApiMaster.prototype["GroupDrawings"]                  = ApiMaster.prototype.GroupDrawings;
 
     
     ApiLayout.prototype["GetClassType"]                   = ApiLayout.prototype.GetClassType;
@@ -4669,6 +4868,7 @@
     ApiLayout.prototype["GetMaster"]                      = ApiLayout.prototype.GetMaster;
     ApiLayout.prototype["ToJSON"]                         = ApiLayout.prototype.ToJSON;
     ApiLayout.prototype["GetDrawingsByPlaceholderType"]   = ApiLayout.prototype.GetDrawingsByPlaceholderType;
+    ApiLayout.prototype["GroupDrawings"]                  = ApiLayout.prototype.GroupDrawings;
 
     ApiPlaceholder.prototype["GetClassType"]              = ApiPlaceholder.prototype.GetClassType;
     ApiPlaceholder.prototype["SetType"]                   = ApiPlaceholder.prototype.SetType;
@@ -4734,6 +4934,7 @@
     ApiSlide.prototype["ToJSON"]                          = ApiSlide.prototype.ToJSON;
     ApiSlide.prototype["GetDrawingsByPlaceholderType"]    = ApiSlide.prototype.GetDrawingsByPlaceholderType;
     ApiSlide.prototype["Select"]                          = ApiSlide.prototype.Select;
+    ApiSlide.prototype["GroupDrawings"]                   = ApiSlide.prototype.GroupDrawings;
 
 
     ApiDrawing.prototype["GetClassType"]                  = ApiDrawing.prototype.GetClassType;
@@ -4753,6 +4954,8 @@
     ApiDrawing.prototype["SetLockValue"]                  = ApiDrawing.prototype.SetLockValue;
     ApiDrawing.prototype["Select"]                        = ApiDrawing.prototype.Select;
 
+    ApiGroup.prototype["GetClassType"]	= ApiGroup.prototype.GetClassType;
+	ApiGroup.prototype["Ungroup"]		= ApiGroup.prototype.Ungroup;
 
     ApiDrawing.prototype["ToJSON"]                        = ApiDrawing.prototype.ToJSON;
 
@@ -4884,7 +5087,7 @@
 			let aApiDrawings = [];
 			let aSelectedDrawings = oController.selectedObjects;
 			for(let nIdx = 0; nIdx < aSelectedDrawings.length; ++nIdx) {
-				let oDrawing = private_GetApiDrawing(aSelectedDrawings[nIdx]);
+				let oDrawing = AscBuilder.GetApiDrawing(aSelectedDrawings[nIdx]);
 				if(oDrawing) {
 					aApiDrawings.push(oDrawing);
 				}
@@ -5184,32 +5387,6 @@
         return sType;
     }
 
-    function private_GetApiDrawing(drawing) {
-        switch (drawing.getObjectType()) {
-            case AscDFH.historyitem_type_Shape:
-                return new ApiShape(drawing);
-            case AscDFH.historyitem_type_ImageShape:
-                return new ApiImage(drawing);
-            case AscDFH.historyitem_type_GroupShape:
-                return new ApiGroup(drawing);
-            case AscDFH.historyitem_type_OleObject:
-                return new ApiOleObject(drawing);
-            case AscDFH.historyitem_type_GraphicFrame:
-                return new ApiTable(drawing);
-			case AscDFH.historyitem_type_ChartSpace:
-				return new ApiChart(drawing);
-        }
-        return null;
-    }
-	
-	function private_GetApiDrawings(drawingObjects) {
-		return drawingObjects.map(function(drawing) {
-			return private_GetApiDrawing(drawing);
-		}).filter(function(apiDrawing) {
-			return !!apiDrawing;
-		});
-	}
-	
 	function private_GetAllDrawingsWithType(aDrawings, nObjectType, fCreateBuilderWrapper) {
 		let aWrappers = [];
 		for(let nIdx = 0; nIdx < aDrawings.length; ++nIdx) {

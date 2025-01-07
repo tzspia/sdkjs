@@ -370,8 +370,12 @@
 			"word/Editor/Styles/style-cache.js",
 			"word/Editor/Styles/FixedFormDefaults.js",
 			"word/Editor/Styles/default-styles.js",
-			"word/Editor/Revisions/TrackRevisionsManager.js",
-
+			"word/Editor/revisions/review-info.js",
+			"word/Editor/revisions/track-revisions-manager.js",
+			"word/Editor/custom-xml/custom-xml.js",
+			"word/Editor/custom-xml/custom-xml-manager.js",
+			"word/Editor/custom-xml/data-binding.js",
+			
 			"word/apiBuilder.js",
 			"slide/apiBuilder.js",
 			"cell/apiBuilder.js",

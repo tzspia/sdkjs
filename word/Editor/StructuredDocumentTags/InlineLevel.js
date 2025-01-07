@@ -921,7 +921,7 @@ CInlineLevelSdt.prototype.Remove = function(nDirection, bOnAddText)
 		this.private_ReplaceContentWithPlaceHolder();
 		result = true;
 	}
-
+	
 	return result;
 };
 CInlineLevelSdt.prototype.Shift_Range = function(Dx, Dy, _CurLine, _CurRange, _CurPage)
@@ -1676,6 +1676,9 @@ CInlineLevelSdt.prototype.SetPr = function(oPr)
 
 	if(undefined !== oPr.OForm)
 		this.SetOForm(oPr.OForm);
+
+	if (undefined !== oPr.DataBinding)
+		this.setDataBinding(oPr.DataBinding);
 };
 /**
  * Выставляем настройки текста по умолчанию для данного контрола
@@ -2245,14 +2248,6 @@ CInlineLevelSdt.prototype.IsSignatureForm = function()
 	return (this.IsForm() && this.IsPicture() && undefined !== this.Pr.PictureFormPr && this.Pr.PictureFormPr.IsSignature());
 };
 /**
- * Проверяем является ли данный контейнер специальным для поля со списком
- * @returns {boolean}
- */
-CInlineLevelSdt.prototype.IsComboBox = function()
-{
-	return (undefined !== this.Pr.ComboBox);
-};
-/**
  * @param oPr {AscWord.CSdtComboBoxPr}
  */
 CInlineLevelSdt.prototype.SetComboBoxPr = function(oPr)
@@ -2270,14 +2265,6 @@ CInlineLevelSdt.prototype.SetComboBoxPr = function(oPr)
 CInlineLevelSdt.prototype.GetComboBoxPr = function()
 {
 	return this.Pr.ComboBox;
-};
-/**
- * Проверяем является ли данный контейнер специальным для выпадающего списка
- * @returns {boolean}
- */
-CInlineLevelSdt.prototype.IsDropDownList = function()
-{
-	return (undefined !== this.Pr.DropDown);
 };
 /**
  * @param oPr {AscWord.CSdtComboBoxPr}
@@ -2410,14 +2397,6 @@ CInlineLevelSdt.prototype.private_UpdateListContent = function()
 		return null;
 
 	return this.MakeSingleRunElement();
-};
-/**
- * Проверяем является ли данный контейнер специальным для даты
- * @returns {boolean}
- */
-CInlineLevelSdt.prototype.IsDatePicker = function()
-{
-	return (undefined !== this.Pr.Date);
 };
 /**
  * @param oPr {AscWord.CSdtDatePickerPr}

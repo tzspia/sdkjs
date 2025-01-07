@@ -703,13 +703,14 @@ $(function () {
 		}
 	};
 
-	let initDefinedName = function (eR, sheetName, range, name) {
+	let initDefinedName = function (eR, sheetName, range, name, shortLink) {
 		let RealDefNameWorksheet = AscCommonExcel.g_DefNameWorksheet;
 		AscCommonExcel.g_DefNameWorksheet = eR.worksheets[sheetName];
 		wb.dependencyFormulas.initOpen();
 		let _obj = {
 			value: name,
-			ws: {sName: sheetName}
+			ws: {sName: sheetName},
+			shortLink: shortLink
 		};
 		eR.initDefinedName(_obj);
 		AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;
@@ -736,7 +737,7 @@ $(function () {
 
 		res = oParser.calculate();
 		let dimension = res.getDimensions();
-		assert.strictEqual(dimension.row, 0, 'IMPORTRANGE_1_after_add_references_row_count');
+		assert.strictEqual(dimension.row, 1, 'IMPORTRANGE_1_after_add_references_row_count');
 
 		initReference(wb.externalReferences[0], "Sheet1", "A1", [[1000]]);
 		res = oParser.calculate();
@@ -986,6 +987,208 @@ $(function () {
 		// assert.strictEqual(oParser.parse(true, null, parseResult), false, "Trying to access not existed sheet in existed externalRef");
 
 		assert.strictEqual(wb.externalReferences.length, 1);
+
+		//remove external reference
+		wb.removeExternalReferences([wb.externalReferences[0].getAscLink()]);
+		assert.strictEqual(wb.externalReferences.length, 0);
+	});
+
+	QUnit.test("Test: \"Check short links\"", function (assert) {
+		// create ext link
+		// check parser formula - simulate reading a string like [linkIndex] + "SheetName" + "!" + "ReferenceTo"
+		let fullLinkLocal = "'[book.xlsx]Sheet1'!A1",
+			fullLinkDefnameLocal = "'[book.xlsx]Sheet1'!_s1",
+			fullLink = "'[1]Sheet1'!A1",
+			fullLinkDefname = "'[1]Sheet1'!_s1",
+			shortLinkLocal = "'[book.xlsx]'!A1",
+			shortLinkDefnameLocal = "[book.xlsx]!_s1",
+			shortLinkDefnameLocalWithoutBrackets = "book.xlsx!_s1",
+			shortLinkDefnameLocalWithoutBrackets2 = "'book.xlsx'!_s1",
+			shortLink = "[1]!A1",
+			shortLinkDefname = "[1]!_s1",
+			shortLinkDefname2 = "'[1]'!_s1",
+			shortLinkDefnameWithoutBrackets = "'1'!_s1",
+			externalWs;
+		
+		let elemInStack;
+		// create external link
+		let cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 1, 0);
+		let parseResult = new AscCommonExcel.ParseResult([]);
+		oParser = new parserFormula(fullLinkDefnameLocal, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), fullLinkDefnameLocal);
+
+		// set extrefs to 0
+		wb.externalReferences.length = 0;
+
+		assert.strictEqual(wb.externalReferences.length, 0, 'External reference length before add');
+		wb.addExternalReferencesAfterParseFormulas(parseResult.externalReferenesNeedAdd);
+		assert.strictEqual(wb.externalReferences.length, 1, 'External reference length after add');
+		initDefinedName(wb.externalReferences[0], "Sheet1", "A1:A2", "_s1");
+
+		externalWs = createExternalWorksheet("Sheet1");
+		externalWs.getRange2("A1").setValue("10");
+		externalWs.getRange2("A2").setValue("20");
+
+		wb.externalReferences[0].updateData([externalWs]);
+		// defNames.wb[this.Name].getRef();
+		// wb.externalReferences[0].addDefName()
+
+		// local = false. Read/open file with formulas. Try to parse string to external ref similiar as read the file
+		oParser = new parserFormula(fullLink, cellWithFormula, ws);
+		assert.ok(oParser.parse(false/*isLocal*/, null, parseResult), "Full link. isLocal = false. " + fullLink);
+
+		oParser = new parserFormula(fullLinkDefname, cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult), "Full link to defname. isLocal = false. " + fullLinkDefname);
+
+		oParser = new parserFormula(shortLink, cellWithFormula, ws);
+		assert.ok(!oParser.parse(false, null, parseResult), "Short link. isLocal = false. " + shortLink);
+
+		oParser = new parserFormula(shortLinkDefname, cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult), "Short link to defname. isLocal = false. " + shortLinkDefname);
+		elemInStack = oParser.outStack && oParser.outStack[0];
+		if (elemInStack && (elemInStack.type === AscCommonExcel.cElementType.name3D)) {
+			assert.strictEqual(elemInStack.value, "_s1");
+			assert.ok(elemInStack.ws);
+			assert.strictEqual(elemInStack.ws && elemInStack.ws.sName, "Sheet1");
+		}
+
+		oParser = new parserFormula("[1]!_s223", cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult), "Short link to defname that not exist. isLocal = false. " + "[1]!_s223");
+		elemInStack = oParser.outStack && oParser.outStack[0];
+		if (elemInStack && (elemInStack.type === AscCommonExcel.cElementType.name3D)) {
+			assert.strictEqual(elemInStack.value, "_s223");
+			assert.ok(elemInStack.ws);
+			assert.strictEqual(elemInStack.ws && elemInStack.ws.sName, "Sheet1");
+		}
+
+		// inside the formula tests
+		oParser = new parserFormula("SUM([1]!_s1)", cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult), "SUM([1]!_s1). isLocal = false");
+
+		oParser = new parserFormula("SUM('[1]'!_s1)", cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult) === false, "SUM('[1]'!_s1). isLocal = false");
+
+		oParser = new parserFormula("SUM([1]!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult), "SUM([1]!_s1,2,3). isLocal = false");
+
+		oParser = new parserFormula("SUM('[1]'!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult) === false, "SUM('[1]'!_s1,2,3). isLocal = false");
+
+		// local = true. Manual input. Try parse string to external ref similiar as writing a string manually
+		oParser = new parserFormula(fullLinkLocal, cellWithFormula, ws);
+		assert.ok(oParser.parse(true/*isLocal*/, null, parseResult), "Full link. isLocal = true. " + fullLinkLocal);
+
+		oParser = new parserFormula(fullLinkDefnameLocal, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "Full link to defname. isLocal = true. " + fullLinkDefnameLocal);
+		
+		oParser = new parserFormula(shortLinkLocal, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "Short link. isLocal = true. " + shortLinkLocal);
+
+		oParser = new parserFormula(shortLinkDefnameLocal, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "Short link to defname. isLocal = true. " + shortLinkDefnameLocal);
+
+		oParser = new parserFormula(shortLinkDefnameLocalWithoutBrackets, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "Short link to defname without brackets. isLocal = true. " + shortLinkDefnameLocalWithoutBrackets);
+
+		oParser = new parserFormula(shortLinkDefnameLocalWithoutBrackets2, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "Short link to defname without brackets and with single quotes. isLocal = true. " + shortLinkDefnameLocalWithoutBrackets2);
+
+		oParser = new parserFormula(shortLink, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "Short link from file as local. isLocal = true. " + shortLink);
+
+		oParser = new parserFormula(shortLinkDefname, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "Short link to defname from file as local. isLocal = true. " + shortLinkDefname);
+
+		oParser = new parserFormula(shortLinkDefname2, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "Short link to defname with quotes from file as local. isLocal = true. " + shortLinkDefname2);
+
+		oParser = new parserFormula(shortLinkDefnameWithoutBrackets, cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "Short link to defname with quotes & without brackets from file as local. isLocal = true. " + shortLinkDefnameWithoutBrackets);
+
+		oParser = new parserFormula("book(20).xlsx!_s1", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "book(20).xlsx!_s1. isLocal = true");
+
+		oParser = new parserFormula("'book(20).xlsx'!_s1", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "'book(20).xlsx'!_s1. isLocal = true");
+
+		oParser = new parserFormula("123book(20).xlsx!_s1", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "123book(20).xlsx!_s1. isLocal = true");
+
+		oParser = new parserFormula("'123book(20).xlsx'!_s1", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "'123book(20).xlsx'!_s1. isLocal = true");
+
+		// inside the formula tests
+		oParser = new parserFormula("SUM(test.xlsx!_s1)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM(test.xlsx!_s1). isLocal = true");
+
+		oParser = new parserFormula("SUM('test.xlsx'!_s1)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM('test.xlsx'!_s1). isLocal = true");
+
+		oParser = new parserFormula("SUM(test.xlsx!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM(test.xlsx!_s1,2,3). isLocal = true");
+
+		oParser = new parserFormula("SUM('test.xlsx'!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM('test.xlsx'!_s1,2,3). isLocal = true");
+
+		oParser = new parserFormula("SUM(test(20).xlsx!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "SUM(test(20).xlsx!_s1,2,3). isLocal = true");
+
+		oParser = new parserFormula("SUM('test(20).xlsx'!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM('test(20).xlsx'!_s1,2,3). isLocal = true");
+
+		oParser = new parserFormula("SUM(123test(20).xlsx!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "SUM(123test(20).xlsx!_s1,2,3). isLocal = true");
+
+		oParser = new parserFormula("SUM('123test(20).xlsx'!_s1,2,3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM('123test(20).xlsx'!_s1,2,3). isLocal = true");
+
+		// todo on the desktop, the file selection window opens three times, one after another
+		oParser = new parserFormula("SUM(book.xlsx!_s1,book2.xlsx!_s2,book3.xlsx!_s3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM(book.xlsx!_s1,book2.xlsx!_s2,book3.xlsx!_s3). isLocal = true");
+
+		oParser = new parserFormula("SUM('book.xlsx'!_s1,book2.xlsx!_s2,book3.xlsx!_s3)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM('book.xlsx'!_s1,book2.xlsx!_s2,book3.xlsx!_s3). isLocal = true");
+
+		oParser = new parserFormula("SUM('123test(20).xlsx'!_s1, 123test(20).xlsx!_s1)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult) === false, "SUM('123test(20).xlsx'!_s1, 123test(20).xlsx!_s1). isLocal = true");
+
+		oParser = new parserFormula("SUM('123test(20).xlsx'!_s1, '123test(20).xlsx'!_s1)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "SUM('123test(20).xlsx'!_s1, '123test(20).xlsx'!_s1). isLocal = true");
+
+		// clear er
+		wb.externalReferences.length = 0;
+
+		/* create new eR with temporary ws, which will be deleted */
+		cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 1, 0);
+		parseResult = new AscCommonExcel.ParseResult([]);
+		oParser = new parserFormula("'book.xlsx'!_s22", cellWithFormula, ws);
+		assert.ok(oParser.parse(true, null, parseResult), "'book.xlsx'!_s22 - local short link with refernce to non existed defname");
+
+		assert.strictEqual(wb.externalReferences.length, 0, 'External reference length before add');
+		wb.addExternalReferencesAfterParseFormulas(parseResult.externalReferenesNeedAdd);
+		assert.strictEqual(wb.externalReferences.length, 1, 'External reference length after add');
+
+		let ER = wb.externalReferences[0];
+		initDefinedName(ER, "book.xlsx", "A1:A2", "_s22", true);
+
+		externalWs = createExternalWorksheet("Sheet1");
+		externalWs.getRange2("A1").setValue("10");
+		externalWs.getRange2("A2").setValue("20");
+
+		let externalWb = ER.getWb();
+		externalWb.insertWorksheet(0, externalWs);
+		ER.addSheet(externalWs);
+
+		assert.strictEqual(ER.SheetNames.length, 2, "Amount of sheets before updateData");
+		assert.strictEqual(ER.SheetDataSet.length, 2, "Amount of SheetDataSet before updateData");
+		assert.strictEqual(ER.SheetDataSet[0].SheetId, 0, "SheetDataSet id before updateData");
+		assert.strictEqual(ER.SheetDataSet[1].SheetId, 1, "SheetDataSet id before updateData");
+
+		ER.updateData([externalWs], null, null, wb);
+
+		assert.strictEqual(ER.SheetNames.length, 1, "Amount of sheets after updateData `received` data");
+		assert.strictEqual(ER.SheetDataSet.length, 1, "Amount of SheetDataSet after updateData `received` data");
+		assert.strictEqual(ER.SheetDataSet[0].SheetId, 0, "SheetDataSet id after updateData and shift id's");
 
 		//remove external reference
 		wb.removeExternalReferences([wb.externalReferences[0].getAscLink()]);

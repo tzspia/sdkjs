@@ -79,8 +79,9 @@ function (window, undefined) {
 	window['AscCH'].historyitem_Worksheet_ChangeHyperlink = 26;
 	window['AscCH'].historyitem_Worksheet_SetTabColor = 27;
 	window['AscCH'].historyitem_Worksheet_RowHide = 28;
-// Frozen cell
+
 	window['AscCH'].historyitem_Worksheet_SetRightToLeft = 29;
+	// Frozen cell
 	window['AscCH'].historyitem_Worksheet_ChangeFrozenCell = 30;
 	window['AscCH'].historyitem_Worksheet_SetDisplayGridlines = 31;
 	window['AscCH'].historyitem_Worksheet_SetDisplayHeadings = 32;

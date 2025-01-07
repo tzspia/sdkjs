@@ -2698,10 +2698,12 @@
 				}
 			}
 			if (isShow)
-				AscCommon.g_inputContext.HtmlArea.focus();
+			{
+				AscCommon.g_inputContext.showKeyboard();
 
-			if (this.isCheckFocusOnClick)
-				this.isCheckFocusOnClickValue = true;
+				if (this.isCheckFocusOnClick)
+					this.isCheckFocusOnClickValue = true;
+			}
 		}
 	};
 
@@ -2716,7 +2718,7 @@
 		if (this.isCheckFocusOnClickValue === true)
 		{
 			if (AscCommon.g_inputContext)
-				AscCommon.g_inputContext.HtmlArea.focus();
+				AscCommon.g_inputContext.showKeyboard();
 			this.isCheckFocusOnClickValue = false;
 		}
 

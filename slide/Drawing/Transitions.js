@@ -2948,6 +2948,14 @@ function CDemonstrationManager(htmlpage)
             window.removeEventListener("keydown", this._funcWrapKeyboard);
     };
 
+    this.CheckBackgroundColor = function()
+    {
+        if(Asc.editor.demoBackgroundColor && this.Canvas)
+        {
+            this.Canvas.style.backgroundColor = Asc.editor.demoBackgroundColor;
+        }
+    };
+
     this.Start = function(main_div_id, start_slide_num, is_play_mode, is_no_fullscreen)
     {
 		this.StartSlideNum = start_slide_num;
@@ -2971,6 +2979,9 @@ function CDemonstrationManager(htmlpage)
         this.Mode = true;
         this.Canvas = document.createElement('canvas');
         this.Canvas.setAttribute("style", "position:absolute;margin:0;padding:0;left:0px;top:0px;width:100%;height:100%;zIndex:2;background-color:#000000;");
+        this.CheckBackgroundColor();
+
+
         this.Canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_width, true);
         this.Canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_height, true);
 

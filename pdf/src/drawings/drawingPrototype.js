@@ -310,6 +310,10 @@
         let oViewer = Asc.editor.getDocumentRenderer();
         let nPage   = this.GetPage();
         
+        if (false == this.IsUseInDocument()) {
+            return;
+        }
+        
         if (this.group && this.group.IsAnnot()) {
             this.group.AddToRedraw();
             return;

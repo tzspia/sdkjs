@@ -973,6 +973,16 @@ CParagraphContentBase.prototype.GetAllPermRangeMarks = function(marks)
 {
 	return [];
 };
+CParagraphContentBase.prototype.IsUseInDocument = function()
+{
+	return !!(this.Paragraph
+		&& this.Paragraph.IsUseInDocument()
+		&& this.IsUseInParagraph());
+};
+CParagraphContentBase.prototype.IsUseInParagraph = function()
+{
+	return (this.Paragraph && !!this.Paragraph.Get_PosByElement(this));
+};
 
 /**
  * Это базовый класс для элементов содержимого(контент) параграфа, у которых есть свое содержимое.
@@ -1121,16 +1131,6 @@ CParagraphContentWithContentBase.prototype.private_UpdateShapeText = function()
 {
 	if (this.Paragraph)
 		this.Paragraph.RecalcInfo.NeedShapeText();
-};
-CParagraphContentWithContentBase.prototype.IsUseInDocument = function()
-{
-	return !!(this.Paragraph
-		&& this.Paragraph.IsUseInDocument()
-		&& this.IsUseInParagraph());
-};
-CParagraphContentWithContentBase.prototype.IsUseInParagraph = function()
-{
-	return (this.Paragraph && !!this.Paragraph.Get_PosByElement(this));
 };
 CParagraphContentWithContentBase.prototype.SelectThisElement = function(nDirection, isUseInnerSelection)
 {

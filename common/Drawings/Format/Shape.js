@@ -6485,10 +6485,6 @@
 			}
 		};
 
-
-		CShape.prototype.Load_LinkData = function (linkData) {
-		};
-
 		CShape.prototype.Get_PageContentStartPos = function (pageNum) {
 			if (this.textBoxContent) {
 				if (this.getTextRect) {

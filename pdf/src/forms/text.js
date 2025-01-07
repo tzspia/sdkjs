@@ -341,6 +341,9 @@
         // redraw target cursor if field is selected
         if (oDoc.activeForm == this && oContentToDraw.IsSelectionUse() == false && this.IsCanEditText())
             oContentToDraw.RecalculateCurPos();
+
+
+        this.DrawLocks(oGraphicsPDF);
     };
     CTextField.prototype.DrawDateMarker = function(oCtx) {
         if (this.IsHidden())
@@ -1111,7 +1114,7 @@
         oDoc.EndNoHistoryMode();
         
         if (this.GetApiValue() != this.GetValue()) {
-            AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetApiValue(), this.GetValue()));
+            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetApiValue(), this.GetValue()));
             this.RevertContentView();
             this.SetApiValue(this.GetValue());
         }
@@ -1187,7 +1190,7 @@
         let oFormatTrigger      = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
         let oActionRunScript    = oFormatTrigger ? oFormatTrigger.GetActions()[0] : null;
         
-        let isCanFormat = AscCommon.History.UndoRedoInProgress != true ? this.DoKeystrokeAction(null, false, true) : true;
+        let isCanFormat = oDoc.History.UndoRedoInProgress != true ? this.DoKeystrokeAction(null, false, true) : true;
         if (!isCanFormat) {
             let oWarningInfo = oDoc.GetWarningInfo();
             if (!oWarningInfo) {

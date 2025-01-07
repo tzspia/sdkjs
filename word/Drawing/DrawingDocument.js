@@ -6572,10 +6572,6 @@ function CDrawingDocument()
 		this.m_lCurrentPage = -1;
 	};
 
-	this.InitViewer = function ()
-	{
-	};
-
 	this.IsMobileVersion = function ()
 	{
 		return this.m_oWordControl.m_oApi.isMobileVersion;

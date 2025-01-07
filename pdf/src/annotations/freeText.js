@@ -897,7 +897,7 @@
         let oMainComm = this._replies[0];
         oAscCommData.asc_putText(oMainComm.GetContents());
         oAscCommData.asc_putOnlyOfficeTime(oMainComm.GetModDate().toString());
-        oAscCommData.asc_putUserId(editor.documentUserId);
+        oAscCommData.asc_putUserId(this.GetUserId());
         oAscCommData.asc_putUserName(oMainComm.GetAuthor());
         oAscCommData.asc_putSolved(false);
         oAscCommData.asc_putQuoteText("");
@@ -1335,7 +1335,7 @@
                 let xContent    = oTransform.TransformPointX(X, 0);
                 let yContent    = oTransform.TransformPointY(0, Y);
 
-                if (this.IsInTextBox() == false) {
+                if (this.IsInTextBox() == false && false == this.Lock.Is_Locked()) {
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {
                         this.FitTextBox();

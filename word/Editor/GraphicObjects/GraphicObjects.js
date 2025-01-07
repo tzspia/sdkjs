@@ -793,6 +793,7 @@ CGraphicObjects.prototype =
                 image_props.flipH = props_by_types.imageProps.flipH;
                 image_props.flipV = props_by_types.imageProps.flipV;
                 image_props.lockAspect = props_by_types.imageProps.lockAspect;
+                image_props.transparent = props_by_types.imageProps.transparent;
 
                 image_props.pluginGuid = props_by_types.imageProps.pluginGuid;
                 image_props.pluginData = props_by_types.imageProps.pluginData;

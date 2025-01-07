@@ -804,7 +804,7 @@ $(function () {
 			for (let i = 2; i < 30; i += 1) {
 				let row = [];
 				for (let j = 0; j < 6; j += 1) {
-					row.push(pivot.asc_getFieldIndexByCell(i, j));
+					row.push(pivot.getFieldIndexByCell(i, j));
 				}
 				fieldIndexes.push(row);
 			}
@@ -871,7 +871,7 @@ $(function () {
 			for (let i = 2; i < 30; i += 1) {
 				let row = [];
 				for (let j = 0; j < 6; j += 1) {
-					row.push(pivot.asc_canChangeCalculatedItemByCell(i, j));
+					row.push(pivot.canChangeCalculatedItemByCell(i, j));
 				}
 				canAdd.push(row);
 			}

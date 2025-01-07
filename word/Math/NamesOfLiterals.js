@@ -1194,7 +1194,6 @@
 			"\\begin{Bmatrix}" : 1,
 			"\\begin{vmatrix}" : 1,
 			"\\begin{Vmatrix}" : 1,
-			"\\begin{array}" : 1,
 			"\\begin{equation}" : 1,
 
 			"\\end{cases}" : 2,
@@ -1204,7 +1203,6 @@
 			"\\end{Bmatrix}" : 2,
 			"\\end{vmatrix}" : 2,
 			"\\end{Vmatrix}" : 2,
-			"\\end{array}" : 2,
 			"\\end{equation}" : 2,
 		};
 		this.Init();
@@ -1212,6 +1210,22 @@
 	TokenMatrix.prototype = Object.create(LexerLiterals.prototype);
 	TokenMatrix.prototype.constructor = TokenMatrix;
 	TokenMatrix.prototype.isUseLaTeXBrackets = true;
+
+	function TokenArray()
+	{
+		this.id = 89;
+		this.data = [];
+		this.Unicode = {};
+		this.LaTeX = {
+			"\\begin{array}" : 1,
+			"\\end{array}" : 2,
+			"\\array{" : 1,
+		};
+		this.Init();
+	}
+	TokenArray.prototype = Object.create(LexerLiterals.prototype);
+	TokenArray.prototype.constructor = TokenArray;
+	TokenArray.prototype.isUseLaTeXBrackets = true;
 
 	function TokenRect()
 	{
@@ -1557,6 +1571,7 @@
 		box: 			new TokenBox(),
 		rect:			new TokenRect(),
 		matrix: 		new TokenMatrix(),
+		array: 			new TokenArray(),
 		font:			new TokenFont(),
 		of:				new TokenOf(),
 		delimiter:		new TokenDelimiter(),
@@ -1591,6 +1606,7 @@
 		MathLiterals.invisible,
 		MathLiterals.horizontal,
 		MathLiterals.matrix,
+		MathLiterals.array,
 		MathLiterals.nary,
 		MathLiterals.radical,
 		MathLiterals.other,
@@ -2398,7 +2414,7 @@
 							null
 						);
 						oFraction.SetReviewTypeWithInfo(oTokens.style.reviewData.reviewType, oTokens.style.reviewData.reviewInfo);
-						if (oTokens.style.reviewData.reviewInfo)
+						if (oTokens.style.reviewData.reviewInfo && oFraction.ReviewInfo)
 							oFraction.ReviewInfo.Update();
 
 						UnicodeArgument(
@@ -4965,13 +4981,6 @@
 		if (!(oContent instanceof MathTextAndStyles) && oContent.Content.length === 0)
 			return this.GetLastPos();
 
-		// check what's wrong
-		// for mathBase set rFont
-		if (!(oContent instanceof ParaRun)
-			&& !(oContent instanceof MathTextAndStyles)
-			&& !(oContent instanceof CMathContent))
-			oContent.Set_RFont_ForMath();
-
 		let nPosCopy = this.nPos;
 
 		if (oContent instanceof MathTextAndStyles)
@@ -5426,7 +5435,7 @@
 		this.style		= undefined;
 		this.reviewData	= {
 			reviewType : reviewtype_Common,
-			reviewInfo : new CReviewInfo()
+			reviewInfo : new AscWord.ReviewInfo()
 		}
 		this.mathPrp	= new CMPrp();
 		this.metaData	= new MathMetaData();
@@ -5538,21 +5547,31 @@
 	};
 	MathTextAdditionalData.prototype.IsReviewDataEqual = function (oContent)
 	{
+		let reviewType = undefined;
+		let reviewInfo = undefined;
+		
 		if (oContent instanceof MathTextAdditionalData)
 		{
-			if (this.reviewData.reviewType === undefined || oContent.reviewData.reviewInfo === undefined)
-				return true;
-			return this.reviewData.reviewType === oContent.reviewData.reviewType
-				&& this.reviewData.reviewInfo.IsEqual(oContent.reviewData.reviewInfo, false)
+			reviewType = oContent.reviewData.reviewType;
+			reviewInfo = oContent.reviewData.reviewInfo;
 		}
-		else
+		else if (oContent.GetReviewType)
 		{
-			if (oContent.ReviewInfo === undefined)
-				return false;
-
-			return this.reviewData.reviewType === oContent.ReviewType
-				&& this.reviewData.reviewInfo.IsEqual(oContent.ReviewInfo, false)
+			reviewType = oContent.GetReviewType();
+			reviewInfo = oContent.GetReviewInfo();
 		}
+		
+		if (this.reviewData.reviewType !== reviewType)
+			return false;
+		
+		if (!this.reviewData.reviewInfo && !reviewInfo)
+			return true;
+		
+		if (!this.reviewData.reviewInfo || !reviewInfo)
+			return false;
+		
+		return this.reviewData.reviewInfo.IsEqual(reviewInfo, false)
+		
 	}
 	MathTextAdditionalData.prototype.SetAdditionalDataFromContent = function (oContent, isCtrPrp)
 	{
@@ -5582,8 +5601,17 @@
 		}
 
 		this.SetAdditionalStyleData(oPr);
-		this.SetAdditionalReviewType(oContent.ReviewType);
-		this.SetAdditionalReviewInfo(oContent.ReviewInfo);
+		
+		if (oContent.GetReviewType)
+		{
+			this.SetAdditionalReviewType(oContent.GetReviewType());
+			this.SetAdditionalReviewInfo(oContent.GetReviewInfo());
+		}
+		else
+		{
+			this.SetAdditionalReviewType(undefined);
+			this.SetAdditionalReviewInfo(undefined);
+		}
 
 		if (oContent instanceof ParaRun)
 			this.SetMathPrp(oContent.MathPrp);
@@ -7194,8 +7222,8 @@
 				{
 					let oFirstPos	= oMath.Positions[0];
 					let oLastPos	= oMath.Positions[oMath.Positions.length - 1];
-					oMath.AddBefore(oFirstPos, new MathText("〖"));
-					oMath.AddAfter(oLastPos, new MathText("〗"));
+					oMath.AddBefore(oFirstPos, new MathText("〖", oContent));
+					oMath.AddAfter(oLastPos, new MathText("〗", oContent));
 				}
 
 				oContent.Remove_FromContent(nPosCMathContent, 1);

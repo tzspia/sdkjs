@@ -302,6 +302,35 @@ CPDFCollaborativeEditing.prototype.OnEnd_ReadForeignChanges = function() {
 	AscCommon.CCollaborativeEditingBase.prototype.OnEnd_ReadForeignChanges.apply(this, arguments);
 };
 CPDFCollaborativeEditing.prototype.Check_MergeData = function() {};
+CPDFCollaborativeEditing.prototype.Release_Locks = function() {
+    let UnlockCount = this.m_aNeedUnlock.length;
+    for (let Index = 0; Index < UnlockCount; Index++) {
+        let CurLockType = this.m_aNeedUnlock[Index].Lock.Get_Type();
+
+        if (AscCommon.c_oAscLockTypes.kLockTypeOther3 != CurLockType && AscCommon.c_oAscLockTypes.kLockTypeOther != CurLockType) {
+            this.m_aNeedUnlock[Index].Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeNone, false);
+            this.m_aNeedUnlock[Index].AddToRedraw && this.m_aNeedUnlock[Index].AddToRedraw();
+
+            if (this.m_aNeedUnlock[Index] instanceof AscCommonWord.CHeaderFooterController)
+                editor.sync_UnLockHeaderFooters();
+            else if (this.m_aNeedUnlock[Index] instanceof AscCommonWord.CDocument)
+                editor.sync_UnLockDocumentProps();
+            else if (this.m_aNeedUnlock[Index] instanceof AscCommon.CComment)
+                editor.sync_UnLockComment(this.m_aNeedUnlock[Index].Get_Id());
+            else if (this.m_aNeedUnlock[Index] instanceof AscCommonWord.CGraphicObjects)
+                editor.sync_UnLockDocumentSchema();
+            else if (this.m_aNeedUnlock[Index] instanceof AscCommon.CCore)
+                editor.sendEvent("asc_onLockCore", false);
+            else if (this.m_aNeedUnlock[Index] instanceof AscCommonWord.CDocProtect)
+                editor.sendEvent("asc_onLockDocumentProtection", false);
+        }
+        else if (AscCommon.c_oAscLockTypes.kLockTypeOther3 === CurLockType)
+        {
+            this.m_aNeedUnlock[Index].Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, false);
+            this.m_aNeedUnlock[Index].AddToRedraw && this.m_aNeedUnlock[Index].AddToRedraw();
+        }
+    }
+};
 
 //--------------------------------------------------------export----------------------------------------------------
 window['AscPDF'] = window['AscPDF'] || {};

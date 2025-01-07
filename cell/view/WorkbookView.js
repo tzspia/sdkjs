@@ -472,6 +472,8 @@
 				  self._onSelectColumnsByRange.apply(self, arguments);
 			  }, "selectRowsByRange": function () {
 				  self._onSelectRowsByRange.apply(self, arguments);
+			  }, "selectAllByRange": function () {
+				  self._onSelectAllByRange.apply(self, arguments);
 			  }, "save": function () {
 				  self.Api.asc_Save();
 			  }, "showCellEditorCursor": function () {
@@ -1395,7 +1397,7 @@
             }, 1000);
         }
 
-        if (this.isFormulaEditMode && this.isCellEditMode && this.cellEditor) {
+        if (this.isFormulaEditMode && this.isCellEditMode && this.cellEditor && this.cellEditor.isTopLineActive) {
             /* set focus to the top formula entry line */
             this.input.focus();
         }
@@ -2328,6 +2330,10 @@
     this.getWorksheet()._selectRowsByRange();
   };
 
+  WorkbookView.prototype._onSelectAllByRange = function() {
+    this.getWorksheet()._selectAllByRange();
+  };
+
   WorkbookView.prototype._onShowCellEditorCursor = function() {
     // Показываем курсор
     if (this.getCellEditMode()) {
@@ -2593,6 +2599,7 @@
         item.resize(/*isDraw*/i == activeIndex, this.cellEditor);
       }
       this.drawWorksheet();
+	  this.checkScrollRtl(this.getWorksheet().getRightToLeft());
     } else {
       // ToDo не должно происходить ничего, но нам приходит resize сверху, поэтому проверим отрисовывали ли мы
       if (-1 === this.wsActive || this.wsMustDraw) {
@@ -3189,15 +3196,39 @@
         return this.getCellEditMode() && this.cellEditor.checkSymbolBeforeRange(char);
     };
 
-	WorkbookView.prototype.insertArgumentsInFormula = function (args, argNum, argType, name) {
+	WorkbookView.prototype.insertArgumentsInFormula = function (args, argNum, argType, name, bEndInsertArg) {
 		if (this.getCellEditMode()) {
+			var ws = this.getActiveWS();
+
+			let needChange = false;
+			if (bEndInsertArg) {
+				if (argType === AscCommonExcel.cElementType.string) {
+					let curArg = args[argNum];
+					//!number + !defname + !quotes
+					if (curArg && !AscCommon.isNumber(curArg) && !(curArg[0] === '"' && curArg[curArg.length - 1] === '"')) {
+						let parser = new AscCommonExcel.parserFormula(curArg, null, ws);
+						let parseResultArg = new AscCommonExcel.ParseResult([], []);
+						parser.parse(true, true, parseResultArg, true);
+
+						let argRes = parser.calculate();
+						if (argRes && argRes.type === AscCommonExcel.cElementType.error && argRes.errorType === AscCommonExcel.cErrorType.wrong_name) {
+							//add quotes
+							args[argNum] = '"' + args[argNum] + '"';
+							needChange = true;
+						}
+					}
+				}
+			}
+
 			var sArguments = args.join(AscCommon.FormulaSeparators.functionArgumentSeparator);
 			this.cellEditor.changeCellText(sArguments);
 
 			if (name) {
-				var ws = this.getActiveWS();
 
 				var res = new AscCommonExcel.CFunctionInfo(name);
+				if (needChange) {
+					res.asc_setArguments(args);
+				}
 				res.argumentsResult = [];
 				var argCalc = ws.calculateWizardFormula(args[argNum], argType);
 				res.argumentsResult[argNum] = argCalc.str;
@@ -3806,26 +3837,28 @@
 		}
 	};
 
-  WorkbookView.prototype.getSimulatePageForOleObject = function (sizes, oRange) {
+  WorkbookView.prototype.getSimulatePageForOleObject = function (rangeSizes, range) {
     var page = new AscCommonExcel.CPagePrint();
     page.indexWorksheet = 0;
-    page.pageClipRectHeight = sizes.height;
-    page.pageClipRectWidth = sizes.width;
-    page.pageGridLines = true;
-    page.pageHeight = sizes.height;
+    page.pageClipRectHeight = rangeSizes.height;
+    page.pageClipRectWidth = rangeSizes.width;
+	  page.topFieldInPx = 2;
+	  page.leftFieldInPx = 2;
 
-    page.pageRange =  oRange.clone();
-    page.pageWidth = sizes.width;
+    page.pageGridLines = true;
+    page.pageHeight = rangeSizes.height;
+	  page.pageWidth = rangeSizes.width;
+
+    page.pageRange =  range.clone();
     page.scale = 1;
     return page;
   };
 
   WorkbookView.prototype.printForOleObject = function (ws, oRange) {
-    var sizes = ws.getRangePosition(oRange);
+    var sizes = ws.getPrintOleRangePosition(oRange);
     var page = this.getSimulatePageForOleObject(sizes, oRange);
     var previewOleObjectContext = AscCommonExcel.getContext(sizes.width, sizes.height, this);
     previewOleObjectContext.DocumentRenderer = AscCommonExcel.getGraphics(previewOleObjectContext);
-    previewOleObjectContext.isPreviewOleObjectContext = true;
 		previewOleObjectContext.isNotDrawBackground = !this.Api.isFromSheetEditor;
     ws.drawForPrint(previewOleObjectContext, page, 0, 1);
     return previewOleObjectContext;
@@ -4707,6 +4740,89 @@
 		this.getWorksheet()._updateGroups(true);
 		this.getWorksheet()._updateGroups(null);
 	};
+
+	WorkbookView.prototype.pasteSheets = function (arrSheets, insertBefore, arrNames) {
+		var t = this;
+		var pasteProcessor = AscCommonExcel.g_clipboardExcel.pasteProcessor;
+		var newFonts = {}, aPastedImages = [], pastedWorksheets = [];
+		for (let i = 0; i < arrSheets.length; i++) {
+			let sheet_data = arrSheets[i];
+
+			var tempWorkbook, pastedWs, base64;
+			if (typeof (sheet_data) === "string") {
+				base64 = sheet_data;
+				tempWorkbook = new AscCommonExcel.Workbook();
+				tempWorkbook.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
+				tempWorkbook.setCommonIndexObjectsFrom(this.model);
+				aPastedImages = aPastedImages.concat(pasteProcessor._readExcelBinary(base64.split('xslData;')[1], tempWorkbook, true));
+				pastedWs = tempWorkbook.aWorksheets[0];
+			} else {
+				pastedWs = sheet_data;
+				tempWorkbook = sheet_data.workbook;
+			}
+
+			pastedWorksheets.push(pastedWs);
+
+			newFonts = Object.assign(newFonts, tempWorkbook.generateFontMap2());
+			newFonts = pasteProcessor._convertFonts(newFonts);
+			for (let j = 0; j < pastedWs.Drawings.length; j++) {
+				pastedWs.Drawings[j].graphicObject.getAllFonts(newFonts);
+			}
+		}
+
+		var doCopy = function() {
+			History.Create_NewPoint();
+			History.StartTransaction();
+
+			let scale = api.asc_getZoom();
+			let renameParamsArr = [];
+			let renameSheetMap = {};
+			for (let i = 0; i < pastedWorksheets.length; i++) {
+				if (i !== 0) {
+					insertBefore++;
+				}
+				var renameParams = t.model.copyWorksheet(0, insertBefore, arrNames[i], undefined, undefined, undefined, pastedWorksheets[i], base64);
+				//TODO ошибку по срезам добавил в renameParams. необходимо пересмотреть
+				//переименовать эту переменную, либо не добавлять copySlicerError и посылать ошибку в другом месте
+				if (renameParams && renameParams.copySlicerError) {
+					t.handlers.trigger("asc_onError", c_oAscError.ID.MoveSlicerError, c_oAscError.Level.NoCritical);
+				}
+
+				renameParamsArr.push(renameParams);
+				renameSheetMap[renameParams.lastName] =  renameParams.newName;
+				api.asc_showWorksheet(insertBefore);
+				api.asc_setZoom(scale);
+			}
+
+			//парсинг формул после вставки всех листов, поскольку внутри одного листа может быть ссылка в формуле на другой лист который ещё не вставился
+			//поэтому дожидаемся вставку всех листов
+			for(var j = 0; j < renameParamsArr.length; j++) {
+				var newSheet = t.model.getWorksheetByName(renameParamsArr[j].newName);
+				newSheet.copyFromFormulas(renameParamsArr[j], renameSheetMap);
+			}
+
+			// Делаем активным скопированный
+			t.model.setActive(insertBefore);
+			t.updateWorksheetByModel();
+			t.showWorksheet();
+			History.EndTransaction();
+			// Посылаем callback об изменении списка листов
+			api.sheetsChanged();
+		};
+
+		var api = window["Asc"]["editor"];
+		api._loadFonts(newFonts, function () {
+			if (aPastedImages && aPastedImages.length) {
+				pasteProcessor._loadImagesOnServer(aPastedImages, function () {
+					doCopy();
+				});
+			} else {
+				doCopy();
+			}
+		});
+
+	};
+
 	WorkbookView.prototype.pasteSheet = function (sheet_data, insertBefore, name, callback) {
 
 		var t = this;
@@ -5209,7 +5325,7 @@
 	};
 
 	WorkbookView.prototype.changeUpdateLinks = function () {
-		let val = this.model.workbookPr && this.model.workbookPr.UpdateLinks;
+		let val = this.model.workbookPr && this.model.workbookPr.getUpdateLinks();
 		if (!val) {
 			this.clearExternalReferenceUpdateTimer();
 		} else {
@@ -5218,14 +5334,14 @@
 	};
 
 	WorkbookView.prototype.initExternalReferenceUpdateTimer = function (clear) {
-		let val = this.model.workbookPr && this.model.workbookPr.UpdateLinks;
+		let val = this.model.workbookPr && this.model.workbookPr.getUpdateLinks();
 		let oThis = this;
 		if (clear) {
 			this.clearExternalReferenceUpdateTimer();
 		}
 		if (val) {
-			let timeout = 300000;
-			this.externalReferenceUpdateTimer = setTimeout(function () {
+			let timeout = 30000;
+			oThis.externalReferenceUpdateTimer = setTimeout(function () {
 				oThis.updateExternalReferences(oThis.getExternalReferences());
 				//we are waiting update, after reinit timer
 				oThis.clearExternalReferenceUpdateTimer();
@@ -5435,6 +5551,7 @@
 			const doUpdateData = function (_arrAfterPromise) {
 				if (!_arrAfterPromise.length) {
 					callback && callback(true);
+					t.changeUpdateLinks();
 					t.model.handlers.trigger("asc_onStartUpdateExternalReference", false);
 					return;
 				}
@@ -5442,29 +5559,41 @@
 				History.Create_NewPoint();
 				History.StartTransaction();
 
-				var updatedReferences = [];
-				for (var i = 0; i < _arrAfterPromise.length; i++) {
+				let updatedReferences = [];
+				for (let i = 0; i < _arrAfterPromise.length; i++) {
 					// eR - current External Reference
 					let eRId = _arrAfterPromise[i].externalReferenceId;
 					let stream = _arrAfterPromise[i].stream;
 
 					let oPortalData = _arrAfterPromise[i].data;
 					let path = oPortalData && oPortalData["path"];
+					let referenceData = oPortalData.referenceData;
+
 					//if after update get short path, check on added such link
-					let eR = t.model.getExternalReferenceById(eRId);
+					let eR = t.model.getExternalReferenceByReferenceData(referenceData);
+					let noRefDataER = t.model.getExternalReferenceById(eRId);
+
+					if (!eR && noRefDataER) {
+						eR = noRefDataER;
+					}
 
 					let externalReferenceId = eRId;
 					if (path && externalReferenceId !== path) {
 						let isNotUpdate = (AscCommonExcel.importRangeLinksState && AscCommonExcel.importRangeLinksState.notUpdateIdMap && AscCommonExcel.importRangeLinksState.notUpdateIdMap[this.Id]) || this.notUpdateId;
 						if (!isNotUpdate) {
-							eR = t.model.getExternalReferenceById(path);
-							//need remove added new link with externalReferenceId id
-							if (eR) {
-								let eRAdded = t.model.getExternalReferenceById(externalReferenceId);
-								if (eRAdded) {
-									let indexFrom = t.model.getExternalReferenceById(externalReferenceId, true);
-									let indexTo = t.model.getExternalReferenceById(path, true);
+							// eR = t.model.getExternalReferenceById(path);
+							/* 
+								next we need to remove the added new link with the same identifier externalReferenceId
+								change the index of an already added link for which a promise has not yet been received
+								we get the link that we wrote down before receiving the promise
+								so we are looking for a link without referenceData, but with the same name 
+							*/
+							let eRAdded = t.model.getExternalReferenceWithoutRefData(externalReferenceId);
+							if (eR && eRAdded) {
+								let indexFrom = t.model.getExternalReferenceById(externalReferenceId, true);
+								let indexTo = t.model.getExternalReferenceById(path, true);
 
+								if (indexFrom !== null && indexTo !== null) {
 									for (let wsName in eRAdded.worksheets) {
 										let existedWs = eR.worksheets[wsName];
 										let prepared = t.model.dependencyFormulas.prepareChangeSheet(eRAdded.worksheets[wsName].getId(), {from: indexFrom + 1, to: indexTo + 1});
@@ -5490,16 +5619,14 @@
 											}
 										}
 									}
+
 									eR.addDataSetFrom(eRAdded);
 									t.model.removeExternalReferences([eRAdded.getAscLink()]);
 								}
 							}
 						}
 					}
-					
-					if (!eR) {
-						eR = t.model.getExternalReferenceById(externalReferenceId);
-					}
+
 
 					if (stream && eR) {
 						updatedReferences.push(eR);
@@ -5556,7 +5683,7 @@
 								wb.dependencyFormulas.initOpen();
 								AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;
 								if (wb.aWorksheets) {
-									eR && eR.updateData(wb.aWorksheets, _arrAfterPromise[i].data);
+									eR && eR.updateData(wb.aWorksheets, _arrAfterPromise[i].data, null, t.model);
 								}
 							}
 
@@ -5567,7 +5694,7 @@
 							}
 							let updatedData = window["Asc"]["editor"].openDocumentFromZip2(wb ? wb : t.model, stream);
 							if (updatedData) {
-								eR && eR.updateData(updatedData, _arrAfterPromise[i].data);
+								eR && eR.updateData(updatedData, _arrAfterPromise[i].data, null, t.model /* working file workbook */);
 							}
 						}
 					} else if (eR) {	 
@@ -5591,18 +5718,17 @@
 
 				History.EndTransaction();
 
+				//TODO
 				//кроме пересчёта нужно изменить ссылку на лист во всех диапазонах, которые используют данную ссылку
-				for (let j = 0; i < updatedReferences.length; j++) {
+				/*for (let j = 0; j < updatedReferences.length; j++) {
 					for (let n in updatedReferences[j].worksheets) {
 						let prepared = t.model.dependencyFormulas.prepareChangeSheet(updatedReferences[j].worksheets[n].getId());
 						t.model.dependencyFormulas.dependencyFormulas.changeSheet(prepared);
 					}
-				}
+				}*/
 
 				//if update all, reinit timer
-				if (t.model.externalReferences && t.model.externalReferences.length === updatedReferences.length) {
-					t.changeUpdateLinks();
-				}
+				t.changeUpdateLinks();
 
 				//t.model.dependencyFormulas.calcTree();
 				let ws = t.getWorksheet();
@@ -6022,6 +6148,11 @@
 			}
 		}
 	};
+
+	WorkbookView.prototype.setDefaultDirection = function(val) {
+		this.model.setDefaultDirection(val);
+	};
+
 
 	//временно добавляю сюда. в идеале - использовать общий класс из документов(или сделать базовый, от него наследоваться) - CDocumentSearch
 	function CDocumentSearchExcel(wb) {
