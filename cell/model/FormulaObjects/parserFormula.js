@@ -8129,7 +8129,7 @@ function parserFormula( formula, parent, _ws ) {
 
 			oRange && oRange._foreachNoEmpty(function (oCell) {
 				if (!bRecursiveCell) {
-					bRecursiveCell = oCell.checkRecursiveFormula(parserFormula.getParent());
+					bRecursiveCell = oCell.checkRecursiveFormula && oCell.checkRecursiveFormula(parserFormula.getParent());
 				}
 			});
 

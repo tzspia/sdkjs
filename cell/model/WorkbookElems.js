@@ -15330,7 +15330,7 @@ function RangeDataManagerElem(bbox, data)
 		if (addSheetObj) {
 			let wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.CExternalWorkbook();
+				wb = new AscCommonExcel.CExternalWorkbook(this);
 			}
 			let ws = new AscCommonExcel.CExternalWorksheet(wb);
 			ws.sName = name;
@@ -15409,7 +15409,7 @@ function RangeDataManagerElem(bbox, data)
 		if (!this.worksheets[sheetName]) {
 			var wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.CExternalWorkbook();
+				wb = new AscCommonExcel.CExternalWorkbook(this);
 			}
 			ws = new AscCommonExcel.CExternalWorksheet(wb);
 			ws.sName = sheetName;
@@ -15427,7 +15427,7 @@ function RangeDataManagerElem(bbox, data)
 			if (!this.worksheets[sheetName]) {
 				var wb = this.getWb();
 				if (!wb) {
-					wb = new AscCommonExcel.CExternalWorkbook();
+					wb = new AscCommonExcel.CExternalWorkbook(this);
 				}
 				ws = new AscCommonExcel.CExternalWorksheet(wb);
 				ws.sName = sheetName;
@@ -15436,6 +15436,7 @@ function RangeDataManagerElem(bbox, data)
 				wb.aWorksheets.push(ws);
 			}
 
+			return;
 
 			//клонируем все данные из SheetDataSet в данный темповый Worksheet
 			if (!sheetDataSet || !sheetDataSet.Row) {
@@ -16159,6 +16160,21 @@ function RangeDataManagerElem(bbox, data)
 
 		return res;
 	};
+
+	ExternalCell.prototype.isNullText = function () {
+		return this.CellValue == null || this.CellValue === "";
+	};
+	ExternalCell.prototype.getNumberValue = function () {
+		return this.CellValue;
+	};
+	ExternalCell.prototype.getValueWithoutFormat = function () {
+		return this.CellValue;
+	};
+	ExternalCell.prototype.getType = function () {
+		return this.CellType;
+	};
+
+
 
 	function ExternalDefinedName(parent) {
 		this.Name = null;
@@ -19016,12 +19032,97 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 
-	function CExternalWorkbook() {
+	function CExternalWorkbook(externalReference) {
+		this.externalReference = externalReference;
 		this.aWorksheets = [];
 	}
 	function CExternalWorksheet(wb) {
 		this.workbook = wb;
+		this.sName = null;
 	}
+
+	CExternalWorksheet.prototype.getRange2 = function (sRange) {
+		var bbox = AscCommonExcel.g_oRangeCache.getAscRange(sRange);
+		if (null != bbox)
+			return new CExternalRange(this, bbox);
+		return null;
+	};
+	CExternalWorksheet.prototype.getName = function () {
+		return this.sName;
+	};
+
+
+	function CExternalRange(ws, bbox) {
+		this.bbox = bbox;
+		this.worksheet = ws;
+	}
+
+	CExternalRange.prototype._foreachNoEmpty = function (actionCell) {
+		let ws = this.worksheet;
+		let wb = ws && ws.workbook;
+		let eR = wb && wb.externalReference;
+		if (eR) {
+			let sheetDataSetIndex = eR.getSheetByName(ws.getName());
+			if (null !== sheetDataSetIndex) {
+				let sheetDataSet = eR.SheetDataSet[sheetDataSetIndex];
+				if (sheetDataSet && sheetDataSet.Row) {
+					// Get range boundaries from this.bbox
+					const startRow = this.bbox.r1;
+					const endRow = this.bbox.r2;
+					const startCol = this.bbox.c1;
+					const endCol = this.bbox.c2;
+
+					// Iterate only rows within range
+					for (let i = 0; i < sheetDataSet.Row.length; i++) {
+						const row = sheetDataSet.Row[i];
+						// Check if row is within range
+						if (row && row.R >= startRow + 1 && row.R <= endRow + 1) {
+							// Iterate cells in row
+							for (let j = 0; j < row.Cell.length; j++) {
+								const cell = row.Cell[j];
+								if (cell && cell.Ref) {
+									// Get cell range
+									const cellRange = cell.getRange();
+									// Check if cell is within column range
+									if (cellRange &&
+										cellRange.c1 >= startCol &&
+										cellRange.c1 <= endCol) {
+										// Call callback for cell
+										actionCell(cell);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	};
+
+	CExternalRange.prototype.getBBox0 = function () {
+		return this.bbox;
+	};
+
+	CExternalRange.prototype.getLeftTopCellNoEmpty = function (actionCell) {
+		let ws = this.worksheet;
+		let wb = ws && ws.workbook;
+		let eR = wb && wb.externalReference;
+		if (eR) {
+			let sheetDataSetIndex = eR.getSheetByName(ws.getName());
+			if (null !== sheetDataSetIndex) {
+				let sheetDataSet = eR.SheetDataSet[sheetDataSetIndex];
+				if (sheetDataSet && sheetDataSet.Row) {
+					actionCell(sheetDataSet.Row[0] && sheetDataSet.Row[0].Cell && sheetDataSet.Row[0].Cell[0]);
+				}
+			}
+		}
+	};
+
+	CExternalRange.prototype.getName = function () {
+		return this.bbox.getName();
+	};
+
+
 
 	//----------------------------------------------------------export----------------------------------------------------
 	var prot;
