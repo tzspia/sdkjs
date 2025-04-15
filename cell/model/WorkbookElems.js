@@ -15330,9 +15330,9 @@ function RangeDataManagerElem(bbox, data)
 		if (addSheetObj) {
 			let wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
+				wb = new AscCommonExcel.CExternalWorkbook();
 			}
-			let ws = new AscCommonExcel.Worksheet(wb);
+			let ws = new AscCommonExcel.CExternalWorksheet(wb);
 			ws.sName = name;
 			this.worksheets[name] = ws;
 		}
@@ -15409,9 +15409,9 @@ function RangeDataManagerElem(bbox, data)
 		if (!this.worksheets[sheetName]) {
 			var wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
+				wb = new AscCommonExcel.CExternalWorkbook();
 			}
-			ws = new AscCommonExcel.Worksheet(wb);
+			ws = new AscCommonExcel.CExternalWorksheet(wb);
 			ws.sName = sheetName;
 
 			this.worksheets[sheetName] = ws;
@@ -15427,9 +15427,9 @@ function RangeDataManagerElem(bbox, data)
 			if (!this.worksheets[sheetName]) {
 				var wb = this.getWb();
 				if (!wb) {
-					wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
+					wb = new AscCommonExcel.CExternalWorkbook();
 				}
-				ws = new AscCommonExcel.Worksheet(wb, wb.aWorksheets.length);
+				ws = new AscCommonExcel.CExternalWorksheet(wb);
 				ws.sName = sheetName;
 
 				this.worksheets[sheetName] = ws;
@@ -19015,6 +19015,14 @@ function RangeDataManagerElem(bbox, data)
 		return this.index;
 	};
 
+
+	function CExternalWorkbook() {
+		this.aWorksheets = [];
+	}
+	function CExternalWorksheet(wb) {
+		this.workbook = wb;
+	}
+
 	//----------------------------------------------------------export----------------------------------------------------
 	var prot;
 	window['Asc'] = window['Asc'] || {};
@@ -19588,6 +19596,8 @@ function RangeDataManagerElem(bbox, data)
 	prot["asc_getName"] = prot.asc_getName;
 	prot["asc_getIndex"] = prot.asc_getIndex;
 
+	window["AscCommonExcel"].CExternalWorkbook = CExternalWorkbook;
+	window["AscCommonExcel"].CExternalWorksheet = CExternalWorksheet;
 
 
 

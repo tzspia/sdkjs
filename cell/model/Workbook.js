@@ -5455,7 +5455,7 @@
 				for (var i = 0; i < extarnalLink.SheetNames.length; i++) {
 					if (extarnalLink.SheetNames[i] === sheet) {
 						var wb = this.getTemporaryExternalWb();
-						extarnalLink.worksheets[sheet] = new Worksheet(wb, wb.aWorksheets.length);
+						extarnalLink.worksheets[sheet] = new AscCommonExcel.CExternalWorksheet(wb);
 						wb.aWorksheets.push(extarnalLink.worksheets[sheet]);
 						extarnalLink.worksheets[sheet].sName = sheet;
 						return extarnalLink.worksheets[sheet];
@@ -5518,7 +5518,7 @@
 				}
 			}
 		}
-		return new Workbook(undefined, undefined, false);
+		return new AscCommonExcel.CExternalWorkbook();
 	};
 
 	Workbook.prototype.getExternalIndexByWorksheet = function (ws) {
