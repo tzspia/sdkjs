@@ -1518,7 +1518,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			if (!wsRange[i]) {
 				r.push(null);
 			} else {
-				r.push(AscCommonExcel.Range.prototype.createFromBBox(wsRange[i], this.bbox));
+				r.push(this.externalLink != null ? AscCommonExcel.CExternalRange.prototype.createFromBBox(wsRange[i], this.bbox) : AscCommonExcel.Range.prototype.createFromBBox(wsRange[i], this.bbox));
 			}
 		}
 		return r;

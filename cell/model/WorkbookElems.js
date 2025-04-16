@@ -16207,7 +16207,26 @@ function RangeDataManagerElem(bbox, data)
 		return this.CellValue;
 	};
 	ExternalCell.prototype.getType = function () {
-		return this.CellType;
+		let res;
+		switch (this.CellType) {
+			case Asc.ECellTypeType.celltypeStr:
+			case Asc.ECellTypeType.celltypeSharedString:
+			case Asc.ECellTypeType.celltypeInlineStr:
+			case Asc.ECellTypeType.celltypeDate:
+				res = AscCommonExcel.cElementType.string;
+				break;
+			case Asc.ECellTypeType.celltypeBool:
+				res = AscCommonExcel.cElementType.bool;
+				break;
+			case Asc.ECellTypeType.celltypeError:
+				res = AscCommonExcel.cElementType.error;
+				break;
+			case Asc.ECellTypeType.celltypeNumber:
+			default:
+				res = AscCommonExcel.cElementType.number;
+				break;
+		}
+		return res;
 	};
 	ExternalCell.prototype.compareCellIndex = function () {
 		return false;
@@ -19225,7 +19244,15 @@ function RangeDataManagerElem(bbox, data)
 		return this.bbox.getName();
 	};
 
+	CExternalRange.prototype.createFromBBox = function(worksheet, bbox){
+		var oRes = new CExternalRange(worksheet, bbox);
+		oRes.bbox = bbox.clone();
+		return oRes;
+	};
 
+	CExternalRange.prototype.getWorksheet = function () {
+		return this.worksheet;
+	};
 
 
 	//----------------------------------------------------------export----------------------------------------------------
@@ -19803,7 +19830,8 @@ function RangeDataManagerElem(bbox, data)
 
 	window["AscCommonExcel"].CExternalWorkbook = CExternalWorkbook;
 	window["AscCommonExcel"].CExternalWorksheet = CExternalWorksheet;
-
+	window["AscCommonExcel"].CExternalRange = CExternalRange;
+	
 
 
 })(window);
