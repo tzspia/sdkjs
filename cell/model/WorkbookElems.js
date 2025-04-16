@@ -19109,6 +19109,59 @@ function RangeDataManagerElem(bbox, data)
 		}
 		return null;
 	};
+	CExternalWorkbook.prototype.insertWorksheet = function (pos, ws) {
+		this.aWorksheets.push(ws);
+	};
+	CExternalWorkbook.prototype.editDefinesNames = function(oldUndoName, newUndoName) {
+		var res = null;
+		if (oldUndoName) {
+			res = this.getDefNameByName(oldUndoName.name, oldUndoName.sheetId);
+		} else {
+			res = this.addDefName(newUndoName.name, newUndoName.ref, newUndoName.sheetId, false, newUndoName.type, newUndoName.isXLNM);
+		}
+		if (res && oldUndoName) {
+			if (oldUndoName.name !== newUndoName.name) {
+				res = this._delDefName(res.name, res.sheetId);
+			}
+		}
+		return res;
+	};
+	CExternalWorkbook.prototype.getDefNameByName = function(name, sheetId) {
+		var res = null;
+		var nameIndex = AscCommonExcel.getDefNameIndex(name);
+		for (let i = 0; i < this.externalReference.DefinedNames.length; i++) {
+			let defName = this.externalReference.DefinedNames[i];
+			if (defName.SheetId === sheetId && defName.Name === nameIndex) {
+				res = defName;
+				break;
+			}
+		}
+		return res;
+	};
+	CExternalWorkbook.prototype.addDefName = function(name, ref, sheetId) {
+		var defName = new ExternalDefinedName(this.externalReference);
+		defName.Name = name;
+		defName.RefersTo = ref;
+		defName.SheetId = sheetId;
+		this.externalReference.DefinedNames.push(defName);
+		return defName;
+	};
+	CExternalWorkbook.prototype._delDefName = function(name, sheetId) {
+		var res = null;
+		var nameIndex = AscCommonExcel.getDefNameIndex(name);
+
+		for (let i = 0; i < this.externalReference.DefinedNames.length; i++) {
+			let defName = this.externalReference.DefinedNames[i];
+			if (defName.SheetId === sheetId && defName.Name === nameIndex) {
+				this.externalReference.DefinedNames.splice(i, 1);
+				res = true;
+				break;
+			}
+		}
+
+		return res;
+	};
+
 
 
 	function CExternalWorksheet(wb) {
