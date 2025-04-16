@@ -19115,13 +19115,13 @@ function RangeDataManagerElem(bbox, data)
 	CExternalWorkbook.prototype.editDefinesNames = function(oldUndoName, newUndoName) {
 		var res = null;
 		if (oldUndoName) {
-			res = this.getDefNameByName(oldUndoName.name, oldUndoName.sheetId);
+			res = this.getDefNameByName(oldUndoName.Name, oldUndoName.SheetId);
 		} else {
-			res = this.addDefName(newUndoName.name, newUndoName.ref, newUndoName.sheetId, false, newUndoName.type, newUndoName.isXLNM);
+			res = this.addDefName(newUndoName.Name, newUndoName.Ref, newUndoName.SheetId);
 		}
 		if (res && oldUndoName) {
-			if (oldUndoName.name !== newUndoName.name) {
-				res = this._delDefName(res.name, res.sheetId);
+			if (oldUndoName.Name !== newUndoName.Name) {
+				res = this._delDefName(res.Name, res.SheetId);
 			}
 		}
 		return res;
