@@ -15180,7 +15180,7 @@ function RangeDataManagerElem(bbox, data)
 			if (this.worksheets && this.worksheets[sheetName]) {
 				let wsTo = this.worksheets[sheetName];
 				//меняем лист
-				AscFormat.ExecuteNoHistory(function(){
+				/*AscFormat.ExecuteNoHistory(function(){
 					AscCommonExcel.executeInR1C1Mode(false, function () {
 
 						let defNames = wsTo.workbook && wsTo.workbook.dependencyFormulas && wsTo.workbook.dependencyFormulas.defNames;
@@ -15197,7 +15197,7 @@ function RangeDataManagerElem(bbox, data)
 						oAllRange.cleanAll();
 						wsTo.copyFrom(arr[i], wsTo.sName);
 					});
-				});
+				});*/
 				//this.worksheets[sheetName] = arr[i];
 
 				//обновляем данные в SheetDataSet
@@ -15205,7 +15205,7 @@ function RangeDataManagerElem(bbox, data)
 				if (index != null) {
 					var externalSheetDataSet = this.SheetDataSet[index];
 					if (externalSheetDataSet) {
-						if (externalSheetDataSet.updateFromSheet(t.worksheets[sheetName], noData)) {
+						if (externalSheetDataSet.updateFromSheet(arr[i], noData, wsTo)) {
 							isChanged = true;
 						}
 					}
@@ -15213,7 +15213,7 @@ function RangeDataManagerElem(bbox, data)
 					let externalDefName = this.getDefinedNamesBySheetIndex(index, eWB);
 					if (externalDefName) {
 						for (let i = 0; i < externalDefName.length; i++) {
-							if (externalDefName[i].updateFromSheet(t.worksheets[sheetName], noData)) {
+							if (externalDefName[i].updateFromSheet(arr[i], noData, wsTo)) {
 								isChanged = true;
 							}
 						}
@@ -15868,7 +15868,7 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 
-	ExternalSheetDataSet.prototype.updateFromSheet = function(sheet, noData) {
+	ExternalSheetDataSet.prototype.updateFromSheet = function(sheet, noData, parentSheet) {
 		var isChanged = false;
 		if (sheet) {
 			var t = this;
@@ -15884,6 +15884,13 @@ function RangeDataManagerElem(bbox, data)
 					if (!externalCell) {
 						continue;
 					}
+
+					var api_sheet = Asc['editor'];
+					var wb = api_sheet.wbModel;
+					//let range = sheet.getRange2(externalCell.Ref)
+					//wb.dependencyFormulas.addToChangedCell2(sheet.getId(), range.bbox.r1, range.bbox.c1)
+					//wb.dependencyFormulas.addToChangedCell(cell);
+
 					var range = sheet.getRange2(externalCell.Ref);
 					range._foreach(function (cell) {
 
@@ -15894,13 +15901,14 @@ function RangeDataManagerElem(bbox, data)
 
 						var api_sheet = Asc['editor'];
 						var wb = api_sheet.wbModel;
-						
+
 						/* if we haven't received data from an external source, put #REF error for all cells */
 						if (noData) {
 							cell._setValue("#REF!");
 						}
 
-						wb.dependencyFormulas.addToChangedCell(cell);
+						wb.dependencyFormulas.addToChangedCell2(parentSheet.getId(), cell.nRow, cell.nCol)
+						//wb.dependencyFormulas.addToChangedCell(cell);
 					});
 				}
 			}
@@ -16173,6 +16181,13 @@ function RangeDataManagerElem(bbox, data)
 	ExternalCell.prototype.getType = function () {
 		return this.CellType;
 	};
+	ExternalCell.prototype.compareCellIndex = function () {
+		return false;
+	};
+	ExternalCell.prototype.isFormula = function () {
+		return false;
+	};
+
 
 
 
@@ -19039,6 +19054,8 @@ function RangeDataManagerElem(bbox, data)
 	function CExternalWorksheet(wb) {
 		this.workbook = wb;
 		this.sName = null;
+
+		this.Id = AscCommon.g_oIdCounter.Get_NewId();
 	}
 
 	CExternalWorksheet.prototype.getRange2 = function (sRange) {
@@ -19049,6 +19066,9 @@ function RangeDataManagerElem(bbox, data)
 	};
 	CExternalWorksheet.prototype.getName = function () {
 		return this.sName;
+	};
+	CExternalWorksheet.prototype.getId = function () {
+		return this.Id;
 	};
 
 
@@ -19121,6 +19141,7 @@ function RangeDataManagerElem(bbox, data)
 	CExternalRange.prototype.getName = function () {
 		return this.bbox.getName();
 	};
+
 
 
 

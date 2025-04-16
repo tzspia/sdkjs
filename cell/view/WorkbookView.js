@@ -5794,7 +5794,7 @@
 						//использую общий wb для externalReferences. поскольку внутри
 						//хранится sharedStrings, возмжно придтся использовать для каждого листа свою книгу
 						//необходимо проверить, ссылкой на 2 листа одной книги
-						let wb = eR.getWb();
+						let wb =  new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 						let _updateData = function (_aWs, _aAfterPromiseData, _model) {
 							//g_DefNameWorksheet use on parse def name ref. here need use external ws.
 							let RealDefNameWorksheet = AscCommonExcel.g_DefNameWorksheet;
