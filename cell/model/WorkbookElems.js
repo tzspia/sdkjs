@@ -15786,12 +15786,12 @@ function RangeDataManagerElem(bbox, data)
 	}
 
 	ExternalSheetDataSet.prototype.getCell = function (row, col) {
-		let oExternalRow = this.getRow(row);
+		let oExternalRow = this.getRow(row + 1);
 		if (oExternalRow) {
-			for (let j = 0; j < row.Cell.length; j++) {
-				row.Cell[j]._init();
-				if (row.Cell[j].nCol === col && row.Cell[j].nRow === row) {
-					return row.Cell[j];
+			for (let j = 0; j < oExternalRow.Cell.length; j++) {
+				oExternalRow.Cell[j]._init();
+				if (oExternalRow.Cell[j].nCol === col && oExternalRow.Cell[j].nRow === row) {
+					return oExternalRow.Cell[j];
 				}
 			}
 		}
@@ -19205,14 +19205,19 @@ function RangeDataManagerElem(bbox, data)
 		let ws = this.worksheet;
 		let wb = ws && ws.workbook;
 		let eR = wb && wb.externalReference;
+		let isAction;
 		if (eR) {
 			let sheetDataSetIndex = eR.getSheetByName(ws.getName());
 			if (null !== sheetDataSetIndex) {
 				let sheetDataSet = eR.SheetDataSet[sheetDataSetIndex];
 				if (sheetDataSet && sheetDataSet.Row) {
-					actionCell(sheetDataSet.Row[0] && sheetDataSet.Row[0].Cell && sheetDataSet.Row[0].Cell[0]);
+					actionCell(sheetDataSet.getCell(this.bbox.r1, this.bbox.c1));
+					isAction = true;
 				}
 			}
+		}
+		if (!isAction) {
+			actionCell(null);
 		}
 	};
 
