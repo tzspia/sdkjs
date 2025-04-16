@@ -15785,6 +15785,19 @@ function RangeDataManagerElem(bbox, data)
 		this.Row = [];
 	}
 
+	ExternalSheetDataSet.prototype.getCell = function (row, col) {
+		let oExternalRow = this.getRow(row);
+		if (oExternalRow) {
+			for (let j = 0; j < row.Cell.length; j++) {
+				row.Cell[j]._init();
+				if (row.Cell[j].nCol === col && row.Cell[j].nRow === row) {
+					return row.Cell[j];
+				}
+			}
+		}
+		return null;
+	};
+
 	ExternalSheetDataSet.prototype.Read_FromBinary2 = function(r) {
 		if (r.GetBool()) {
 			this.SheetId = r.GetLong();
@@ -16045,11 +16058,26 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 
-	function ExternalCell() {
+	function ExternalCell(ws, nRow, nCol) {
 		this.Ref = null;//храним в строке, в будущем перевести в row/col
 		this.CellType = null;
 		this.CellValue = null;
+
+		this.nRow = nRow;
+		this.nCol = nCol;
+		this.ws = ws;
 	}
+
+	ExternalCell.prototype._init = function (ws) {
+		if (!this.ws) {
+			this.ws = ws;
+		}
+		if (null == this.nRow) {
+			let bbox = AscCommonExcel.g_oRangeCache.getAscRange(this.Ref);
+			this.nRow = bbox.r1;
+			this.nCol = bbox.c1;
+		}
+	};
 
 	ExternalCell.prototype.Read_FromBinary2 = function(r) {
 		if (r.GetBool()) {
@@ -19051,6 +19079,19 @@ function RangeDataManagerElem(bbox, data)
 		this.externalReference = externalReference;
 		this.aWorksheets = [];
 	}
+	CExternalWorkbook.prototype.getDefinesNames = function (name, sheetId) {
+		if (this.externalReference && this.externalReference.DefinedNames) {
+			let defNames = this.externalReference.DefinedNames;
+			for (let i = 0; i < defNames.length; i++) {
+				if (defNames[i].SheetId === sheetId && defNames[i].Name === name) {
+					return this.externalReference.DefinedNames[i];
+				}
+			}
+		}
+		return null;
+	};
+
+
 	function CExternalWorksheet(wb) {
 		this.workbook = wb;
 		this.sName = null;
@@ -19113,6 +19154,43 @@ function RangeDataManagerElem(bbox, data)
 								}
 							}
 						}
+					}
+				}
+			}
+		}
+	};
+
+	CExternalRange.prototype._foreach = function (actionCell) {
+		let ws = this.worksheet;
+		let wb = ws && ws.workbook;
+		let eR = wb && wb.externalReference;
+
+		let newCell;
+		let _getNewCell = function (nRow, nCol) {
+			if (!newCell) {
+				newCell = new ExternalCell(nRow, nCol, ws);
+			}
+			newCell.nCol = nCol;
+			newCell.nRow = nRow;
+			newCell.ws = ws;
+
+			return newCell;
+		};
+
+		if (eR) {
+			let sheetDataSetIndex = eR.getSheetByName(ws.getName());
+			if (null !== sheetDataSetIndex) {
+
+				const startRow = this.bbox.r1;
+				const endRow = this.bbox.r2;
+				const startCol = this.bbox.c1;
+				const endCol = this.bbox.c2;
+
+				let sheetDataSet = eR.SheetDataSet[sheetDataSetIndex];
+				for (let i = startRow; i <= endRow; i++) {
+					for (let j = startCol; j <= endCol; j++) {
+						let cell = sheetDataSet.getCell(i, j);
+						actionCell(cell ? cell._init(ws) : _getNewCell(i, j));
 					}
 				}
 			}
