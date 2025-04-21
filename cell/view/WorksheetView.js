@@ -1162,24 +1162,48 @@
 			let tmp = this.topLeftFrozenCell.getRow0();
 			frozenVisibleRangeHeight = this._getRowTop(tmp) - this.cellsTop;
 		}
-		
-		if (!this.scrollV) {
-			this.scrollV = 0;
-		}
 
+		this.scrollV = this.scrollV || 0;
 		let defaultScrollPxStep = Asc.round(this.getVScrollStep());
-		return (frozenVisibleRangeHeight + this.scrollV) / defaultScrollPxStep;
+		return defaultScrollPxStep ? (frozenVisibleRangeHeight + this.scrollV) / defaultScrollPxStep : 0;
 	};
 
 	WorksheetView.prototype.getVerticalSmoothScrollRange = function (bCheckEqual) {
+		var offsetFrozen = this.getFrozenPaneOffset(true, false);
+		var ctxH = this.drawingCtx.getHeight() - offsetFrozen.offsetY - this.cellsTop;
+
+		var h = 0, i = this.nRowsCount - 1;
+		while (i >= 0) {
+			h += this._getRowHeight(i);
+			if (h >= ctxH) {
+				if (bCheckEqual && h > ctxH) {
+					i++;
+				}
+				break;
+			}
+			i--;
+		}
+
 		var frozenVisibleRangeHeight = 0;
 		if (this.topLeftFrozenCell) {
 			let tmp = this.topLeftFrozenCell.getRow0();
 			frozenVisibleRangeHeight = this._getRowTop(tmp) - this.cellsTop;
 		}
 
+		let row = Math.max(0, i);
 		let defaultScrollPxStep = Asc.round(this.getVScrollStep());
-		return (this.scrollV + frozenVisibleRangeHeight) / defaultScrollPxStep;
+		if (!defaultScrollPxStep) {
+			return 0;
+		}
+
+		let beforeVisibleRangeHeight = this._getRowTop(row) - this.cellsTop;
+		let isMobileVersion = this.workbook && this.workbook.Api && this.workbook.Api.isMobileVersion;
+
+		if (isMobileVersion || (AscCommonExcel.c_oAscScrollType.ScrollInitRowsColsCount & this.scrollType)) {
+			beforeVisibleRangeHeight += this.getScrollCorrect();
+		}
+
+		return (beforeVisibleRangeHeight - frozenVisibleRangeHeight) / defaultScrollPxStep;
 	};
 
 	WorksheetView.prototype.getFirstVisibleColSmoothScroll = function (allowPane) {
@@ -1189,25 +1213,22 @@
 			frozenVisibleRangeWidth = this._getColLeft(tmp) - this.cellsLeft;
 		}
 
-		if (!this.scrollH) {
-			this.scrollH = 0;
-		}
-
+		this.scrollH = this.scrollH || 0;
 		let defaultScrollPxStep = Asc.round(this.getHScrollStep());
-		return (frozenVisibleRangeWidth + this.scrollH) / defaultScrollPxStep;
+		return defaultScrollPxStep ? (frozenVisibleRangeWidth + this.scrollH) / defaultScrollPxStep : 0;
 	};
 
-	WorksheetView.prototype.getHorizontalSmoothScrollRange = function (/*bCheckEqual*/) {
+	WorksheetView.prototype.getHorizontalSmoothScrollRange = function () {
 		var offsetFrozen = this.getFrozenPaneOffset(false, true);
 		var ctxW = this.drawingCtx.getWidth() - offsetFrozen.offsetX - this.cellsLeft;
-		for (var h = 0, i = this.nColsCount - 1; i >= 0; --i) {
+
+		var h = 0, i = this.nColsCount - 1;
+		while (i >= 0) {
 			h += this._getColumnWidth(i);
 			if (h >= ctxW) {
-				/*if (bCheckEqual && h > ctxH) {
-					i++;
-				}*/
 				break;
 			}
+			i--;
 		}
 
 		var frozenVisibleRangeWidth = 0;
@@ -1215,19 +1236,21 @@
 			let tmp = this.topLeftFrozenCell.getCol0();
 			frozenVisibleRangeWidth = this._getColLeft(tmp) - this.cellsLeft;
 		}
-		//TODO
-		/*if (gc_nMaxRow === this.nRowsCount || this.model.isDefaultHeightHidden()) {
-			tmp -= 1;
-		}*/
-		let isMobileVersion = this.workbook && this.workbook.Api && this.workbook.Api.isMobileVersion;
-		let col = Math.max(0, i); // Диапазон скрола должен быть меньше количества строк, чтобы не было прибавления строк при перетаскивании бегунка
+
+		let col = Math.max(0, i);
 		let defaultScrollPxStep = Asc.round(this.getHScrollStep());
+		if (!defaultScrollPxStep) {
+			return 0;
+		}
+
 		let beforeVisibleRangeWidth = this._getColLeft(col) - this.cellsLeft;
-		if (isMobileVersion || AscCommonExcel.c_oAscScrollType.ScrollInitRowsColsCount & this.scrollType) {
+		let isMobileVersion = this.workbook && this.workbook.Api && this.workbook.Api.isMobileVersion;
+
+		if (isMobileVersion || (AscCommonExcel.c_oAscScrollType.ScrollInitRowsColsCount & this.scrollType)) {
 			beforeVisibleRangeWidth += this.getHorizontalScrollCorrect();
 		}
 
-		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeWidth - frozenVisibleRangeWidth)/defaultScrollPxStep);
+		return (beforeVisibleRangeWidth - frozenVisibleRangeWidth) / defaultScrollPxStep;
 	};
 
     WorksheetView.prototype.getLastVisibleRow = function () {
