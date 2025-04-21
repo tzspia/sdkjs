@@ -1162,46 +1162,24 @@
 			let tmp = this.topLeftFrozenCell.getRow0();
 			frozenVisibleRangeHeight = this._getRowTop(tmp) - this.cellsTop;
 		}
+		
+		if (!this.scrollV) {
+			this.scrollV = 0;
+		}
 
-		//new scroll - calculate height before vr
-		let beforeVisibleRangeHeight = this._getRowTop(this.visibleRange.r1) - this.cellsTop;
-
-
-		beforeVisibleRangeHeight += this.getScrollCorrect();
 		let defaultScrollPxStep = Asc.round(this.getVScrollStep());
-		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeHeight - frozenVisibleRangeHeight)/defaultScrollPxStep);
+		return (frozenVisibleRangeHeight + this.scrollV) / defaultScrollPxStep;
 	};
 
 	WorksheetView.prototype.getVerticalSmoothScrollRange = function (bCheckEqual) {
-		var offsetFrozen = this.getFrozenPaneOffset(true, false);
-		var ctxH = this.drawingCtx.getHeight() - offsetFrozen.offsetY - this.cellsTop;
-		for (var h = 0, i = this.nRowsCount - 1; i >= 0; --i) {
-			h += this._getRowHeight(i);
-			if (h >= ctxH) {
-				if (bCheckEqual && h > ctxH) {
-					i++;
-				}
-				break;
-			}
-		}
-
 		var frozenVisibleRangeHeight = 0;
 		if (this.topLeftFrozenCell) {
 			let tmp = this.topLeftFrozenCell.getRow0();
 			frozenVisibleRangeHeight = this._getRowTop(tmp) - this.cellsTop;
 		}
-		//TODO
-		/*if (gc_nMaxRow === this.nRowsCount || this.model.isDefaultHeightHidden()) {
-			tmp -= 1;
-		}*/
-		let isMobileVersion = this.workbook && this.workbook.Api && this.workbook.Api.isMobileVersion;
-		let row = Math.max(0, i); // Диапазон скрола должен быть меньше количества строк, чтобы не было прибавления строк при перетаскивании бегунка
+
 		let defaultScrollPxStep = Asc.round(this.getVScrollStep());
-		let beforeVisibleRangeHeight = this._getRowTop(row) - this.cellsTop;
-		if (isMobileVersion || AscCommonExcel.c_oAscScrollType.ScrollInitRowsColsCount & this.scrollType) {
-			beforeVisibleRangeHeight += this.getScrollCorrect();
-		}
-		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeHeight - frozenVisibleRangeHeight)/defaultScrollPxStep);
+		return (this.scrollV + frozenVisibleRangeHeight) / defaultScrollPxStep;
 	};
 
 	WorksheetView.prototype.getFirstVisibleColSmoothScroll = function (allowPane) {
@@ -1211,13 +1189,12 @@
 			frozenVisibleRangeWidth = this._getColLeft(tmp) - this.cellsLeft;
 		}
 
-		//new scroll - calculate height before vr
-		let beforeVisibleRangeWidth = this._getColLeft(this.visibleRange.c1) - this.cellsLeft;
+		if (!this.scrollH) {
+			this.scrollH = 0;
+		}
 
-
-		beforeVisibleRangeWidth += this.getHorizontalScrollCorrect();
 		let defaultScrollPxStep = Asc.round(this.getHScrollStep());
-		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeWidth - frozenVisibleRangeWidth)/defaultScrollPxStep);
+		return (frozenVisibleRangeWidth + this.scrollH) / defaultScrollPxStep;
 	};
 
 	WorksheetView.prototype.getHorizontalSmoothScrollRange = function (/*bCheckEqual*/) {
@@ -10529,6 +10506,8 @@
 		}
 		defaultScrollPxStep = Math.floor(defaultScrollPxStep);
 
+		this.scrollV += isReverse ? -defaultScrollPxStep : defaultScrollPxStep;
+
 		let deltaRows = 0, deltaCorrect = 0;
 		let currentScrollCorrect = this.getScrollCorrect();
 
@@ -10923,6 +10902,8 @@
 			return;
 		}
 		defaultScrollPxStep = Math.ceil(defaultScrollPxStep);
+
+		this.scrollH += isReverse ? -defaultScrollPxStep : defaultScrollPxStep;
 
 		let deltaCols = 0, deltaCorrect = 0;
 		let currentScrollCorrect = this.getHorizontalScrollCorrect();
