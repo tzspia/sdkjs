@@ -1864,18 +1864,25 @@ $(function () {
 		assert.strictEqual(oFactCellIndex, null, `Test: initStartCellForIterCalc. Negative case cell without any chain. Selected cell: C1004. Start cell: ${oFactCellIndex}`);
 	});
 	QUnit.test("Test: \"ABS\"", function (assert) {
-
-		ws.getRange2("A22").setValue("-4");
-
+		// Positive cases:
+		// Case #1: Number. Integer positive number
 		oParser = new parserFormula("ABS(2)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 2);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Number. Integer positive number. Result: 2');
+		// Case #2: Number. Integer negative number
 		oParser = new parserFormula("ABS(-2)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 2);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Number. Integer negative number. Result: 2');
+		// Case #3: Reference link. Integer negative number from ref.
+		ws.getRange2("A22").setValue("-4");
 		oParser = new parserFormula("ABS(A22)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 4);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Reference link. Integer negative number from ref. Result: 4');
+		// Case #4: Reference link. Float negative number from ref with formula.
+		ws.getRange2("A22").setValue("=2-3.5");
+		oParser = new parserFormula("ABS(A22)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5, 'Test: Positive case: Reference link. Float negative number from ref with formula. Result: 1.5');
 
 		testArrayFormula(assert, "ABS");
 	});
