@@ -1883,7 +1883,16 @@ $(function () {
 		oParser = new parserFormula("ABS(A22)", "A1", ws);
 		assert.ok(oParser.parse(), 'Formula is parsed');
 		assert.strictEqual(oParser.calculate().getValue(), 1.5, 'Test: Positive case: Reference link. Float negative number from ref with formula. Result: 1.5');
-
+		// Case #5: Boolean. Non-standard case.
+		oParser = new parserFormula("ABS(TRUE)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Boolean. Non-standard case. Result: 1');
+		// Case #6: Boolean. Non-standard case.
+		oParser = new parserFormula("ABS(FALSE)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Boolean. Non-standard case. Result: 0');
+		// Negative cases:
+		// Case
 		testArrayFormula(assert, "ABS");
 	});
 
