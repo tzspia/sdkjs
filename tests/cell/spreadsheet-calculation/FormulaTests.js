@@ -1891,8 +1891,117 @@ $(function () {
 		oParser = new parserFormula("ABS(FALSE)", "A1", ws);
 		assert.ok(oParser.parse(), 'Formula is parsed');
 		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Boolean. Non-standard case. Result: 0');
+		// Case #7: Reference link. Non-standard case. Empty cell.
+		ws.getRange2("A22").setValue("");
+		oParser = new parserFormula("ABS(A22)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Reference link. Non-standard case. Empty cell. Result: 0');
+		// Case #8: String. Non-standard case. Number in string type.
+		oParser = new parserFormula("ABS(\"-2\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: String. Non-standard case. Number in string type. Result: 2');
+		// Case #9: Formula. Non-standard case. Getting date using DATE formula.
+		oParser = new parserFormula("ABS(-DATE(2024,1,1))", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 45292, 'Test: Positive case: Formula. Non-standard case. Getting date using DATE formula. Result: 45292');
+		// Case #10: String. Non-standard case. Float number with regional separator
+		oParser = new parserFormula("ABS(\"-2.5\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 2.5, 'Test: Positive case: String. Non-standard case. Float number with regional separator. Result: 2.5');
+		// Case #11: String. Non-standard case.  Number with separator for date.
+		oParser = new parserFormula("ABS(\"5/5\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 45782, 'Test: Positive case: String. Non-standard case.  Number with separator for date. Result: 45782');
+		// Case #12: String. Non-standard case. Date.
+		oParser = new parserFormula("ABS(\"12/12/2000\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 36872, 'Test: Positive case: String. Non-standard case. Date. Result: 36872');
+		// Case #13: Reference link. Date.
+		ws.getRange2("A22").setValue("12/12/2000");
+		oParser = new parserFormula("ABS(A22)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 36872, 'Test: Positive case: Reference link. Date. Result: 36872');
+		// Case #14: Formula. Nested formula which return a number.
+		oParser = new parserFormula("ABS(-SQRT(16))", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Formula. Nested formula which return a number. Result: 4');
+		// Case #15: Formula. Non-standard case. Getting time using formula TIME.
+		oParser = new parserFormula("ABS(-TIME(12,0,0))", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Formula. Non-standard case. Getting time using formula TIME. Result: 0.5');
+		// Case #16: String. Non-standard case. Time.
+		oParser = new parserFormula("ABS(\"12:00:00\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: String. Non-standard case. Time. Result: 0.5');
+		// Case #17: Reference link. Non-standard case. Time.
+		ws.getRange2("A22").setValue("12:00:00");
+		oParser = new parserFormula("ABS(A22)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Reference link. Non-standard case. Time. Result: 0.5');
+		// Case #18: Formula. Non-standard case. Formula with number to string type.
+		oParser = new parserFormula("ABS(\"1\"+\"1\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Formula. Non-standard case. Formula with number to string type. Result: 2');
 		// Negative cases:
-		// Case
+		// Case #1: String. Text.
+		oParser = new parserFormula("ABS(\"test\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Text. Result: #VALUE!');
+		// Case #2: String. Float number with not correct separator.
+		oParser = new parserFormula("ABS(\"-2,5\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Float number with not correct separator. Result: #VALUE!');
+		// Case #3: Formula. Nested formula which return a string
+		oParser = new parserFormula("ABS(-REPT(\"a\", 2))", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Formula. Nested formula which return a string. Result: #VALUE!');
+		// Case #4: Formula. Wrong formula which return the error - #DIV/0!
+		oParser = new parserFormula("ABS(-1/0)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Formula. Wrong formula which return a error. Result: #DIV/0!');
+		// Case #5: Formula. Nested formula which return the error - #NUM!
+		oParser = new parserFormula("ABS(SQRT(-1))", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Nested formula which return a error. Result: #NUM!');
+		// Case #6: Formula. Nested formula which return the error - #REF!
+		oParser = new parserFormula("ABS(INDIRECT(\"A0\"))", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#REF!', 'Test: Negative case: Formula. Nested formula which return a error. Result: #REF!');
+		// Case #7: Formula. Nested formula which return the error - #N/A
+		oParser = new parserFormula("ABS(VLOOKUP(1,A1:A2,2,FALSE))", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Formula. Nested formula which return a error. Result: #N/A');
+		// Case #8: Reference link. Incorrect cross which return the error - #NULL!
+		oParser = new parserFormula("ABS(A22 B22)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#NULL!', 'Test: Negative case: Reference link. Incorrect cross which return the error. Result: #NULL!');
+		// Case #9: Formula. String + number.
+		oParser = new parserFormula("ABS(\"test\"+1)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Formula. String + number. Result: #VALUE!');
+		// Case #10: String. Empty string
+		oParser = new parserFormula("ABS(\"\")", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string. Result: #VALUE!');
+		// Case #11: Reference link. Cell with text.
+		ws.getRange2("A22").setValue("test");
+		oParser = new parserFormula("ABS(A22)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Reference link. Cell with text. Result: #VALUE!');
+		// Case #12: Array. Empty array.
+		oParser = new parserFormula("ABS({})", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), '#CALC!', 'Test: Negative case: Array. Empty array. Result: #CALC!');
+		// Bounded cases:
+		// Case #1: Number. Bounded positive case maximum number
+		oParser = new parserFormula("ABS(9.99999999999999E+307)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 9.99999999999999e+307, 'Test: Bounded case: Number. Bounded positive case maximum number. Result: 9.99999999999999e+307');
+		// Case #2: Number.  Bounded  positive case minimum number
+		oParser = new parserFormula("ABS(-9.99999999999999E+307)", "A1", ws);
+		assert.ok(oParser.parse(), 'Formula is parsed');
+		assert.strictEqual(oParser.calculate().getValue(), 9.99999999999999e+307, 'Test: Bounded case: Number. Bounded positive case minimum number. Result: 9.99999999999999e+307');
+
 		testArrayFormula(assert, "ABS");
 	});
 
