@@ -2637,7 +2637,10 @@ function (window, undefined) {
 			}
 			arg2 = arg2.toNumber();
 			arg2 = parseInt(arg2);
-			if (Math.abs(arg2) < 1) {
+			if (Math.abs(arg2) < 0) {
+				return new cError(cErrorType.array_not_calc);
+			}
+			if (!isDrop && Math.abs(arg2) < 1) {
 				return new cError(cErrorType.array_not_calc);
 			}
 		}
@@ -2661,9 +2664,16 @@ function (window, undefined) {
 			}
 			arg3 = arg3.toNumber();
 			arg3 = parseInt(arg3);
-			if (Math.abs(arg3) < 1) {
-				return new cError(cErrorType.wrong_value_type);
+			if (Math.abs(arg3) < 0) {
+				return new cError(cErrorType.array_not_calc);
 			}
+			if (!isDrop && Math.abs(arg3) < 1) {
+				return new cError(cErrorType.array_not_calc);
+			}
+		}
+
+		if (Math.abs(arg2) === 0 && ((arg3 && Math.abs(arg3) === 0) || !arg3)) {
+			return arg1;
 		}
 
 		if (isDrop) {
