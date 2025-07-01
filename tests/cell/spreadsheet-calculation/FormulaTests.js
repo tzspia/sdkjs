@@ -14359,23 +14359,23 @@ $(function () {
 
 		oParser = new parserFormula("DATEDIF(DATE(9999,30,12),DATE(99999,30,12),\"Y\")", "A2", ws);
 		assert.ok(oParser.parse(), "Exotic date");
-		assert.strictEqual(oParser.calculate().getValue(), 90000, "Exotic date");
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', "Exotic date");
 
 		oParser = new parserFormula("DATEDIF(DATE(9999,30,12),DATE(99999,30,12),\"M\")", "A2", ws);
 		assert.ok(oParser.parse(), "Exotic date");
-		assert.strictEqual(oParser.calculate().getValue(), 1080000, "Exotic date");
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', "Exotic date");
 
 		oParser = new parserFormula("DATEDIF(DATE(9999,30,12),DATE(99999,30,12222),\"M\")", "A2", ws);
 		assert.ok(oParser.parse(), "Exotic date");
-		assert.strictEqual(oParser.calculate().getValue(), 1080401, "Exotic date");
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', "Exotic date");
 
 		oParser = new parserFormula("DATEDIF(DATE(9999,30,12),DATE(99999,30,12),\"D\")", "A2", ws);
 		assert.ok(oParser.parse(), "Exotic date");
-		assert.strictEqual(oParser.calculate().getValue(), 32871825, "Exotic date");
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', "Exotic date");
 
 		oParser = new parserFormula("DATEDIF(DATE(9999,30,12),DATE(99999,30000,12),\"D\")", "A2", ws);
 		assert.ok(oParser.parse(), "Exotic date");
-		assert.strictEqual(oParser.calculate().getValue(), 33784019, "Exotic date");
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', "Exotic date");
 
 		oParser = new parserFormula("DATEDIF(DATE(1,1,1),DATE(1,2,1),\"Y\")", "A2", ws);
 		assert.ok(oParser.parse(), "Exotic date");
@@ -26911,18 +26911,312 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"ACCRINTM\"", function (assert) {
+		// Data for reference link test.
+		// Dates
+		ws.getRange2("A100").setValue("05/20/2025");
+		ws.getRange2("A101").setValue("06/20/2025");
+		ws.getRange2("A102").setValue("38777");
+		ws.getRange2("A103").setValue("38838");
+		// Rate
+		ws.getRange2("A104").setValue("0.01");
+		ws.getRange2("A105").setValue("1");
+		// Par
+		ws.getRange2("A106").setValue("1500");
+		ws.getRange2("A107").setValue("1100");
+		//Basis
+		ws.getRange2("A108").setValue("0");
+		ws.getRange2("A109").setValue("3");
+		// Unexpected data for formula
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("Str");
 
+		// Positive cases:
+
+		// Case #1: Formula(2), Number(3). All arguments are correct and have expected type of arguments. 5 of 5 arguments used.
 		oParser = new parserFormula("ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,1100,0)", "A2", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 18.333333333333332);
-
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,1100,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 18.333333333333332, 'Test: Positive case: Formula(2), Number(3). All arguments are correct and have expected type of arguments. 5 of 5 arguments used.');
+		// Case #2: Formula(2), Number, Empty, Number. Dates are correct filled by formula DATE, Rate > 0, Par is empty, Basis - 0. 5 of 5 arguments used.
 		oParser = new parserFormula("ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,,0)", "A2", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 16.666666666666664);
-
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 16.666666666666664, 'Test: Positive case: Formula(2), Number, Empty, Number. Dates are correct filled by formula DATE, Rate > 0, Par is empty, Basis - 0. 5 of 5 arguments used.');
+		// Case #3: Formula (2), Number, Empty. Dates are correct filled by formula DATE, Rate > 0, Par and Basis aren't fill. 4 of 5 arguments filled.
 		oParser = new parserFormula("ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,)", "A2", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 16.666666666666664);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 16.666666666666664, 'Test: Positive case: Formula (2), Number, Empty. Dates are correct filled by formula DATE, Rate > 0, Par and Basis aren\'t fill. 4 of 5 arguments filled.');
+		// Case #4: Date in String(2), Number(3). Dates as string format. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("03/01/2006","05/01/2006",0.1,1100,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("03/01/2006","05/01/2006",0.1,1100,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 18.333333333333332, 'Test: Positive case: String(2), Number(3). Dates in string format. 5 of 5 arguments used.');
+		// Case #5: Formula(2), Number(3). Issue filled via IF formula. 5 of 5 arguments used.
+		oParser = new parserFormula("ACCRINTM(IF(TRUE, DATE(2006,3,1), DATE(2000,1,1)), DATE(2006,5,1), 0.1, 1100, 0)", "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(IF(TRUE, DATE(2006,3,1), DATE(2000,1,1)), DATE(2006,5,1), 0.1, 1100, 0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 18.333333333333332, 'Test: Positive case:  Formula(2), Number(3). Nested formula IF for issue date. 5 of 5 arguments used.');
+		// Case #6: String (4). All requirement arguments in string type, basis omitted. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("03/01/2006","05/01/2006","0.1","1")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("03/01/2006","05/01/2006","0.1","1") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.016666666666666666, 'Test: Positive case: String (4). All requirement arguments in string type, basis omitted. 4 of 5 arguments used.');
+		// Case #7: Formula, Number. Formula inside parent SUM(). 5 of 5 arguments used.
+		oParser = new parserFormula("SUM(ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,1100,0), 10)", "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula SUM(ACCRINTM(DATE(2006,3,1),DATE(2006,5,1),0.1,1100,0), 10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 28.333333333333332, 'Test: Positive case: Fourmula, Number. Formula inside parent SUM(). 5 of 5 arguments used.');
+		// Case #8: Number(5). Dates are correct in number format, Rate is large number. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,999999999,1000,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,999999999,1000,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.666666665e+11, 'Test: Positive case: Number(5). Dates are correct in number format. Rate is large number. 5 of 5 arguments used.');
+		// Case #9: Number(5). Dates are correct in number format, Rate is small number, Basis - 1. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.0000000001,1100,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,0.0000000001,1100,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.838356164383562e-8, 'Test: Positive case: Number(5). Dates are correct in number format, Rate is small number, Basis - 1. 5 of 5 arguments used.');
+		// Case #10: Number, Formula, Formula, Number (2). Issue is date in number format, Settlement filled by NOW formula, Rate filled by formula, Basis - 2. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(45792,DATE(2025,6,30),((110-100)+5)/100,1100,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(45792,DATE(2025,6,30),((110-100)+5)/100,1100,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 21.083, 'Test: Positive case: Number, Formula, Formula, Number (2). Issue is date in number format, Settlement filled by NOW formula, Rate filled by formula, Basis - 2. 5 of 5 arguments used.');
+		// Case #11: Reference link (5). All arguments in Ref link, basis - 3. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(A100,A101,A104,A107,A109)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(A100,A101,A104,A107,A109) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 0.934, 'Test: Positive case: Reference link (5). All arguments in Ref link, basis - 3. 5 of 5 arguments used.');
+		// Case #12: String(2), Number(3). Dates are in short format in string type, basis - 4. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("5/5","6/5",0.1,1100,4)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM("5/5","6/5",0.1,1100,4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 9.167, 'Test: Positive case: String(2), Number(3). Dates are in short format in string type, basis - 4. 5 of 5 arguments used.');
+		// Case #13: Area(5). All arguments are area with single cell. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(A102:A102,A103:A103,A105:A105,A106:A106,A108:A108)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(A102:A102,A103:A103,A105:A105,A106:A106,A108:A108) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 250, 'Test: Positive case: Area(5). All arguments are area with single cell. 5 of 5 arguments used.');
+		// Case #14: Array(5). All arguments are array with single element. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM({38777},{38838},{0.01},{1000},{2})', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM({38777},{38838},{0.01},{1000},{2}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 1.694, 'Test: Positive case: Area(5). All arguments are area with single cell. 5 of 5 arguments used.');
+		// Case #15: Array(5). All arguments are array with multiple elements. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM({38777,TRUE},{38838,FALSE},{0.01,TRUE},{1000,FALSE},{2,TRUE})', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM({38777,TRUE},{38838,FALSE},{0.01,TRUE},{1000,FALSE},{2,TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 1.694, 'Test: Positive case: Array(5). All arguments are array with multiple elements. 5 of 5 arguments used.');
+		// Case #16: Reference link, Formula, String, Number. Dates are correct, Rate in string, Per is large number, Basis omitted. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(A100,DATE(2025,6,20),"10",999999999)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(A100,DATE(2025,6,20),"10",999999999) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 833333332.500, 'Test: Positive case: Reference link, Formula, String, Number. Dates are correct, Rate in string, Per is large number, Basis omitted. 4 of 5 arguments used.');
+		// Case #17: Number(4). Dates are correct in number format, Per is too small number, Basis omitted. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.0001,0.0000000001)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,0.0001,0.0000000001) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.6666666666666668e-15, 'Test: Positive case: Number(4). Dates are correct in number format, Per is too small number, Basis omitted. 4 of 5 arguments used.');
+		// Case #18: Array(5). All arguments are array with multiple correct elements. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM({38777,45792},{38838,45793},{0.001,1};{1100,1000},{0,1})', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM({38777,45792},{38838,45793},{0.001,1};{1100,1000},{0,1}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 0.183, 'Test: Positive case: Array(5). All arguments are array with multiple correct elements. 5 of 5 arguments used.');
+		// Case #19: Number(5). All arguments are float number. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777.5,38838.5,0.75,0.75,2.5)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777.5,38838.5,0.75,0.75,2.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 0.095, 'Test: Positive case: Number(5). All arguments are float number. 5 of 5 arguments used.');
+		// Case #20: Formula(5). All agruments filled with formula. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(DATE(2025,5,20), DATE(2025,6,30),SQRT(144),ROUND(1000,0),ABS(-1))', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(DATE(2025,5,20), DATE(2025,6,30),SQRT(144),ROUND(1000,0),ABS(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 1347.945, 'Test: Positive case: Formula(5). All agruments filled with formula. 5 of 5 arguments used.');
+		// Case #21: Number(3), Empty(2). Per and Basis are empty. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.5,,)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,0.5,,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 83.333, 'Test: Positive case: Number(3), Empty(2). Per and Basis are empty. 5 of 5 arguments used.');
+		// Case #22: Number(2), Formula(2). Rate and Par filled by DATE and TIME formulas. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,DATE(2025,6,6),TIME(15,15,15))', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,DATE(2025,6,6),TIME(15,15,15)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 4853.155, 'Test: Positive case: Number(2), Formula(2). Rate and Par filled by DATE and TIME formulas. 4 of 5 arguments used.');
+		// Case #23: Number(2), Formula(2). Rate and Par filled by TIME and DATE formulas. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,TIME(15,15,15),DATE(2025,6,6))', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,TIME(15,15,15),DATE(2025,6,6)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 4853.155, 'Test: Positive case: Number(2), Formula(2). Rate and Par filled by TIME and DATE formulas. 4 of 5 arguments used.');
+
+		// Negative cases:
+
+		// Case #1: String (3), Boolean. Rate as string, par as boolean TRUE, basis omitted. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("03/01/2006","05/01/2006","0.1",TRUE)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("03/01/2006","05/01/2006","0.1",TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String (3), Boolean. Rate as string, par as boolean TRUE, basis omitted. 4 of 5 arguments used.');
+		// Case #2: Number(2), Boolean, Number. Dates as number, Rate as boolean, Per as number. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,TRUE, 1)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,TRUE,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case:  Number(2), Boolean, Number. Dates as number, Rate as boolean, Per as number. 4 of 5 arguments used.');
+		// Case #3: Number(4), Boolean. Dates as number, Rate as number, Per as number, Basis as Boolean. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.1,1,TRUE)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,0.1,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case:  Number(4), Boolean. Dates as number, Rate as number, Per as number, Basis as Boolean. 5 of 5 arguments used.');
+		// Case #4: Number, Boolean, Number(2). Issue as number, Settlement as Boolean, Rate as number, Per as number. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,FALSE,0.1,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,FALSE,0.1,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Boolean, Number(2). Issue as number, Settlement as Boolean, Rate as number, Per as number. 4 of 5 arguments used.');
+		// Case #5: Boolean, Number(3). Issue as Boolean, Settlement as number, Rate as number, Per as number. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(TRUE,38838,0.1,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(TRUE,38838,0.1,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean, Number(3). Issue as Boolean, Settlement as number, Rate as number, Per as number. 4 of 5 arguments used.');
+		// Case #6: Empty, Number(3). Issue is empty. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(,"05/20/2020",1500,0.1)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(,"05/20/2020",1500,0.1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Empty, Number(3). Issue is empty. 4 of 5 arguments used.');
+		// Case #7: Number, Empty, Number(2). Settlement is empty. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,,0.5,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,,0.5,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Empty, Number(2). Settlement is empty. 4 of 5 arguments used.');
+		// Case #8: Number(2),Empty,Number. Rate is empty. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number(2),Empty,Number. Rate is empty. 4 of 5 arguments used.');
+		// Case #9: Number(4). Issue and Settlement are zero date. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(0;0;0,1;1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(0;0;0,1;1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Issue and Settlement are zero date. 4 of 5 arguments used.');
+		// Case #10: Number(4). Settlement is zero date, issue >= settlement. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,0,0.1,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,0,0.1,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Settlement is zero date, issue >= settlement. 4 of 5 arguments used.');
+		// Case #11: Formula(2), Number(2). Issue >= settlement. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(DATE(2025,6,27),DATE(2025,5,27),0.5,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(2025,6,27),DATE(2025,5,27),0.5,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula(2), Number(2). Issue >= settlement. 4 of 5 arguments used.');
+		// Case #12: String, Formula, Number(2). Issue is incorrect date. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("13/01/2025", DATE(2026,10,1),0.5,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("13/01/2025", DATE(2026,10,1),0.5,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String, Formula, Number(2). Issue is incorrect date. 4 of 5 arguments used.');
+		// Case #13: Formula, String, Number(2). Settlement is incorrect date. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(DATE(2025,12,1),"13/01/2025",0.5,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(2025,12,1),"13/01/2025",0.5,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Formula, String, Number(2). Settlement is incorrect date. 4 of 5 arguments used.');
+		// Case #14: Number(4). Rate is negative number. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838, -1,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838, -1,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Rate is negative number. 4 of 5 arguments used.');
+		// Case #15: Number(4). Per is negative number. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.5,-1)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,0.5,-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Per is negative number. 4 of 5 arguments used.');
+		// Case #16. Number(5). Basis is out of allowed numbers - -1. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.5,1500,-1)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,0.5,1500,-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(5). Basis is out of allowed numbers - -1. 5 of 5 arguments used.');
+		// Case #17. Number(5). Basis is out of allowed diapason of numbers - 5. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.5,1500,5)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,0.5,1500,5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(5). Basis is out of allowed diapason of numbers - 5. 5 of 5 arguments used.');
+		// Case #18: String(4). Issue is empty string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("","05/20/2025","1.5","1000")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("","05/20/2025","1.5","1000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(4). Issue is empty string. 4 of 5 arguments used.');
+		// Case #19: String(4). Issue has text string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("Str","05/20/2025","1.5","1000")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("Str","05/20/2025","1.5","1000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(4). Issue has text string. 4 of 5 arguments used.');
+		// Case #20: String(4). Settlement is empty string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","","1","1000")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","","1","1000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(4). Settlement is empty string. 4 of 5 arguments used.');
+		// Case #21: String(4). Settlement has text string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","Str","1","1000")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","Str","1","1000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(4). Settlement has text string. 4 of 5 arguments used.');
+		// Case #22: String(3), Empty. Rate is empty string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","06/20/2025","",)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","06/20/2025","",) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case:  String(3), Empty. Rate is empty string. 4 of 5 arguments used.');
+		// Case #23: String(3), Empty. Rate has text string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","06/20/2025","Str",)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","06/20/2025","Str",) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(3), Empty. Rate has text string. 4 of 5 arguments used.');
+		// Case #24: String(4). Per is empty string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","06/20/2025","1","")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","06/20/2025","1","") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(4). Per is empty string. 4 of 5 arguments used.');
+		// Case #25: String(4). Per has text string. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","06/20/2025","1","Str")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","06/20/2025","1","Str") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(4). Per has text string. 4 of 5 arguments used.');
+		// Case #26: String(5). Basis is empty string. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","06/20/2025","1","1000","")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","06/20/2025","1","1000","") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(5). Basis is empty string. 5 of 5 arguments used.');
+		// Case #27: String(5). Basis has text string. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM("05/20/2025","06/20/2025","1","1000","Str")', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM("05/20/2025","06/20/2025","1","1000","Str") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(5). Basis has text string. 5 of 5 arguments used.');
+		// Case #28: Number(4). Rate is 0. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,0,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Rate is 0. 4 of 5 arguments used.');
+		// Case #29: Number(4). Per is 0. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,0.5,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,0.5,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Per is 0. 4 of 5 arguments used.');
+		// Case #30: Formula(2), Number(2). Issue maximum unaccepted date. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(DATE(9999,12,31)+1,DATE(9999,12,31),1,1000)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(9999,12,31)+1,DATE(9999,12,31),1,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula(2), Number(2). Issue maximum unaccepted date. 4 of 5 arguments used.');
+		// Case #31: Formula(2), Number(2). Settlement maximum unaccepted date. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(DATE(9999,12,30),DATE(9999,12,32),1,1000)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(9999,12,31),DATE(9999,12,32),1,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula(2), Number(2). Settlement maximum unaccepted date. 4 of 5 arguments used.');
+		// Case #32: Number(4). Rate maximum unaccepted date. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1E+308,10)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,1E+308,10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Rate maximum unaccepted date. 4 of 5 arguments used.');
+		// Case #33: Number(4). Per maximum unaccepted date. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,10,9.99999999999999E+307)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,10,9.99999999999999E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(4). Per maximum unaccepted date. 4 of 5 arguments used.');
+		// Case #34: Array, Number(3). Issue is array with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM({TRUE},38838,1,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM({TRUE},38838,1,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Array, Number(3). Issue is array with unexpected data. 4 of 5 arguments used.');
+		// Case #35: Area, Number(3). Issue is area with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(A110:A111,38838,1,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(A110:A111,38838,1,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case:Area, Number(3). Issue is area with unexpected data. 4 of 5 arguments used.');
+		// Case #36: Number, Array, Number(2). Settlement is array with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,{TRUE},1,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,{TRUE},1,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Array, Number(2). Settlement is array with unexpected data. 4 of 5 arguments used.');
+		// Case #37: Number, Area, Number(2). Settlement is area with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,A110:A111,1,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,A110:A111,1,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Area, Number(2). Settlement is area with unexpected data. 4 of 5 arguments used.');
+		// Case #38: Number(2), Array, Number. Rate is array with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,{FALSE},1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,{FALSE},1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(2), Array, Number. Rate is array with unexpected data. 4 of 5 arguments used.');
+		// Case #39: Number(2), Area, Number. Rate is area with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,A110:A111,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,A110:A111,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(2), Area, Number. Rate is area with unexpected data. 4 of 5 arguments used.');
+		// Case #40: Number(3), Array. Per is array with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,{TRUE})', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,1,{TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(3), Array. Per is array with unexpected data. 4 of 5 arguments used.');
+		// Case #41: Number(3), Area. Per is area with unexpected data. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,A110:A111)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,1,A110:A111) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(3), Array. Per is array with unexpected data. 4 of 5 arguments used.');
+		// Case #42: Number(4), Array. Basis is array with unexpected data. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,1500,{FALSE})', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,1,1500,{FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(4), Array. Basis is array with unexpected data. 5 of 5 arguments used.');
+		// Case #43: Number(4), Area. Basis is area with unexpected data. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,1500,A110:A111)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,1,1500,A110:A111) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(4), Area. Basis is area with unexpected data. 5 of 5 arguments used.');
+
+		// Bounded cases:
+		// Case #2: Number(5). All arguments are minimum accepted value. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(1,2,1E-152,1E-152,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(1,2,1E-152,1E-152,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2.7777777777777786e-307, 'Test: Bounded case: Number(5). All arguments are minimum accepted value. 5 of 5 arguments used.');
+		// Case #3: Formula(2), Number(3). All arguments are maximum accepted value. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(DATE(9999,12,30);DATE(9999,12,31),1E+152,1E+152,4)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(9999,12,30);DATE(9999,12,31),1E+152,1E+152,4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Formula(2), Number(3). All arguments are maximum accepted value. 5 of 5 arguments used.');
+
+
+		// Need to fix:
+		// Different result with MS and LO
+		// Case #1: Number, String, Number(2). Issue is zero date(minimum accepted value). 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(0,"12/12/2000",0.1,1500)', "A2", ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(0,"12/12/2000",0.1,1500) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 15130.000, 'Test: Need to fix: Number, String, Number(2). Issue is zero date (minimum accepted value). 4 of 5 arguments used.'); // 15142.5
 
 		testArrayFormula2(assert, "ACCRINTM", 4, 5, true)
 
