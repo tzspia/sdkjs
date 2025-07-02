@@ -277,9 +277,23 @@
 		try
 		{
 			if (AscCommon.History.Is_On()) {
-				AscCommon.History.Create_NewPoint();
-				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SetCustomFunctions,
-					null, null, new AscCommonExcel.UndoRedoData_FromTo(this["pluginMethod_GetCustomFunctions"](), jsonString));
+				let isNeedAddByLastPoint = false;
+				if (AscCommon.History.CanRemoveLastPoint()) {
+					let itemsLastPoints = AscCommon.History.Points[AscCommon.History.Index].Items;
+					if (itemsLastPoints.length === 2 && itemsLastPoints[1] && itemsLastPoints[1].Class &&
+						itemsLastPoints[1].Class.Type === AscDFH.historyitem_DocumentMacros_Data) {
+						isNeedAddByLastPoint = true;
+					}
+				}
+
+				if (isNeedAddByLastPoint) {
+					AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SetCustomFunctions,
+						null, null, new AscCommonExcel.UndoRedoData_FromTo(this["pluginMethod_GetCustomFunctions"](), jsonString));
+				} else {
+					AscCommon.History.Create_NewPoint();
+					AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SetCustomFunctions,
+						null, null, new AscCommonExcel.UndoRedoData_FromTo(this["pluginMethod_GetCustomFunctions"](), jsonString));
+				}
 			}
 
 			let obj = JSON.parse(jsonString);
