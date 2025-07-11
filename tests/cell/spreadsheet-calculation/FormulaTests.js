@@ -27321,7 +27321,7 @@ $(function () {
 		ws.getRange2("D601").setValue("1000"); // Par (Column4)
 		ws.getRange2("E601").setValue("3"); // Basis (Column5)
 		// 3D links
-		let ws2 = wb.createWorksheet(0, 'Sheet2');
+		let ws2 = getSecondSheet();
 		ws2.getRange2("A1").setValue("45797");
 		ws2.getRange2("B1").setValue("45828");
 		ws2.getRange2("C1").setValue("0.01");
@@ -27718,8 +27718,6 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 15130.000, 'Test: Need to fix: Number, String, Number(2). Issue is zero date (minimum accepted value). 4 of 5 arguments used.'); // 15142.5
 
 		testArrayFormula2(assert, "ACCRINTM", 4, 5, true)
-		// Remove created sheets.
-		wb.removeWorksheet(0);
 		// Clean define name
 		wb.delDefinesNames(defName);
 		wb.delDefinesNames(defName3D);
