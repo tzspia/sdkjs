@@ -32,6 +32,72 @@
 
 
 $(function () {
+	// Mocks for API Testing
+	Asc.spreadsheet_api.prototype._init = function () {
+		this._loadModules();
+	};
+	Asc.spreadsheet_api.prototype._loadFonts = function (fonts, callback) {
+		callback();
+	};
+	AscCommonExcel.WorkbookView.prototype._calcMaxDigitWidth = function () {
+	};
+	AscCommonExcel.WorkbookView.prototype._init = function () {
+	};
+	AscCommonExcel.WorkbookView.prototype._isLockedUserProtectedRange = function (callback) {
+		callback(true);
+	};
+	AscCommonExcel.WorkbookView.prototype._onWSSelectionChanged = function () {
+	};
+	AscCommonExcel.WorkbookView.prototype.showWorksheet = function () {
+	};
+	AscCommonExcel.WorkbookView.prototype.recalculateDrawingObjects = function () {
+	};
+	AscCommonExcel.WorkbookView.prototype.restoreFocus = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._init = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype.updateRanges = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._autoFitColumnsWidth = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype.cleanSelection = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._drawSelection = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._scrollToRange = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype.draw = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._prepareDrawingObjects = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._initCellsArea = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype.getZoom = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._prepareCellTextMetricsCache = function () {
+	};
+
+	AscCommon.baseEditorsApi.prototype._onEndLoadSdk = function () {
+	};
+
+	AscCommon.baseEditorsApi.prototype._onEndLoadSdk = function () {
+	};
+	Asc.ReadDefTableStyles = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._isLockedCells = function (oFromRange, subType, callback) {
+		callback(true);
+		return true;
+	};
+	AscCommonExcel.WorksheetView.prototype._isLockedAll = function (callback) {
+		callback(true);
+	};
+	AscCommonExcel.WorksheetView.prototype._isLockedFrozenPane = function (callback) {
+		callback(true);
+	};
+	AscCommonExcel.WorksheetView.prototype._updateVisibleColsCount = function () {
+	};
+	AscCommonExcel.WorksheetView.prototype._calcActiveCellOffset = function () {
+	};
 
 	var cDate = Asc.cDate;
 
@@ -597,6 +663,77 @@ $(function () {
 		//console.log(val);
 	}
 
+	/**
+	 * Function creates table or edit existed table.
+	 * * Creating happened when the function was called for the first time in the code totally.
+	 * In that case, you should set range coordinates like you're creating table, select needed range.
+	 * * For editing table you should consider that you have constant row with header and one data row as minimum required.
+	 * In that case your minimum row coordinates must be equal 2 rows.
+	 * For filling data use cells A301:L3**
+	 * @param {number} r1
+	 * @param {number} c1
+	 * @param {number} r2
+	 * @param {number} c2
+	 * @returns {TablePart}
+	 */
+	function getTableType(r1, c1, r2, c2) {
+		const range = new window["Asc"].Range(c1, r1, c2, r2);
+		const  tableName = 'Table1';
+		const tableParts = ws.TableParts;
+		const foundedTable = tableParts.find(function(table) { return table.DisplayName === tableName});
+		if (foundedTable) {
+			// Change table
+			ws.autoFilters.changeTableRange(tableName, range);
+			return foundedTable;
+		}
+		// Create table
+		const tableOptFormat = ws.autoFilters.getAddFormatTableOptions(range);
+		const styleName = 'TableStyleMedium2';
+		ws.autoFilters.addAutoFilter(styleName, range, tableOptFormat);
+
+		return tableParts[tableParts.length - 1]
+	}
+	function getSecondSheet () {
+		let ws2 = wb.getWorksheetByName('Sheet2');
+		if (!ws2) {
+			ws2 = wb.createWorksheet(null, 'Sheet2');
+		}
+
+		return ws2;
+	}
+	function initDefNames() {
+		const defName = new Asc.asc_CDefName('TestName', ws.getName() + '!$A$201');
+		const defName2 = new Asc.asc_CDefName('TestName1', ws.getName() + '!$A$202');
+		const defName3 = new Asc.asc_CDefName('TestName2', ws.getName() + '!$A$203');
+		const defName4 = new Asc.asc_CDefName('TestName3', ws.getName() + '!$A$204');
+		const defName5 = new Asc.asc_CDefName('TestName4', ws.getName() + '!$A$205');
+		const defNameArea = new Asc.asc_CDefName('TestNameArea', ws.getName() + '!$A$206:$A$207');
+		const defNameArea2 = new Asc.asc_CDefName('TestNameArea2', ws.getName() + '!$A$208:$B$208');
+		const ws2 = getSecondSheet();
+		const defName3D = new Asc.asc_CDefName('TestName3D', ws2.getName() + '!$A$11');
+		const defName3D2 = new Asc.asc_CDefName('TestName3D1', ws2.getName() + '!$A$12');
+		const defName3D3 = new Asc.asc_CDefName('TestName3D2', ws2.getName() + '!$A$13');
+		const defName3D4 = new Asc.asc_CDefName('TestName3D3', ws2.getName() + '!$A$14');
+		const defName3D5 = new Asc.asc_CDefName('TestName3D4', ws2.getName() + '!$A$15');
+		const defNameArea3D = new Asc.asc_CDefName('TestNameArea3D', ws2.getName() + '!$A$16:$A$17');
+		const defNameArea3D2 = new Asc.asc_CDefName('TestNameArea3D2', ws2.getName() + '!$A$18:$B$18');
+
+		wb.editDefinesNames(null, defName);
+		wb.editDefinesNames(null, defName2);
+		wb.editDefinesNames(null, defName3);
+		wb.editDefinesNames(null, defName4);
+		wb.editDefinesNames(null, defName5);
+		wb.editDefinesNames(null, defNameArea);
+		wb.editDefinesNames(null, defNameArea2);
+		wb.editDefinesNames(null, defName3D);
+		wb.editDefinesNames(null, defName3D2);
+		wb.editDefinesNames(null, defName3D3);
+		wb.editDefinesNames(null, defName3D4);
+		wb.editDefinesNames(null, defName3D5);
+		wb.editDefinesNames(null, defNameArea3D);
+		wb.editDefinesNames(null, defNameArea3D2);
+	}
+
 	var newFormulaParser = false;
 
 	var c_msPerDay = AscCommonExcel.c_msPerDay;
@@ -629,16 +766,21 @@ $(function () {
 
 
 		window["Asc"]["editor"] = api;
-
 		AscCommon.g_oTableId.init(api);
+		api._onEndLoadSdk();
+		api.isOpenOOXInBrowser = false;
+		api.OpenDocumentFromBin(null, AscCommon.getEmpty());
+		api.initCollaborativeEditing({});
 		wb = new AscCommonExcel.Workbook(new AscCommonExcel.asc_CHandlersList(), api, true);
+		api.wbModel = wb;
+		api.wb = new AscCommonExcel.WorkbookView(api.wbModel, api.controller, api.handlers, api.HtmlElement,
+			api.topLineEditorElement, api, api.collaborativeEditing, api.fontRenderingMode);
 		AscCommon.History.init(wb);
 		//нет тестовых операция с историей, отключаем чтобы не было лишних сериализаций
 		AscCommon.History.TurnOff();
 		wb.maxDigitWidth = 7;
 		wb.paddingPlusBorder = 5;
 
-		api.wbModel = wb;
 		api.initCollaborativeEditing({});
 
 		if (this.User) {
@@ -660,7 +802,6 @@ $(function () {
 		ws = wb.getWorksheet(wb.getActive());
 		AscCommonExcel.getFormulasInfo();
 	}
-
 	wb.dependencyFormulas.lockRecal();
 
 	QUnit.module("Formula");
@@ -3405,9 +3546,252 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"ACOS\"", function (assert) {
-		oParser = new parserFormula('ACOS(-0.5)', "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 2.094395102);
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+
+		// Case #0: Number. Basic valid input. Negative number. Argument in [-1,1] range.
+		oParser = new parserFormula('ACOS(-0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(-0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 2.094395102, 'Test: Positive case: Number. Basic valid input. Negative number. Argument in [-1,1] range.');
+		// Case #1: Number. Basic valid input. Argument in [-1,1] range.
+		oParser = new parserFormula('ACOS(0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: Number. Basic valid input. Argument in [-1,1] range.');
+		// Case #2: String. Numeric string converted to number.
+		oParser = new parserFormula('ACOS("0.5")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("0.5") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: String. Numeric string converted to number.');
+		// Case #3: Formula. Nested function calculation.
+		oParser = new parserFormula('ACOS(SQRT(0.25))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(SQRT(0.25)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: Formula. Nested function calculation.');
+		// Case #4: Reference link. Cell reference argument.
+		oParser = new parserFormula('ACOS(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: Reference link. Cell reference argument.');
+		// Case #5: Area. Non-standard case. Single-cell range argument.
+		oParser = new parserFormula('ACOS(A100:A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(A100:A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: Area. Non-standard case. Single-cell range argument.');
+		// Case #6: Array. Non-standard case. Array with single element.
+		oParser = new parserFormula('ACOS({0.5})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS({0.5}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: Array. Non-standard case. Array with single element.');
+		// Case #7: Formula. Non-standard case. Nested formula date.
+		oParser = new parserFormula('ACOS(DATE(1900,1,1)-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(DATE(1900,1,1)-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.570796327, 'Test: Positive case: Formula. Non-standard case. Nested formula date.');
+		// Case #8: Time. Non-standard case. Nested formula Time.
+		oParser = new parserFormula('ACOS(TIME(12,0,0)/24)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TIME(12,0,0)/24) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.549961486, 'Test: Positive case: Time. Non-standard case. Nested formula Time.');
+		// Case #9: Empty. Non-standard case. Empty cell treated as 0.
+		oParser = new parserFormula('ACOS(A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.570796327, 'Test: Positive case: Empty. Non-standard case. Empty cell treated as 0.');
+		// Case #10: Boolean. Non-standard case. Boolean TRUE treated as 1.
+		oParser = new parserFormula('ACOS(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Boolean. Non-standard case. Boolean TRUE treated as 1.');
+		// Case #11: Boolean. Non-standard case. Boolean FALSE treated as 0.
+		oParser = new parserFormula('ACOS(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.570796327, 'Test: Positive case: Boolean. Non-standard case. Boolean FALSE treated as 0.');
+		// Case #12: Formula. Nested SUM function.
+		oParser = new parserFormula('ACOS(SUM(0.3,0.2))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(SUM(0.3,0.2)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: Formula. Nested SUM function.');
+		// Case #13: String. Non-standard case.  Date in string.
+		oParser = new parserFormula('ACOS("01/01/1900")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("01/01/1900") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: String. Non-standard case.  Date in string.');
+		// Case #14: String. Non-standard case. Time in string.
+		oParser = new parserFormula('ACOS("12:00:00")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("12:00:00") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: String. Non-standard case. Time in string.');
+		// Case #15: Number. Zero value.
+		oParser = new parserFormula('ACOS(0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.570796327, 'Test: Positive case: Number. Zero value.');
+		// Case #16: Formula. ACOS inside another function.
+		oParser = new parserFormula('SUM(ACOS(0.5),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(ACOS(0.5),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 2.047197551, 'Test: Positive case: Formula. ACOS inside another function.');
+		// Case #17: Ref3D. Reference link to another Sheet, argument is number.
+		oParser = new parserFormula('ACOS(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.047197551, 'Test: Positive case: Ref3D. Reference link to another Sheet, argument is number.');
+		// Case #18: Array. Multi-element array.
+		oParser = new parserFormula('ACOS({-0.5;0.5})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS({-0.5;0.5}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue().toFixed(9) - 0, 2.094395102, 'Test: Positive case: Array. Multi-element array.');
+		// Case #19: Formula. Formula: Number in string  and Number, operand plus.
+		oParser = new parserFormula('ACOS("0.5"+0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("0.5"+0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Formula. Formula: Number in string  and Number, operand plus.');
+		// Case #20: Formula. Formula: Numbers in string operand multiply.
+		oParser = new parserFormula('ACOS("0.5"*"0.5")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("0.5"*"0.5") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.318116072, 'Test: Positive case: Formula. Formula: Numbers in string operand multiply.');
+		// Different result with MS
+		// Case #21: Area. Multi-cell range.
+		/*oParser = new parserFormula('ACOS(A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(A102:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue()/!*.toFixed(9) - 0*!/, 1.047197551, 'Test: Positive case: Area. Multi-cell range.');*/
+		// Different result with MS
+		// Case #22: Area3D. Multi-cell  range to another sheet.
+		/*oParser = new parserFormula('ACOS(Sheet2!B1:C1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(Sheet2!B1:C1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue()/!*.toFixed(9) - 0*!/, 3.141592654, 'Test: Positive case: Area3D. Multi-cell  range to another sheet.');*/
+		// Case #23: Name. Name reference, number
+		oParser = new parserFormula('ACOS(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 2.094395102, 'Test: Positive case: Name. Name reference, number');
+		// Case #24: Name3D. Name reference, number to another sheet
+		oParser = new parserFormula('ACOS(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 2.094395102, 'Test: Positive case: Name3D. Name reference, number to another sheet');
+		// Case #25: Table. Data in table
+		oParser = new parserFormula('ACOS(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Table. Data in table');
+		// Case #26: Name. Def. Name with area.
+		oParser = new parserFormula('ACOS(TestNameArea2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TestNameArea2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 0.643501109, 'Test: Positive case: Name. Def. Name with area.');
+		// Case #27: Name3D. Name with area to another sheet
+		oParser = new parserFormula('ACOS(TestNameArea3D2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TestNameArea3D2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 0.643501109, 'Test: Positive case: Name3D. Name with area to another sheet');
+
+		// Negative cases:
+
+		// Case #1: Number. Value above valid range.
+		oParser = new parserFormula('ACOS(1.1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(1.1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Value above valid range.');
+		// Case #2: Number. Value below valid range.
+		oParser = new parserFormula('ACOS(-1.1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(-1.1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Value below valid range.');
+		// Case #3: String. Non-numeric string.
+		oParser = new parserFormula('ACOS("text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string.');
+		// Case #4: Error. Error value as argument (#N/A).
+		oParser = new parserFormula('ACOS(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Error value as argument (#N/A).');
+		// Case #5: String. Data greater than 1.
+		oParser = new parserFormula('ACOS("12/12/2000")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("12/12/2000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. Data greater than 1.');
+		// Case #6: String. Empty string argument.
+		oParser = new parserFormula('ACOS("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string argument.');
+		// Case #7: Reference link. Cell with text.
+		oParser = new parserFormula('ACOS(A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Reference link. Cell with text.');
+		// Case #9: Array. Array with invalid element (#VALUE!).
+		oParser = new parserFormula('ACOS({"text"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS({"text"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), '#VALUE!', 'Test: Negative case: Array. Array with invalid element (#VALUE!).');
+		// Case #10: Formula. Division by zero (#DIV/0!).
+		oParser = new parserFormula('ACOS(1/0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(1/0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Formula. Division by zero (#DIV/0!).');
+		// Case #11: Formula. Formula DATE greater than 1.
+		oParser = new parserFormula('ACOS(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula DATE greater than 1.');
+		// Case #12: Number. Value >1.
+		oParser = new parserFormula('ACOS(2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Value >1.');
+		// Case #13: Time. Time + 1.
+		oParser = new parserFormula('ACOS(TIME(12,0,0) + 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TIME(12,0,0) + 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Time. Time + 1.');
+		// Case #14: Number. Value slightly above 1.
+		oParser = new parserFormula('ACOS(1.0000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(1.0000000000001) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Value slightly above 1.');
+		// Case #15: Number. Value slightly below -1.
+		oParser = new parserFormula('ACOS(-1.0000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(-1.0000000000001) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Value slightly below -1.');
+		// Case #15: String. Short date in string
+		oParser = new parserFormula('ACOS("12/12")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS("12/12") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. Short date in string');
+
+		// Bounded cases:
+
+		// Case #1: Number. Minimum valid value (-1).
+		oParser = new parserFormula('ACOS(-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 3.141592654, 'Test: Bounded case: Number. Minimum valid value (-1).');
+		// Case #2: Number. Maximum valid value (1).
+		oParser = new parserFormula('ACOS(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Maximum valid value (1).');
+		// Case #3: Number. Largest valid value <1.
+		oParser = new parserFormula('ACOS(0.99999999999999)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(0.99999999999999) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.4136482746161737e-7, 'Test: Bounded case: Number. Largest valid value <1.');
+		// Case #4: Number. Smallest valid value >-1.
+		oParser = new parserFormula('ACOS(-0.99999999999999)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(-0.99999999999999) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 3.141592512, 'Test: Bounded case: Number. Smallest valid value >-1.');
+		// Case #5: Number. Smallest positive number.
+		oParser = new parserFormula('ACOS(2.22044604925031E-16)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(2.22044604925031E-16) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.570796327, 'Test: Bounded case: Number. Smallest positive number.');
+		// Case #6: Number. Smallest negative number.
+		oParser = new parserFormula('ACOS(-2.22044604925031E-16)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(-2.22044604925031E-16) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.570796327, 'Test: Bounded case: Number. Smallest negative number.');
+		// Case #7: Date. Earliest Excel date (value=1).
+		oParser = new parserFormula('ACOS(DATE(1900,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(DATE(1900,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 0, 'Test: Bounded case: Date. Earliest Excel date (value=1).');
+		// Case #8: Time. Latest time value.
+		oParser = new parserFormula('ACOS(TIME(23,59,59)/24)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(TIME(23,59,59)/24) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 1.529118077, 'Test: Bounded case: Time. Latest time value.');
+		// Case #9: Formula. Nested PI function.
+		oParser = new parserFormula('ACOS(PI()/4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(PI()/4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 0.667457216, 'Test: Bounded case: Formula. Nested PI function.');
+		// Case #10: Reference link. Cell with boundary value.
+		oParser = new parserFormula('ACOS(A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACOS(A104) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 3.141592654, 'Test: Bounded case: Reference link. Cell with boundary value.');
 
 		testArrayFormula(assert, "ACOS");
 	});
@@ -7851,6 +8235,7 @@ $(function () {
 		ws.getRange2("S100").setValue("=" + wb.getWorksheet(0).getName() + "!S95");
 		ws.setName("SheetTmp");
 		assert.strictEqual(ws.getCell2("S100").getFormula(), ws.getName() + "!S95");
+		ws.setName("Sheet1");
 		wb.dependencyFormulas.lockRecal();
 	});
 
@@ -8206,7 +8591,7 @@ $(function () {
 
 		oParser = new parserFormula("SHEETS()", "A2", ws);
 		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 1);
+		assert.strictEqual(oParser.calculate().getValue(), 2);
 
 		testArrayFormula2(assert, "SHEETS", 1, 1, null, true);
 	});
@@ -26420,7 +26805,6 @@ $(function () {
 		assert.ok(oParser.parse(), "Test: Formula ACCRINT(DATE(2008,4,5),DATE(2008,8,31),DATE(2008,5,1),0.1,1000,2,0,TRUE) is parsed.");
 		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 7.22, "Test: Positive case. All arguments are standard. 8 of 8 arguments used.");
 
-
 		// Negative cases:
 
 		// Case #1: Boolean, Number(6). Test of arg[0]: Issue is boolean. 7 of 8 argument used.
@@ -26929,6 +27313,55 @@ $(function () {
 		// Unexpected data for formula
 		ws.getRange2("A110").setValue("TRUE");
 		ws.getRange2("A111").setValue("Str");
+		// Table type
+		let table1 = getTableType(599, 0, 600, 4);
+		ws.getRange2("A601").setValue("39539"); // Issue (Column1)
+		ws.getRange2("B601").setValue("39614"); // Settlement (Column2)
+		ws.getRange2("C601").setValue("0.1"); // Rate (Column3)
+		ws.getRange2("D601").setValue("1000"); // Par (Column4)
+		ws.getRange2("E601").setValue("3"); // Basis (Column5)
+		// 3D links
+		let ws2 = wb.createWorksheet(0, 'Sheet2');
+		ws2.getRange2("A1").setValue("45797");
+		ws2.getRange2("B1").setValue("45828");
+		ws2.getRange2("C1").setValue("0.01");
+		ws2.getRange2("D1").setValue("1100");
+		ws2.getRange2("E1").setValue("3");
+		// DefNames
+		let defName = new Asc.asc_CDefName("Issue", ws.getName() + "!$A$112");
+		let defName3D = new Asc.asc_CDefName("Issue3D", ws2.getName() + "!$A$2");
+		let defName2 = new Asc.asc_CDefName("Settlement", ws.getName() + "!$B$112");
+		let defName3D2 = new Asc.asc_CDefName("Settlement3D", ws2.getName() + "!$B$2");
+		let defName3 = new Asc.asc_CDefName("Rate", ws.getName() + "!$C$112");
+		let defName3D3 = new Asc.asc_CDefName("Rate3D", ws2.getName() + "!$C$2");
+		let defName4 = new Asc.asc_CDefName("Par", ws.getName() + "!$D$112");
+		let defName3D4 = new Asc.asc_CDefName("Par3D", ws2.getName() + "!$D$2");
+		let defName5 = new Asc.asc_CDefName("Basis", ws.getName() + "!$E$112");
+		let defName3D5 = new Asc.asc_CDefName("Basis3D", ws2.getName() + "!$E$2");
+		let defNameArea = new Asc.asc_CDefName("NameArea", ws.getName() + "!$B$112:$E$112");
+		let defNameAreaBug = new Asc.asc_CDefName("NameAreaBug", ws.getName() + "!$A$112:$E$112");
+		wb.editDefinesNames(null, defName);
+		wb.editDefinesNames(null, defName3D);
+		wb.editDefinesNames(null, defName2);
+		wb.editDefinesNames(null, defName3D2);
+		wb.editDefinesNames(null, defName3);
+		wb.editDefinesNames(null, defName3D3);
+		wb.editDefinesNames(null, defName4);
+		wb.editDefinesNames(null, defName3D4);
+		wb.editDefinesNames(null, defName5);
+		wb.editDefinesNames(null, defName3D5);
+		wb.editDefinesNames(null, defNameArea);
+		wb.editDefinesNames(null, defNameAreaBug);
+		ws.getRange2("A112").setValue("39539");
+		ws2.getRange2("A2").setValue("39539");
+		ws.getRange2("B112").setValue("39614");
+		ws2.getRange2("B2").setValue("39614");
+		ws.getRange2("C112").setValue("0.1");
+		ws2.getRange2("C2").setValue("0.1");
+		ws.getRange2("D112").setValue("1000");
+		ws2.getRange2("D2").setValue("1000");
+		ws.getRange2("E112").setValue("3");
+		ws2.getRange2("E2").setValue("3");
 
 		// Positive cases:
 
@@ -27024,6 +27457,26 @@ $(function () {
 		oParser = new parserFormula('ACCRINTM(38777,38838,TIME(15,15,15),DATE(2025,6,6))', "A2", ws);
 		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,TIME(15,15,15),DATE(2025,6,6)) is parsed.');
 		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 4853.155, 'Test: Positive case: Number(2), Formula(2). Rate and Par filled by TIME and DATE formulas. 4 of 5 arguments used.');
+		// Case #23: Name(5). All arguments in Name type. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(Issue,Settlement,Rate,Par,Basis)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(Issue,Settlement,Rate,Par,Basis) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8) - 0, 20.54794521, 'Test: Positive case: Name(5). All arguments in Name type. 5 of 5 arguments used.');
+		// Case #24: Name3D(5). All arguments in Name3D type. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(Issue3D,Settlement3D,Rate3D,Par3D,Basis3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(Issue3D,Settlement3D,Rate3D,Par3D,Basis3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8) - 0, 20.54794521, 'Test: Positive case: Name3D(5). All arguments in Name3D type. 5 of 5 arguments used.');
+		// Case #25: Ref3D(5). All arguments in Ref3D type. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(Sheet2!A1,Sheet2!B1,Sheet2!C1,Sheet2!D1,Sheet2!E1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(Sheet2!A1,Sheet2!B1,Sheet2!C1,Sheet2!D1,Sheet2!E1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 0.934246575, 'Test: Positive case: Ref3D(5). All arguments in Ref3D type. 5 of 5 arguments used.');
+		// Case #26: Area3D(5). All arguments in Area3D type. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(Sheet2!A1:Sheet2!A1,Sheet2!B1:Sheet2!B1,Sheet2!C1:Sheet2!C1,Sheet2!D1:Sheet2!D1,Sheet2!E1:Sheet2!E1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(Sheet2!A1:Sheet2!A1,Sheet2!B1:Sheet2!B1,Sheet2!C1:Sheet2!C1,Sheet2!D1:Sheet2!D1,Sheet2!E1:Sheet2!E1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9) - 0, 0.934246575, 'Test: Positive case: Area3D(5). All arguments in Area3D type. 5 of 5 arguments used.');
+		// Case #27: Table. All arguments in Table. 5 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8) - 0, 20.54794521, 'Test: Positive case: Table. All arguments in Table. 5 of 5 arguments used.');
 
 		// Negative cases:
 
@@ -27199,6 +27652,53 @@ $(function () {
 		oParser = new parserFormula('ACCRINTM(38777,38838,1,1500,A110:A111)', "A2", ws);
 		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(38777,38838,1,1500,A110:A111) is parsed.');
 		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(4), Area. Basis is area with unexpected data. 5 of 5 arguments used.');
+		// Case #44: Area3D, Number(3). Issue is Area3D. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(Sheet2!A5:A6,38838,1,15000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(Sheet2!A5:A6,38838,1,15000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area3D, Number(3). Issue is Area3D. 4 of 5 arguments used.');
+		// Different result with MS TODO Need to fix
+		/*// Case #45: Number, Area3D, Number(2). Settlement is Area3D. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,Sheet2!A1:B1,1,15000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,Sheet2!A1:B1,1,15000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Area3D, Number(2). Settlement is Area3D. 4 of 5 arguments used.');
+		// Case #46: Number(2), Area3D, Number. Rate is Area3D. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,Sheet2!A1:A2,15000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,Sheet2!A1:B1,15000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(2), Area3D, Number. Rate is Area3D. 4 of 5 arguments used.');*/
+		// Case #47: Number(3), Area3D. Par is Area3D. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,Sheet2!B1:C1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,1,Sheet2!B1:C1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(3), Area3D. Par is Area3D. 4 of 5 arguments used.');
+		// Case #48: Number(4), Area3D. Basis ia Area3D. 5 of 5 agruments
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,15000; Sheet2!B2:C2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,1,15000; Sheet2!B2:C2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(4), Area3D. Basis ia Area3D. 5 of 5 agruments');
+		// Different result with MS TODO Need to fix
+		// Case #49: Name, Number(3). Issue is Name  with Area. 4 of 5 arguments used.
+		/*oParser = new parserFormula('ACCRINTM(NameAreaBug,38838,1,15000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(NameAreaBug,38838,1,15000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name, Number(3). Issue is Name  with Area. 4 of 5 arguments used.');*/
+		// Case #50: Number, Name, Number(2). Settlement is Name with Area. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,NameArea,1,15000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,NameArea,1,15000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Name, Number(2). Settlement is Name with Area. 4 of 5 arguments used.');
+		// Case #51: Number(2), Name, Number. Rate is Name with Area. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,NameArea,15000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,NameArea,15000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(2), Name, Number. Rate is Name with Area. 4 of 5 arguments used.');
+		// Case #52: Number(3),Name. Par is Name with Area. 4 of 5 arguments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,NameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,1,NameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(3),Name. Par is Name with Area. 4 of 5 arguments used.');
+		// Case #53: Number(4),Name. Basis is Name with Area. 5 of 5 agruments used.
+		oParser = new parserFormula('ACCRINTM(38777,38838,1,15000,NameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(38777,38838,1,15000,NameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number(4),Name. Basis is Name with Area. 5 of 5 agruments used.');
+		// Case #54: Table. All arguments in table with 2 columns. 5 of 5 arguments used.
+		getTableType(599, 0, 601, 4);
+		oParser = new parserFormula('ACCRINTM(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: ACCRINTM(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Table. All arguments in table with 2 columns. 5 of 5 arguments used.');
 
 		// Bounded cases:
 		// Case #2: Number(5). All arguments are minimum accepted value. 5 of 5 arguments used.
@@ -27210,7 +27710,6 @@ $(function () {
 		assert.ok(oParser.parse(), 'Test: Formula ACCRINTM(DATE(9999,12,30);DATE(9999,12,31),1E+152,1E+152,4) is parsed.');
 		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Formula(2), Number(3). All arguments are maximum accepted value. 5 of 5 arguments used.');
 
-
 		// Need to fix:
 		// Different result with MS and LO
 		// Case #1: Number, String, Number(2). Issue is zero date(minimum accepted value). 4 of 5 arguments used.
@@ -27219,7 +27718,21 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 15130.000, 'Test: Need to fix: Number, String, Number(2). Issue is zero date (minimum accepted value). 4 of 5 arguments used.'); // 15142.5
 
 		testArrayFormula2(assert, "ACCRINTM", 4, 5, true)
-
+		// Remove created sheets.
+		wb.removeWorksheet(0);
+		// Clean define name
+		wb.delDefinesNames(defName);
+		wb.delDefinesNames(defName3D);
+		wb.delDefinesNames(defName2);
+		wb.delDefinesNames(defName3D2);
+		wb.delDefinesNames(defName3);
+		wb.delDefinesNames(defName3D3);
+		wb.delDefinesNames(defName4);
+		wb.delDefinesNames(defName3D4);
+		wb.delDefinesNames(defName5);
+		wb.delDefinesNames(defName3D5);
+		wb.delDefinesNames(defNameArea);
+		wb.delDefinesNames(defNameAreaBug);
 	});
 
 	QUnit.test("Test: \"AMORDEGRC\"", function (assert) {
@@ -35819,7 +36332,7 @@ $(function () {
 
 		formulas = wb.getAllFormulas();
 		assert.ok(1, "Created 6 formulas on a sheet: 3 regular, 3 array-formula");
-		assert.strictEqual(formulas.length, 6, "GetAllFormulas array length");
+		assert.strictEqual(formulas.length, 21, "GetAllFormulas array length");
 
 		let randRegValBefore = ws.getRange2("C1").getValue(),
 			randArrayFValBefore = ws.getRange2("D1").getValue();
@@ -35828,7 +36341,7 @@ $(function () {
 		wb.calculate(4);
 		formulas = wb.getAllFormulas();
 		assert.ok(1, "Check formulas after workbook recalculate");
-		assert.strictEqual(formulas.length, 6, "GetAllFormulas array length");
+		assert.strictEqual(formulas.length, 21, "GetAllFormulas array length");
 
 		let randRegValAfter = ws.getRange2("C1").getValue(),
 			randArrayFValAfter = ws.getRange2("D1").getValue();
@@ -38738,74 +39251,6 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
 
 	});
-
-
-	// Mocks for API Testing
-	Asc.spreadsheet_api.prototype._init = function () {
-		this._loadModules();
-	};
-	Asc.spreadsheet_api.prototype._loadFonts = function (fonts, callback) {
-		callback();
-	};
-	AscCommonExcel.WorkbookView.prototype._calcMaxDigitWidth = function () {
-	};
-	AscCommonExcel.WorkbookView.prototype._init = function () {
-	};
-	AscCommonExcel.WorkbookView.prototype._isLockedUserProtectedRange = function (callback) {
-		callback(true);
-	};
-	AscCommonExcel.WorkbookView.prototype._onWSSelectionChanged = function () {
-	};
-	AscCommonExcel.WorkbookView.prototype.showWorksheet = function () {
-	};
-	AscCommonExcel.WorkbookView.prototype.recalculateDrawingObjects = function () {
-	};
-	AscCommonExcel.WorkbookView.prototype.restoreFocus = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._init = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype.updateRanges = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._autoFitColumnsWidth = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype.cleanSelection = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._drawSelection = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._scrollToRange = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype.draw = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._prepareDrawingObjects = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._initCellsArea = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype.getZoom = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._prepareCellTextMetricsCache = function () {
-	};
-
-	AscCommon.baseEditorsApi.prototype._onEndLoadSdk = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._isLockedCells = function (oFromRange, subType, callback) {
-		callback(true);
-		return true;
-	};
-	AscCommonExcel.WorksheetView.prototype._isLockedAll = function (callback) {
-		callback(true);
-	};
-	AscCommonExcel.WorksheetView.prototype._isLockedFrozenPane = function (callback) {
-		callback(true);
-	};
-	AscCommonExcel.WorksheetView.prototype._updateVisibleColsCount = function () {
-	};
-	AscCommonExcel.WorksheetView.prototype._calcActiveCellOffset = function () {
-	};
-
-	AscCommon.baseEditorsApi.prototype._onEndLoadSdk = function () {
-	};
-	Asc.ReadDefTableStyles = function () {
-	};
 
 	QUnit.test("Test: API Calculation option", function (assert) {
 		// Init api
