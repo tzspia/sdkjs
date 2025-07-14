@@ -16091,31 +16091,6 @@ $(function () {
 		testArrayFormula(assert, "FACT");
 	});
 
-	QUnit.test("Test: \"GCD\"", function (assert) {
-		oParser = new parserFormula("LCM(5)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 5);
-
-		oParser = new parserFormula("LCM(24.6,36.2)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 72);
-
-		oParser = new parserFormula("LCM(-1,39,52)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
-
-		oParser = new parserFormula("LCM(0,39,52)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
-
-		oParser = new parserFormula("LCM(24,36,15)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 360);
-
-		testArrayFormula2(assert, "LCM", 1, 8, null, true);
-	});
-
-
 	QUnit.test("Test: \"RANDBETWEEN\"", function (assert) {
 		let res;
 		oParser = new parserFormula("RANDBETWEEN(1,6)", "A1", ws);
@@ -20974,6 +20949,28 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"LCM\"", function (assert) {
+		ws.getRange2("A1:Z300").cleanAll();
+
+		oParser = new parserFormula("LCM(5)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5);
+
+		oParser = new parserFormula("LCM(24.6,36.2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 72);
+
+		oParser = new parserFormula("LCM(-1,39,52)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
+
+		oParser = new parserFormula("LCM(0,39,52)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		oParser = new parserFormula("LCM(24,36,15)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 360);
+
 		// Data for reference link. Use A100-A111
 		ws.getRange2("A100").setValue("0.5");
 		ws.getRange2("A101").setValue("");
@@ -21186,9 +21183,8 @@ $(function () {
 		assert.ok(oParser.parse(), 'Test: LCM(1E-100,1E-100) is parsed.');
 		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case 5: Number(2). Extremely small numbers. 2 of 2 arguments used.');
 
-		// Need to fix:
-		// Different result with MS:
-		// Case #13: Array, Boolean. Array with boolean LCM({TRUE},12) (different err)
+
+		testArrayFormula2(assert, "LCM", 1, 8, null, true);
 
 	});
 
