@@ -20973,6 +20973,225 @@ $(function () {
 		//testArrayFormula2(assert, "LARGE", 2, 2)
 	});
 
+	QUnit.test("Test: \"LCM\"", function (assert) {
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+
+		// Case #1: Number(2). Basic case with two positive integers. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(12,18)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(12,18) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 36, 'Test: Positive case 1: Number(2). Basic case with two positive integers. 2 of 2 arguments used.');
+		// Case #2: Number(3). Three positive integers. 3 of 3 arguments used.
+		oParser = new parserFormula('LCM(5,10,15)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(5,10,15) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 30, 'Test: Positive case 2: Number(3). Three positive integers. 3 of 3 arguments used.');
+		// Case #3: Number, Empty. Second argument is empty. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(8,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(8,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case 3: Number, Empty. Second argument is empty. 2 of 2 arguments used.');
+		// Case #4: Number, Formula. Second argument is a formula. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(20, SQRT(100))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(20, SQRT(100)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 20, 'Test: Positive case 4: Number, Formula. Second argument is a formula. 2 of 2 arguments used.');
+		// Case #5: String(2). Arguments as numeric strings. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM("12","18")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM("12","18") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 36, 'Test: Positive case 5: String(2). Arguments as numeric strings. 2 of 2 arguments used.');
+		// Case #6: Reference link(2). Arguments as reference links. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(A100,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(A100,A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case 6: Reference link(2). Arguments as reference links. 2 of 2 arguments used.');
+		// Case #7: Area(2). Arguments as single-cell areas. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(A102:A102,A103:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case 7: Area(2). Arguments as single-cell areas. 2 of 2 arguments used.');
+		// Case #8: Array(2). Arguments as single-element arrays. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM({12},{18})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM({12},{18}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 36, 'Test: Positive case 8: Array(2). Arguments as single-element arrays. 2 of 2 arguments used.');
+		// Case #9: Array(2). Arguments as multi-element arrays. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM({12,6},{18,9})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM({12,6},{18,9}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 36, 'Test: Positive case 9: Array(2). Arguments as multi-element arrays. 2 of 2 arguments used.');
+		// Case #10: Name(2). Arguments as named ranges. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(TestName1,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(TestName1,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case 10: Name(2). Arguments as named ranges. 2 of 2 arguments used.');
+		// Case #11: Name3D(2). Arguments as 3D-named ranges. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(TestName3D1,TestName3D2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(TestName3D1,TestName3D2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case 11: Name3D(2). Arguments as 3D-named ranges. 2 of 2 arguments used.');
+		// Case #12: Ref3D(2). Arguments as 3D references. 2 of 2 arguments used.
+		oParser = new parserFormula("LCM(Sheet2!A1,Sheet2!A2)", 'A2', ws);
+		assert.ok(oParser.parse(), "Test: LCM(Sheet2!A1,Sheet2!A2) is parsed.");
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case 12: Ref3D(2). Arguments as 3D references. 2 of 2 arguments used.');
+		// Case #13: Area3D(2). Arguments as 3D-area references. 2 of 2 arguments used.
+		oParser = new parserFormula("LCM(Sheet2!A1:A1,Sheet2!A2:A2)", 'A2', ws);
+		assert.ok(oParser.parse(), "Test: LCM(Sheet2!A1:A1,Sheet2!A2:A2) is parsed.");
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case 13: Area3D(2). Arguments as 3D-area references. 2 of 2 arguments used.');
+		// Case #14: Table. Arguments as table columns. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(Table1[Column1],Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case 14: Table. Arguments as table columns. 2 of 2 arguments used.');
+		// Case #15: Number(2). One argument is zero. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(0,5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(0,5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case 15: Number(2). One argument is zero. 2 of 2 arguments used.');
+		// Case #16: Number(2). Arguments are ones. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case 16: Number(2). Arguments are ones. 2 of 2 arguments used.');
+		// Case #17: Number(2). Large numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1E+100,1E+100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1E+100,1E+100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Test: Positive case 17: Number(2). Large numbers. 2 of 2 arguments used.');
+		// Case #18: Number(2). Very small numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1E-100,1E-100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1E-100,1E-100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case 18: Number(2). Very small numbers. 2 of 2 arguments used.');
+		// Case #19: Formula(2). Arguments as formulas. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(2*3,3*4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(2*3,3*4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 12, 'Test: Positive case 19: Formula(2). Arguments as formulas. 2 of 2 arguments used.');
+		// Case #20: Number(4). Four arguments. 4 of 4 arguments used.
+		oParser = new parserFormula('LCM(2,4,8,16)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(2,4,8,16) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 16, 'Test: Positive case 20: Number(4). Four arguments. 4 of 4 arguments used.');
+
+		// Negative cases:
+		// Case #1: String, Boolean. Second argument is boolean. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM("12",TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM("12",TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case 1: String, Boolean. Second argument is boolean. 2 of 2 arguments used.');
+		// Case #2: Boolean, Number. First argument is boolean. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(FALSE,12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(FALSE,12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case 2: Boolean, Number. First argument is boolean. 2 of 2 arguments used.');
+		// Case #3: String(2). Non-numeric strings. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM("A","B")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM("A","B") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case 3: String(2). Non-numeric strings. 2 of 2 arguments used.');
+		// Case #4: Empty, String. First argument empty, second non-numeric. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(,"ABC")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(,"ABC") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case 4: Empty, String. First argument empty, second non-numeric. 2 of 2 arguments used.');
+		// Case #5: Number, Error. Second argument is an error. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(12,#N/A)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(12,#N/A) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case 5: Number, Error. Second argument is an error. 2 of 2 arguments used.');
+		// Case #6: Error, Number. First argument is an error. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(#VALUE!,12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(#VALUE!,12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case 6: Error, Number. First argument is an error. 2 of 2 arguments used.');
+		// Case #7: Number(2). Negative number. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(-12,18)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(-12,18) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case 7: Number(2). Negative number. 2 of 2 arguments used.');
+		// Case #8: Number(2). Negative number. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(12,-18)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(12,-18) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case 8: Number(2). Negative number. 2 of 2 arguments used.');
+		// Case #9: Number(2). Non-integer number. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1.5,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1.5,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Negative case 9: Number(2). Non-integer number. 2 of 2 arguments used.');
+		// Case #10: Number(2). Non-integer number. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(2,1.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(2,1.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Negative case 10: Number(2). Non-integer number. 2 of 2 arguments used.');
+		// Case #11: Date, Number. Date as argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(DATE(2025,1,1),12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(DATE(2025,1,1),12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 273948, 'Test: Negative case 11: Date, Number. Date as argument. 2 of 2 arguments used.');
+		// Case #12: Time, Number. Time as argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(TIME(12,0,0),12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(TIME(12,0,0),12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case 12: Time, Number. Time as argument. 2 of 2 arguments used.');
+		// Case #13: Array, Boolean. Array with boolean. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM({TRUE},12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM({TRUE},12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case 13: Array, Boolean. Array with boolean. 2 of 2 arguments used.');
+		// Case #14: Area, Boolean. Area with boolean. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(A110:A111,12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(A110:A111,12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case 14: Area, Boolean. Area with boolean. 2 of 2 arguments used.');
+		// Case #15: Name, Boolean. Named range with boolean. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(TestNameBool,12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(TestNameBool,12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NAME?', 'Test: Negative case 15: Name, Boolean. Named range with boolean. 2 of 2 arguments used.');
+		// Case #16: Name3D, Boolean. 3D-named range with boolean. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(TestName3DBool,12)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(TestName3DBool,12) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NAME?', 'Test: Negative case 16: Name3D, Boolean. 3D-named range with boolean. 2 of 2 arguments used.');
+		// Case #17: Ref3D, Boolean. 3D reference with boolean. 2 of 2 arguments used.
+		oParser = new parserFormula("LCM(Sheet2!A1,12)", 'A2', ws);
+		assert.ok(oParser.parse(), "Test: LCM(Sheet2!A1,12) is parsed.");
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case 17: Ref3D, Boolean. 3D reference with boolean. 2 of 2 arguments used.');
+		// Case #18: Area3D, Boolean. 3D-area with boolean. 2 of 2 arguments used.
+		oParser = new parserFormula("LCM(Sheet2!A1:B1,12)", 'A2', ws);
+		assert.ok(oParser.parse(), "Test: LCM(Sheet2!A1:B1,12) is parsed.");
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Test: Negative case 18: Area3D, Boolean. 3D-area with boolean. 2 of 2 arguments used.');
+		// Case #19: Number(2). Numbers exceeding Excel\'s limit. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1E+307,1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1E+307,1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case 19: Number(2). Numbers exceeding Excel\'s limit. 2 of 2 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number(2). Maximum allowed number. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1,1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1,1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case 1: Number(2). Maximum allowed number. 2 of 2 arguments used.');
+		// Case #2: Number(2). Minimum allowed number. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1E-307,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1E-307,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case 2: Number(2). Minimum allowed number. 2 of 2 arguments used.');
+		// Case #3: Number(2). Both arguments zero. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(0,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(0,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case 3: Number(2). Both arguments zero. 2 of 2 arguments used.');
+		// Case #4: Number(2). Large but valid integers. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(2^20,2^20)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(2^20,2^20) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1048576, 'Test: Bounded case 4: Number(2). Large but valid integers. 2 of 2 arguments used.');
+		// Case #5: Number(2). Extremely small numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('LCM(1E-100,1E-100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LCM(1E-100,1E-100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case 5: Number(2). Extremely small numbers. 2 of 2 arguments used.');
+
+		// Need to fix:
+		// Different result with MS:
+		// Case #13: Array, Boolean. Array with boolean LCM({TRUE},12) (different err)
+
+	});
+
 	QUnit.test("Test: \"LN\"", function (assert) {
 
 		oParser = new parserFormula("LN(86)", "A1", ws);
