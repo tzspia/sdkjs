@@ -7494,9 +7494,9 @@ function (window, undefined) {
 			return new cError(cErrorType.not_available);
 		}
 
-		var v, tA = [];
-		for (var i = 0; i < arg0.length; i++) {
-			for (var j = 0; j < arg0[i].length; j++) {
+		let v, tA = [];
+		for (let i = 0; i < arg0.length; i++) {
+			for (let j = 0; j < arg0[i].length; j++) {
 				v = arg0[i][j];
 				if (cElementType.error === v.type) {
 					return v;
@@ -7510,14 +7510,24 @@ function (window, undefined) {
 
 		tA.sort(AscCommon.fSortDescending);
 
+		arg1 = Math.ceil(arg1);
 		if (arg1 > tA.length) {
-			return new cError(cErrorType.not_available);
+			return new cError(cErrorType.not_numeric);
 		} else {
 			return new cNumber(tA[arg1 - 1]);
 		}
 	};
 	cLARGE.prototype.Calculate = function (arg) {
-		var arg0 = arg[0], arg1 = arg[1];
+		let arg0 = arg[0], arg1 = arg[1];
+
+		if (cElementType.error === arg0.type) {
+			return arg0;
+		}
+
+		if (cElementType.error === arg1.type) {
+			return arg1;
+		}
+
 		if (cElementType.cellsRange === arg0.type) {
 			arg0 = arg0.getValuesNoEmpty(this.checkExclude, this.excludeHiddenRows, this.excludeErrorsVal,
 				this.excludeNestedStAg);

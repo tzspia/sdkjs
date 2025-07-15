@@ -20944,6 +20944,150 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 4);
 
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+		// Case #1: Array, Number. Basic array with numbers. Returns largest value. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({10,20,30},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({10,20,30},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 30, 'Test: Positive case: Array, Number. Basic array with numbers. Returns largest value. 2 of 2 arguments used.');
+		// Case #2: Array, Number. Array with numbers. Returns second largest value. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({5,3,9,1},2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({5,3,9,1},2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Array, Number. Array with numbers. Returns second largest value. 2 of 2 arguments used.');
+		// Case #3: Array, Number. Array with negative numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({-5,-3,-1},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({-5,-3,-1},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -1, 'Test: Positive case: Array, Number. Array with negative numbers. 2 of 2 arguments used.');
+		// Case #4: Array, Number. Array with decimal numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1.5,2.5,3.5},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1.5,2.5,3.5},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3.5, 'Test: Positive case: Array, Number. Array with decimal numbers. 2 of 2 arguments used.');
+		// Case #5: Array, Number. Array with mixed boolean and number. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({TRUE,FALSE,1},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({TRUE,FALSE,1},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Array, Number. Array with mixed boolean and number. 2 of 2 arguments used.');
+		// Case #6: Reference link, Number. Range reference with numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE(A100:A102,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE(A100:A102,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Reference link, Number. Range reference with numbers. 2 of 2 arguments used.');
+		// Case #7: Area, Number. Area with two cells. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE(A100:A101,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE(A100:A101,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Test: Positive case: Area, Number. Area with two cells. 2 of 2 arguments used.');
+		// Case #8: Array, Number. Array with numbers as strings. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({"10","20","30"},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({"10","20","30"},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Array, Number. Array with numbers as strings. 2 of 2 arguments used.');
+		// Case #9: Name, Number. Named range. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE(TestName1,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE(TestName1,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Name, Number. Named range. 2 of 2 arguments used.');
+		// Case #11: Array, Number. Array operation as argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3}+{4,5,6},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3}+{4,5,6},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 9, 'Test: Positive case: Array, Number. Array operation as argument. 2 of 2 arguments used.');
+
+		// Negative cases:
+		// Case #1: Array, String. Non-numeric k argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},"text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},"text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Array, String. Non-numeric k argument. 2 of 2 arguments used.');
+		// Case #2: String, Number. Non-array text argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE("text",1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE("text",1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String, Number. Non-array text argument. 2 of 2 arguments used.');
+		// Case #3: Array, Number. Empty array. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({""},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({""},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Array, Number. Empty array. 2 of 2 arguments used.');
+		// Case #4: Array, Number. k argument is zero. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},0) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Array, Number. k argument is zero. 2 of 2 arguments used.');
+		// Case #5: Array, Number. k argument larger than array size. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Array, Number. k argument larger than array size. 2 of 2 arguments used.');
+		// Case #6: Array, Number. Negative k argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},-1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Array, Number. Negative k argument. 2 of 2 arguments used.');
+		// Case #7: Error, Number. Error value as array. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE(#N/A,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE(#N/A,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error, Number. Error value as array. 2 of 2 arguments used.');
+		// Case #8: Array, Error. Error value as k. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},#VALUE!)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},#VALUE!) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Array, Error. Error value as k. 2 of 2 arguments used.');
+		// Case #9: Empty, Number. Empty first argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE(,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE(,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Empty, Number. Empty first argument. 2 of 2 arguments used.');
+		// Case #10: Array, Empty. Empty k argument. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Array, Empty. Empty k argument. 2 of 2 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Array, Number. Minimum valid k value. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Bounded case: Array, Number. Minimum valid k value. 2 of 2 arguments used.');
+		// Case #2: Array, Number. Maximum valid k value for array size. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Array, Number. Maximum valid k value for array size. 2 of 2 arguments used.');
+		// Case #3: Array, Number. Maximum numeric value. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1E+306},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1E+306},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1e+306, 'Test: Bounded case: Array, Number. Maximum numeric value. 2 of 2 arguments used.');
+		// Case #4: Array, Number. Minimum numeric value. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1E-306},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1E-306},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1e-306, 'Test: Bounded case: Array, Number. Minimum numeric value. 2 of 2 arguments used.');
+		// Case #5: Array, Number. Fractional k that truncates to valid value. 2 of 2 arguments used.
+		oParser = new parserFormula('LARGE({1,2,3},2.999)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LARGE({1,2,3},2.999) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Array, Number. Fractional k that truncates to valid value. 2 of 2 arguments used.');
+
+		// Need to fix: 
+		// Different result with MS
+		// Case #9: Name, Number - #NUM error while enter defname as argument, 
+		// Case #2: String, Number - different error type when facing the string arg
+		// Case #4: Array, Number. k argument is zero
+		// Case #6: Array, Number. Negative k argument
+		// Case #9: Empty, Number. Empty first argument - add empty args processing
+		// Case #10: Array, Empty. Empty k argument - - add empty args processing
+
 		//TODO нужна другая функция для тестирования
 		//testArrayFormula2(assert, "LARGE", 2, 2)
 	});
