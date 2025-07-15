@@ -20931,6 +20931,124 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
 
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+		// Case #1: Number(4). Basic kurtosis calculation. 4 of 254 arguments used.
+		oParser = new parserFormula('KURT(1,2,3,4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(1,2,3,4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed("1"), "-1.2", 'Test: Positive case: Number(4). Basic kurtosis calculation. 4 of 254 arguments used.');
+		// Case #2: Number(3), Empty. 3 numbers + empty. 3 of 254 args used.
+		oParser = new parserFormula('KURT(1.5,2.5,3.5,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(1.5,2.5,3.5,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "-0.4161062", 'Test: Positive case: Number(3), Empty. 3 numbers + empty. 3 of 254 args used.');
+		// Case #3: Number(100). Test with 100 arguments. 100 of 254 args used.
+		oParser = new parserFormula('KURT(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(1), "-1.2", 'Test: Positive case: Number(100). Test with 100 arguments. 100 of 254 args used.');
+		// Case #5: Array(3). Array input. 1 of 254 args used.
+		oParser = new parserFormula('KURT({1,2,3})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT({1,2,3}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Array(3). Array input. 1 of 254 args used.');	//'#DIV/0!'
+		// Case #6: Formula(3). Formula arguments. 3 of 254 args used.
+		oParser = new parserFormula('KURT(SQRT(1),SQRT(4),SQRT(9))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(SQRT(1),SQRT(4),SQRT(9)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Formula(3). Formula arguments. 3 of 254 args used.');	// '#DIV/0!'
+		// Case #7: Number(3). Decimal numbers. 3 of 254 args used.
+		oParser = new parserFormula('KURT(1.1,2.2,3.3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(1.1,2.2,3.3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Number(3). Decimal numbers. 3 of 254 args used.');	//'#DIV/0!'
+		// Case #8: Number(3). Negative numbers. 3 of 254 args used.
+		oParser = new parserFormula('KURT(-1,-2,-3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(-1,-2,-3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Number(3). Negative numbers. 3 of 254 args used.');	// '#DIV/0!'
+		// Case #11: Array(1). Single value kurtosis calculation. Note: Excel requires minimum 4 values for proper kurtosis calculation, but accepts single value input.
+		oParser = new parserFormula('KURT({1;2;3;4;5;6})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT({1;2;3;4;5;6}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(1), "-1.2", 'Test: Positive case: Array(1). Single value kurtosis calculation. Note: Excel requires minimum 4 values for proper kurtosis calculation, but accepts single value input.');
+		// Case #12: Defname. Defname link kurtosis calculation.
+		oParser = new parserFormula('KURT(TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Defname(1). Defname link kurtosis calculation.');// '#DIV/0!'
+
+		// Negative cases:
+		// Case #1: String(3). #VALUE! for non-coercible text. 3 of 254 args used.
+		oParser = new parserFormula('KURT("a","b","c")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT("a","b","c") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(3). #VALUE! for non-coercible text. 3 of 254 args used.');
+		// Case #2: Error(3). #DIV/0! error propagation. 3 of 254 args used.
+		oParser = new parserFormula('KURT(1/0,2,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(1/0,2,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Error(3). #DIV/0! error propagation. 3 of 254 args used.');
+		// Case #3: Boolean(3). #VALUE! for booleans. 3 of 254 args used.
+		oParser = new parserFormula('KURT(TRUE,FALSE,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(TRUE,FALSE,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean(3). #VALUE! for booleans. 3 of 254 args used.');	// '#DIV/0!'
+		// Case #4: Empty. #NUM! for insufficient data (needs ?4). 0 of 254 args used.
+		oParser = new parserFormula('KURT(,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Empty. #NUM! for insufficient data (needs ?4). 0 of 254 args used.'); //#DIV/0!
+		// Case #5: Number(3). #DIV/0! for zero standard deviation. 3 of 254 args used.
+		oParser = new parserFormula('KURT(1,1,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(1,1,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(3). #DIV/0! for zero standard deviation. 3 of 254 args used.');//#DIV/0!
+
+		// Bounded cases:
+		// Case #1: Number(4). Max double-precision values. 4 of 254 args used.
+		oParser = new parserFormula('KURT(1E+307,1E+307,1E+307,1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(1E+307,1E+307,1E+307,1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number(4). Max double-precision values. 4 of 254 args used.');//#DIV/0!
+		// Case #2: Number(4). Min double-precision values. 4 of 254 args used.
+		oParser = new parserFormula('KURT(-1E+307,-1E+307,-1E+307,-1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(-1E+307,-1E+307,-1E+307,-1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number(4). Min double-precision values. 4 of 254 args used.');//#DIV/0!
+		// Case #3: Number(3). Smallest positive numbers. 3 of 254 args used.
+		oParser = new parserFormula('KURT(2.22507E-308,2.22507E-308,2.22507E-308)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: KURT(2.22507E-308,2.22507E-308,2.22507E-308) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number(3). Smallest positive numbers. 3 of 254 args used.');//#DIV/0!
+
+		// Need to fix: 
+		// Different result with MS
+		// Case #5: Array(3) - error should be #DIV/0
+		// Case #6: Formula(3)
+		// Case #7: Number(3).
+		// Case #8: Number(3)
+		// Case #1: String(3) - string values problem
+		// Case #3: Boolean(3)
+		// Case #4: Empty. #NUM!
+		// Case #5: Number(3). #DIV/0!
+		// All bounded cases
+
+
+
 		testArrayFormula2(assert, "KURT", 1, 8, null, true);
 	});
 

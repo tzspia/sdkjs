@@ -7399,7 +7399,7 @@ function (window, undefined) {
 
 		function kurt(x) {
 
-			var sumSQRDeltaX = 0, _x = 0, xLength = 0, sumSQRDeltaXDivstandDev = 0, i;
+			let sumSQRDeltaX = 0, _x = 0, xLength = 0, sumSQRDeltaXDivstandDev = 0, i;
 			for (i = 0; i < x.length; i++) {
 
 				if (x[i] instanceof cNumber) {
@@ -7419,7 +7419,7 @@ function (window, undefined) {
 
 			}
 
-			var standDev = Math.sqrt(sumSQRDeltaX / (xLength - 1));
+			let standDev = Math.sqrt(sumSQRDeltaX / (xLength - 1));
 
 			for (i = 0; i < x.length; i++) {
 
@@ -7434,9 +7434,9 @@ function (window, undefined) {
 
 		}
 
-		var arr0 = [];
+		let arr0 = [];
 
-		for (var j = 0; j < arg.length; j++) {
+		for (let j = 0; j < arg.length; j++) {
 
 			if (arg[j] instanceof cArea || arg[j] instanceof cArea3D) {
 				arg[j].foreach2(function (elem) {
@@ -7445,7 +7445,7 @@ function (window, undefined) {
 					}
 				});
 			} else if (arg[j] instanceof cRef || arg[j] instanceof cRef3D) {
-				var a = arg[j].getValue();
+				let a = arg[j].getValue();
 				if (a instanceof cNumber) {
 					arr0.push(a);
 				}
@@ -7455,10 +7455,12 @@ function (window, undefined) {
 						arr0.push(elem);
 					}
 				});
-			} else if (arg[j] instanceof cNumber || arg[j] instanceof cBool) {
+			} else if (arg[j] instanceof cNumber || arg[j] instanceof cBool || arg[j] instanceof cEmpty) {
 				arr0.push(arg[j].tocNumber());
 			} else if (arg[j] instanceof cString) {
 				continue;
+			} else if (arg[j] instanceof cError) {
+				return arg[j];
 			} else {
 				return new cError(cErrorType.wrong_value_type);
 			}
