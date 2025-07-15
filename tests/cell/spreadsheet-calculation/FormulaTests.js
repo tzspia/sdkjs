@@ -16036,7 +16036,7 @@ $(function () {
 		testArrayFormula(assert, "FACT");
 	});
 
-	QUnit.test("Test: \"GCD\"", function (assert) {
+	QUnit.test("Test: \"LCM\"", function (assert) {
 		oParser = new parserFormula("LCM(5)", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 5);
@@ -16051,7 +16051,7 @@ $(function () {
 
 		oParser = new parserFormula("LCM(0,39,52)", "A1", ws);
 		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
+		assert.strictEqual(oParser.calculate().getValue(), 0);
 
 		oParser = new parserFormula("LCM(24,36,15)", "A1", ws);
 		assert.ok(oParser.parse());

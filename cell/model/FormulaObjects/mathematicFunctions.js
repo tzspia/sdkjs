@@ -2273,12 +2273,17 @@ function (window, undefined) {
 	cLCM.prototype.argumentsType = [[argType.any]];
 	cLCM.prototype.Calculate = function (arg) {
 
-		var _lcm = 1, argArr;
+		const EMPTY_VAL = 1;
+		let _lcm = 1, argArr;
 
 		function gcd(a, b) {
-			var _a = parseInt(a), _b = parseInt(b);
-			while (_b != 0)
+			let _a = parseInt(a), _b = parseInt(b);
+			while (_b != 0) {
 				_b = _a % (_a = _b);
+				if(isNaN(b)) {
+					break;
+				}
+			}
 			return _a;
 		}
 
@@ -2286,70 +2291,123 @@ function (window, undefined) {
 			return Math.abs(parseInt(a) * parseInt(b)) / gcd(a, b);
 		}
 
-		for (var i = 0; i < arg.length; i++) {
-			var argI = arg[i];
-
-			if (argI instanceof cArea || argI instanceof cArea3D) {
+		for (let i = 0; i < arg.length; i++) {
+			let argI = arg[i];
+			if (argI.type === cElementType.cellsRange || argI.type === cElementType.cellsRange3D) {
 				argArr = argI.getValue();
-				for (var j = 0; j < argArr.length; j++) {
+				for (let j = 0; j < argArr.length; j++) {
 
-					if (argArr[j] instanceof cError) {
-						return argArr[j];
-					}
-
-					if (argArr[j] instanceof cString) {
-						continue;
-					}
-
-					if (argArr[j] instanceof cBool) {
+					if (argArr[j].type === cElementType.string) {
 						argArr[j] = argArr[j].tocNumber();
 					}
 
-					if (argArr[j].getValue() <= 0) {
+					if (argArr[j].type === cElementType.error) {
+						return argArr[j];
+					}
+
+					let argValue = argArr[j].getValue();
+					if (argArr[j].type === cElementType.bool) {
+						return new cError(cErrorType.wrong_value_type);
+					}
+
+					if (argArr[j].type === cElementType.empty) {
+						argValue = EMPTY_VAL;
+					}
+
+					if (argValue < 0) {
+						return new cError(cErrorType.not_numeric);
+					} else if (argValue < 1) {
+						argValue = 0;
+					} else if (argValue > 9 * Math.pow(10,15)) {
 						return new cError(cErrorType.not_numeric);
 					}
 
-					_lcm = lcm(_lcm, argArr[j].getValue());
+					if (_lcm.type &&_lcm.type === cElementType.error) {
+						return _lcm;
+					} else {
+						_lcm = lcm(_lcm, argValue);
+					}
 				}
-			} else if (argI instanceof cArray) {
-				argArr = argI.tocNumber();
+			} else if (argI.type === cElementType.array) {
+				argArr = argI;
 
-				if (argArr.foreach(function (arrElem) {
+				if (argI.foreach(function (arrElem) {
 
-					if (arrElem instanceof cError) {
+					let argValue = arrElem && arrElem.getValue();
+					if (arrElem.type === cElementType.error) {
 						_lcm = arrElem;
 						return true;
 					}
 
-					if (arrElem instanceof cBool) {
-						arrElem = arrElem.tocNumber();
-					}
-
-					if (arrElem instanceof cString) {
+					if (arrElem.type === cElementType.bool) {
+						_lcm = new cError(cErrorType.wrong_value_type);
 						return;
 					}
 
-					if (arrElem.getValue() <= 0) {
+					if (arrElem.type === cElementType.string) {
+						arrElem = arrElem.tocNumber();
+						if (arrElem.type === cElementType.error) {
+							_lcm = new cError(cErrorType.wrong_value_type);
+							return;
+						}
+						argValue = arrElem.getValue();
+					}
+
+					if (arrElem.type === cElementType.empty) {
+						argValue = EMPTY_VAL;
+					}
+
+					if (argValue < 0) {
+						_lcm = new cError(cErrorType.not_numeric);
+						return true;
+					} else if (argValue < 1) {
+						_lcm = new cNumber(0);
+						return true;
+					} else if (argValue > 9 * Math.pow(10,15)) {
 						_lcm = new cError(cErrorType.not_numeric);
 						return true;
 					}
-					_lcm = lcm(_lcm, arrElem.getValue());
+
+					if (_lcm.type && _lcm.type === cElementType.error) {
+						return _lcm;
+					} else {
+						_lcm = lcm(_lcm, argValue);
+					}
 
 				})) {
 					return _lcm;
 				}
 			} else {
-				argI = argI.tocNumber();
+				let isEmptyArg = (argI.type === cElementType.empty);
 
-				if (argI.getValue() <= 0) {
-					return new cError(cErrorType.not_numeric);
+				if (argI.type === cElementType.bool) {
+					return new cError(cErrorType.wrong_value_type);
 				}
 
-				if (argI instanceof cError) {
+				argI = argI.tocNumber();
+
+				if (argI.type === cElementType.error) {
 					return argI;
 				}
 
-				_lcm = lcm(_lcm, argI.getValue())
+				let argValue = argI.getValue();
+				if (isEmptyArg) {
+					argValue = EMPTY_VAL;
+				}
+
+				if (argValue < 0) {
+					return new cError(cErrorType.not_numeric);
+				} else if (argValue < 1) {
+					return new cNumber(0);
+				} else if (argValue > 9 * Math.pow(10,15)) {
+					return new cError(cErrorType.not_numeric);
+				}
+
+				if (_lcm.type && _lcm.type === cElementType.error) {
+					return _lcm;
+				} else {
+					_lcm = lcm(_lcm, argValue);
+				}
 			}
 		}
 
