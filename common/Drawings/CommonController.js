@@ -10752,7 +10752,12 @@
 		};
 		CGeometryEditSelection.prototype.getTrack = function (x, y) {
 			if (!this.geometryEditTrack || !this.geometryEditTrack.isCorrect()) {
-				this.geometryEditTrack = new AscFormat.EditShapeGeometryTrack(this.drawing, this.drawingObjects);
+				if (this.drawing.IsAnnot && this.drawing.IsAnnot() && this.drawing.IsLine()) {
+					this.geometryEditTrack = new AscFormat.EditLineAnnotGeometryTrack(this.drawing, this.drawingObjects);
+				}
+				else {
+					this.geometryEditTrack = new AscFormat.EditShapeGeometryTrack(this.drawing, this.drawingObjects);
+				}
 			}
 			return this.geometryEditTrack;
 		};
@@ -10768,7 +10773,13 @@
 				if (this.drawingObjects.handleEventMode === AscFormat.HANDLE_EVENT_MODE_CURSOR) {
 					return {objectId: this.drawing.Get_Id(), cursorType: "crosshair", bMarker: true};
 				} else {
-					this.drawingObjects.addPreTrackObject(new AscFormat.EditShapeGeometryTrack(this.drawing, this.drawingObjects));
+					if (this.drawing.IsAnnot && this.drawing.IsAnnot() && this.drawing.IsLine()) {
+						this.drawingObjects.addPreTrackObject(new AscFormat.EditLineAnnotGeometryTrack(this.drawing, this.drawingObjects));
+					}
+					else {
+						this.drawingObjects.addPreTrackObject(new AscFormat.EditShapeGeometryTrack(this.drawing, this.drawingObjects));
+					}
+					
 					this.drawingObjects.changeCurrentState(new PreGeometryEditState(this.drawingObjects, this.drawing, x, y, oHit));
 					this.drawingObjects.checkFormatPainterOnMouseEvent();
 					return true;

@@ -1369,6 +1369,86 @@
     };
 
 
+    function EditLineAnnotGeometryTrack(originalObject, drawingObjects, extX, extY) {
+        EditShapeGeometryTrack.call(this, originalObject, drawingObjects, extX, extY);
+    }
+
+    EditLineAnnotGeometryTrack.prototype = Object.create(EditShapeGeometryTrack.prototype);
+	EditLineAnnotGeometryTrack.prototype.constructor = EditLineAnnotGeometryTrack;
+
+    EditLineAnnotGeometryTrack.prototype.track = function (e, posX, posY) {
+        AscFormat.ExecuteNoHistory(function () {
+            const geom    = this.geometry;
+            const overlay = this.overlayGeometry;
+            const annot   = this.originalObject;
+            const coef    = g_dKoef_pt_to_mm;
+
+            // Convert global cursor coordinates to local
+            const inv  = this.originalShape.invertTransform;
+            const relX = inv.TransformPointX(posX, posY);
+            const relY = inv.TransformPointY(posX, posY);
+
+            const idx = this.drawingObjects.selection.geometrySelection.getGmEditPtIdx();
+            if (idx == null) return;
+
+            // Base points of the legs
+            const leftCmd  = geom.pathLst[1].ArrPathCommand;
+            const rightCmd = geom.pathLst[2].ArrPathCommand;
+
+            let baseX1 = leftCmd[0].X,  baseY1 = leftCmd[0].Y;
+            let baseX2 = rightCmd[0].X, baseY2 = rightCmd[0].Y;
+
+            // Moving the leg point
+            if (idx === 2 || idx === 3) {
+                baseX1 = relX; baseY1 = relY;
+            } else if (idx === 4 || idx === 5) {
+                baseX2 = relX; baseY2 = relY;
+            }
+
+            const leadLenPt = annot.GetLeaderLength();
+            const leadExtPt = annot.GetLeaderExtend();
+            const srcLiftMM = leadLenPt ? Math.abs(leadLenPt) * coef : 0;
+            const extMM     = leadExtPt  ? leadExtPt * coef          : 0;
+
+            // Normal vector direction
+            const dx = baseX2 - baseX1, dy = baseY2 - baseY1;
+            const d  = Math.hypot(dx, dy) || 1;
+            const nx = -dy / d, ny = dx / d;
+
+            /*** NEW: recalculate lift if the main line is moved ***/
+            let liftMM = srcLiftMM;
+            if (idx === 0 || idx === 1) { // dragging main line
+                const baseX = idx === 0 ? baseX1 : baseX2;
+                const baseY = idx === 0 ? baseY1 : baseY2;
+                // Project cursor vector onto normal
+                liftMM = Math.max(0, (relX - baseX) * nx + (relY - baseY) * ny);
+            }
+            const legLenMM = liftMM + extMM;
+            /******************************************************/
+
+            // Clear overlay paths
+            overlay.pathLst.forEach(p => { p.ArrPathCommand.length = 0; });
+
+            // Main line
+            overlay.pathLst[0].ArrPathCommand.push(
+                { id: AscFormat.moveTo, X: baseX1 + nx * liftMM, Y: baseY1 + ny * liftMM },
+                { id: AscFormat.lineTo, X: baseX2 + nx * liftMM, Y: baseY2 + ny * liftMM }
+            );
+
+            // Left leg
+            overlay.pathLst[1].ArrPathCommand.push(
+                { id: AscFormat.moveTo, X: baseX1, Y: baseY1 },
+                { id: AscFormat.lineTo, X: baseX1 + nx * legLenMM, Y: baseY1 + ny * legLenMM }
+            );
+
+            // Right leg
+            overlay.pathLst[2].ArrPathCommand.push(
+                { id: AscFormat.moveTo, X: baseX2, Y: baseY2 },
+                { id: AscFormat.lineTo, X: baseX2 + nx * legLenMM, Y: baseY2 + ny * legLenMM }
+            );
+        }, this);
+    };
+
     function CGeomHitData(gmEditPointIdx, isHitInFirstCPoint, isHitInSecondCPoint, addingNewPoint) {
         this.gmEditPointIdx = gmEditPointIdx;
         this.isHitInFirstCPoint = isHitInFirstCPoint;
@@ -1381,6 +1461,7 @@
 
     window['AscFormat'] = window['AscFormat'] || {};
     window['AscFormat'].EditShapeGeometryTrack = EditShapeGeometryTrack;
+    window['AscFormat'].EditLineAnnotGeometryTrack = EditLineAnnotGeometryTrack;
 
 
 

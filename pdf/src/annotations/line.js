@@ -108,25 +108,54 @@
         return this._captionPos;
     };
     CAnnotationLine.prototype.RefillGeometry = function() {
-        let oViewer = editor.getDocumentRenderer();
-        let oDoc    = oViewer.getPDFDoc();
-        
-        let aPoints = this.GetLinePoints();
-        let aLinePoints = [];
-        for (let i = 0; i < aPoints.length - 1; i += 2) {
-            aLinePoints.push({
-                x: aPoints[i] * g_dKoef_pt_to_mm,
-                y: (aPoints[i + 1])* g_dKoef_pt_to_mm
-            });
-        }
-        
-        let aShapeRectInMM = this.GetOrigRect().map(function(measure) {
+        // Convert bbox from pt to mm
+        let rectMM = this.GetOrigRect().map(function(measure) {
             return measure * g_dKoef_pt_to_mm;
         });
+        
+        // Original points in pt
+        let pts         = this.GetLinePoints();      // [x1,y1,x2,y2] in pt
+        let leaderExtPt = this.GetLeaderExtend();    // null or pt
+        let leaderLenPt = this.GetLeaderLength();    // null or pt
 
-        oDoc.StartNoHistoryMode();
-        AscPDF.fillShapeByPoints([aLinePoints], aShapeRectInMM, this);
-        oDoc.EndNoHistoryMode();
+        // Convert leader parameters to mm
+        let liftMM = leaderLenPt != null ? Math.abs(leaderLenPt) * g_dKoef_pt_to_mm : 0;
+        let extMM  = leaderExtPt != null ? leaderExtPt * g_dKoef_pt_to_mm : null;
+
+        // Endpoints in mm
+        let x1 = pts[0] * g_dKoef_pt_to_mm, y1 = pts[1] * g_dKoef_pt_to_mm;
+        let x2 = pts[2] * g_dKoef_pt_to_mm, y2 = pts[3] * g_dKoef_pt_to_mm;
+
+        // Normalized perpendicular vector (mm)
+        let dx   = x2 - x1, dy = y2 - y1;
+        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        let nx   = -dy / dist, ny =  dx / dist;
+
+        AscCommon.History.StartNoHistoryMode();
+
+        // Main line shifted by liftMM along the normal
+        let mainLine = [
+            { x: x1 + nx * liftMM, y: y1 + ny * liftMM },
+            { x: x2 + nx * liftMM, y: y2 + ny * liftMM }
+        ];
+
+        // Соберём все сегменты
+        let shapes = [ mainLine ];
+
+        if (extMM != null) {
+            let totalMM = liftMM + extMM;
+            // Концы ножек в mm
+            let x1t = x1 + nx * totalMM, y1t = y1 + ny * totalMM;
+            let x2t = x2 + nx * totalMM, y2t = y2 + ny * totalMM;
+
+            shapes.push(
+                [ { x: x1,  y: y1  }, { x: x1t, y: y1t } ],
+                [ { x: x2,  y: y2  }, { x: x2t, y: y2t } ]
+            );
+        }
+
+        AscPDF.fillShapeByPoints(shapes, rectMM, this);
+        AscCommon.History.EndNoHistoryMode();
     };
     CAnnotationLine.prototype.SetLeaderLineOffset = function(nValue) {
         this._leaderLineOffset = nValue;
