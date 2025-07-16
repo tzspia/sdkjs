@@ -8752,6 +8752,161 @@ $(function () {
 		assert.ok(oParser.parse(), 'LEN(TRUE)');
 		assert.strictEqual(oParser.calculate().getValue(), 4, 'LEN(TRUE)');
 
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A104").setValue("#N/A");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: String. Basic string input. 1 argument used.
+		oParser = new parserFormula('LEN("Test")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN("Test") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: String. Basic string input. 1 argument used.');
+		// Case #2: Number. Number converted to string. 1 argument used.
+		oParser = new parserFormula('LEN(123)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(123) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Number. Number converted to string. 1 argument used.');
+		// Case #3: Empty. Empty string returns 0. 1 argument used.
+		oParser = new parserFormula('LEN("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Empty. Empty string returns 0. 1 argument used.');
+		// Case #4: Reference link. Ref to cell with text. 1 argument used.
+		oParser = new parserFormula('LEN(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Reference link. Ref to cell with text. 1 argument used.');
+		// Case #5: Area. Single-cell range. 1 argument used.
+		oParser = new parserFormula('LEN(A101:A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(A101:A101) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Area. Single-cell range. 1 argument used.');
+		// Case #6: Array. Array with single element. 1 argument used.
+		oParser = new parserFormula('LEN({"Excel"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN({"Excel"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Array. Array with single element. 1 argument used.');
+		// Case #7: Name. Named range with text. 1 argument used.
+		oParser = new parserFormula('LEN(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Name. Named range with text. 1 argument used.');
+		// Case #8: Name3D. 3D named range. 1 argument used.
+		oParser = new parserFormula('LEN(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Name3D. 3D named range. 1 argument used.');
+		// Case #9: Ref3D. 3D reference to cell. 1 argument used.
+		oParser = new parserFormula('LEN(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Ref3D. 3D reference to cell. 1 argument used.');
+		// Case #10: Area3D. 3D single-cell range. 1 argument used.
+		oParser = new parserFormula('LEN(Sheet2!A1:A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(Sheet2!A1:A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Area3D. 3D single-cell range. 1 argument used.');
+		// Case #11: Table. Table structured reference. 1 argument used.
+		oParser = new parserFormula('LEN(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Table. Table structured reference. 1 argument used.');
+		// Case #12: Date. Date as serial number. 1 argument used.
+		oParser = new parserFormula('LEN(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Date. Date as serial number. 1 argument used.');
+		// Case #13: Time. Time formula. 1 argument used.
+		oParser = new parserFormula('LEN(TIME(12,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(TIME(12,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Time. Time formula. 1 argument used.');
+		// Case #14: Formula. Nested formula. 1 argument used.
+		oParser = new parserFormula('LEN(UPPER("text"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(UPPER("text")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Formula. Nested formula. 1 argument used.');
+		// Case #15: String. String with spaces. 1 argument used.
+		oParser = new parserFormula('LEN("   ")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN("   ") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: String. String with spaces. 1 argument used.');
+		// Case #16: String. Numeric string. 1 argument used.
+		oParser = new parserFormula('LEN("123.45")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN("123.45") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 6, 'Test: Positive case: String. Numeric string. 1 argument used.');
+		// Case #17: Boolean. Boolean converted to string. 1 argument used.
+		oParser = new parserFormula('LEN(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Boolean. Boolean converted to string. 1 argument used.');
+		// Case #18: Error. Error value. 1 argument used.
+		oParser = new parserFormula('LEN(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Positive case: Error. Error value. 1 argument used.');
+		// Case #19: Array. Multi-element array. 1 argument used.
+		oParser = new parserFormula('LEN({"A","B"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN({"A","B"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Array. Multi-element array. 1 argument used.');
+		// Case #20: Formula. LEN inside SUM formula. 1 argument used.
+		oParser = new parserFormula('SUM(LEN("A"),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(LEN("A"),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Formula. LEN inside SUM formula. 1 argument used.');
+
+		// Negative cases:
+		// Case #1: Reference link. Ref to empty cell returns 0.
+		oParser = new parserFormula('LEN(A122)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(A122) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Reference link. Ref to empty cell returns 0.');
+		// Case #2: Reference link. Ref to error cell returns error.
+		oParser = new parserFormula('LEN(A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(A104) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Test: Negative case: Reference link. Ref to error cell returns error.');
+		// Case #3: Area. Multi-cell range returns error.
+		oParser = new parserFormula('LEN(A104:A105)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(A104:A105) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Test: Negative case: Area. Multi-cell range returns error.');
+		// Case #4: String. String with error name. 1 argument used.
+		oParser = new parserFormula('LEN("#VALUE!")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN("#VALUE!") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Negative case: String. String with error name. 1 argument used.');
+		// Case #5: Empty. Missing argument returns error.
+		oParser = new parserFormula('LEN()', 'A2', ws);
+		assert.ok(oParser.parse() === false, 'Test: LEN() is not parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NAME?', 'Test: Negative case: Empty. Missing argument returns error.');
+
+		// Bounded cases:
+		// Case #1: String. Max string length in Excel. 1 argument used.
+		oParser = new parserFormula('LEN(REPT("A",32767))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(REPT("A",32767)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 32767, 'Test: Bounded case: String. Max string length in Excel. 1 argument used.');
+		// Case #2: String. Min non-zero string length. 1 argument used.
+		oParser = new parserFormula('LEN(REPT("A",1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(REPT("A",1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: String. Min non-zero string length. 1 argument used.');
+		// Case #3: Number. Max Excel number converted to string. 1 argument used.
+		oParser = new parserFormula('LEN(9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEN(9.99999999999999E+307) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 6, 'Test: Bounded case: Number. Max Excel number converted to string. 1 argument used.');
+
+		// Need to fix: areas cross check should be changed to array returns
+		// Different result with MS
+		// Case #5: Area. Single-cell range
+		// Case #3: Area. Multi-cell range returns error
+		// Case #3: Number. Max Excel number converted to string - different result
+
+
 		testArrayFormula2(assert, "LEN", 1, 1);
 	});
 
