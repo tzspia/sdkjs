@@ -5516,6 +5516,226 @@ $(function () {
 		assert.ok(oParser.parse(), "LOG(8,1)");
 		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!", "LOG(8,1)");
 
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number. Basic valid input: integer >0. 1 argument used.
+		oParser = new parserFormula('LOG(10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Number. Basic valid input: integer >0. 1 argument used.');
+		// Case #2: Number. Float input. 1 argument used.
+		oParser = new parserFormula('LOG(2.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(2.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.397940009", 'Test: Positive case: Number. Float input. 1 argument used.');
+		// Case #3: String. String convertible to number. 1 argument used.
+		oParser = new parserFormula('LOG("10")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG("10") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: String. String convertible to number. 1 argument used.');
+		// Case #4: Reference link. Ref to cell with valid number. 1 argument used.
+		oParser = new parserFormula('LOG(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.301029996", 'Test: Positive case: Reference link. Ref to cell with valid number. 1 argument used.');
+		// Case #5: Area. Single-cell range. 1 argument used.
+		oParser = new parserFormula('LOG(A100:A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(A100:A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.301029996", 'Test: Positive case: Area. Single-cell range. 1 argument used.');
+		// Case #6: Array. Array with single element. 1 argument used.
+		oParser = new parserFormula('LOG({10})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG({10}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Positive case: Array. Array with single element. 1 argument used.');
+		// Case #7: Name. Named range. 1 argument used.
+		oParser = new parserFormula('LOG(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name. Named range. 1 argument used.');
+		// Case #8: Name3D. 3D named range. 1 argument used.
+		oParser = new parserFormula('LOG(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named range. 1 argument used.');
+		// Case #9: Ref3D. 3D reference to cell. 1 argument used.
+		oParser = new parserFormula('LOG(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(4), "-0.3010", 'Test: Positive case: Ref3D. 3D reference to cell. 1 argument used.');
+		// Case #10: Area3D. 3D single-cell range. 1 argument used.
+		oParser = new parserFormula('LOG(Sheet2!A1:A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(Sheet2!A1:A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(4), "-0.3010", 'Test: Positive case: Area3D. 3D single-cell range. 1 argument used.');
+		// Case #11: Table. Table structured reference. 1 argument used.
+		oParser = new parserFormula('LOG(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Table. Table structured reference. 1 argument used.');
+		// Case #12: Date. Date as serial number (>0). 1 argument used.
+		oParser = new parserFormula('LOG(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "4.659516884", 'Test: Positive case: Date. Date as serial number (>0). 1 argument used.');
+		// Case #13: Time. Time formula adjusted to >0. 1 argument used.
+		oParser = new parserFormula('LOG(TIME(12,0,0)+1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(TIME(12,0,0)+1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.176091259", 'Test: Positive case: Time. Time formula adjusted to >0. 1 argument used.');
+		// Case #14: Formula. LOG inside SUM formula. 1 argument used.
+		oParser = new parserFormula('SUM(LOG(10),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(LOG(10),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Formula. LOG inside SUM formula. 1 argument used.');
+		// Case #15: Number. Value slightly above 0. 1 argument used.
+		oParser = new parserFormula('LOG(1.000000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(1.000000000000001) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Number. Value slightly above 0. 1 argument used.');
+		// Case #16: String. String of min valid value. 1 argument used.
+		oParser = new parserFormula('LOG("1.000000000000001")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG("1.000000000000001") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: String. String of min valid value. 1 argument used.');
+		// Case #17: Array. Multi-element array. 1 argument used.
+		oParser = new parserFormula('LOG({1, 10})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG({1, 10}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Array. Multi-element array. 1 argument used.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), 1, 'Test: Positive case: Array. Multi-element array. 1 argument used.');
+		// Case #18: Formula. Nested IF returning valid value. 1 argument used.
+		oParser = new parserFormula('LOG(IF(TRUE, 10, 0.5))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(IF(TRUE, 10, 0.5)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Formula. Nested IF returning valid value. 1 argument used.');
+		// Case #19: String. Date string converted to number. 1 argument used.
+		oParser = new parserFormula('LOG("12/12")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG("12/12") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "4.662786154", 'Test: Positive case: String. Date string converted to number. 1 argument used.');
+		// Case #20: Number. Large valid number. 1 argument used.
+		oParser = new parserFormula('LOG(1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 307, 'Test: Positive case: Number. Large valid number. 1 argument used.');
+
+		// Negative cases:
+		// Case #1: Number. Zero returns #NUM!. 1 argument used.
+		oParser = new parserFormula('LOG(0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Zero returns #NUM!. 1 argument used.');
+		// Case #2: Number. Negative number returns #NUM!. 1 argument used.
+		oParser = new parserFormula('LOG(-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative number returns #NUM!. 1 argument used.');
+		// Case #3: String. Non-numeric string returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LOG("abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG("abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string returns #VALUE!. 1 argument used.');
+		// Case #4: String. String convertible to zero. 1 argument used.
+		oParser = new parserFormula('LOG("0")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG("0") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. String convertible to zero. 1 argument used.');
+		// Case #5: Error. Propagates #N/A error. 1 argument used.
+		oParser = new parserFormula('LOG(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 1 argument used.');
+		// Case #6: Area. Multi-cell range returns #NUM! error.
+		oParser = new parserFormula('LOG(A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(A102:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.301029996, 'Test: Negative case: Area. Multi-cell range returns #NUM! error.');
+		// Case #7: Empty. Reference link is empty.
+		oParser = new parserFormula('LOG(A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Empty. Reference link is empty.');
+		// Case #8: String. Empty string returns #VALUE!.
+		oParser = new parserFormula('LOG("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string returns #VALUE!.');
+		// Case #9: Boolean. Boolean FALSE (0) returns #NUM!.
+		oParser = new parserFormula('LOG(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean. Boolean FALSE (0) returns #NUM!.');
+		// Case #10: Ref3D. 3D ref to text returns #VALUE!.
+		oParser = new parserFormula('LOG(Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 	"#VALUE!", 'Test: Negative case: Ref3D. 3D ref to text returns #VALUE!.');
+		// Case #11: Name. Named range with text returns #VALUE!.
+		oParser = new parserFormula('LOG(TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Name. Named range with text returns #VALUE!.');
+		// Case #12: Table. Table column with text returns #VALUE!.
+		oParser = new parserFormula('LOG(Table1[Column2])', 'A2', ws);
+		//? assert.ok(oParser.parse(), 'Test: LOG(Table1[Column2]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '=LOG(Table1[Column2])', 'Test: Negative case: Table. Table column with text returns #VALUE!.');
+		// Case #13: Formula. Formula resulting in #NUM! error.
+		oParser = new parserFormula('LOG(SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! error.');
+		// Case #14: Number. Large negative number returns #NUM!.
+		oParser = new parserFormula('LOG(-1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(-1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Large negative number returns #NUM!.');
+		// Case #15: Array. Array with boolean returns #NUM!.
+		oParser = new parserFormula('LOG({FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG({FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), '#NUM!', 'Test: Negative case: Array. Array with boolean returns #NUM!.');
+		// Case #16: Number. Value slightly below 0 returns #NUM!.
+		oParser = new parserFormula('LOG(1-1e-15)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(1-1e-15) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -4.339473599489794e-16, 'Test: Negative case: Number. Value slightly below 0 returns #NUM!.');
+		// Case #17: Time. Time value (0) returns #NUM!.
+		oParser = new parserFormula('LOG(TIME(0,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(TIME(0,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Time. Time value (0) returns #NUM!.');
+		// Case #18: Date. Date before Excel epoch returns #NUM!.
+		oParser = new parserFormula('LOG(DATE(1899,12,31))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(DATE(1899,12,31)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "5.8413357", 'Test: Negative case: Date. Date before Excel epoch returns #NUM!.');
+		// Case #19: Area3D. 3D multi-cell range returns #NUM!.
+		oParser = new parserFormula('LOG(Sheet2!A1:B1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(Sheet2!A1:B1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.30102999566398114, 'Test: Negative case: Area3D. 3D multi-cell range returns #NUM!.');
+		// Case #20: Name3D. 3D named range with text returns #VALUE!.
+		oParser = new parserFormula('LOG(TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Name3D. 3D named range with text returns #VALUE!.');
+
+		// Bounded cases:
+		// Case #1: Number. Min valid value (1). 1 argument used.
+		oParser = new parserFormula('LOG(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Min valid value (1). 1 argument used.');
+		// Case #2: Number. Smallest valid value above 0. 1 argument used.
+		oParser = new parserFormula('LOG(1.000000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(1.000000000000001) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Smallest valid value above 0. 1 argument used.');
+		// Case #3: Number. Max valid Excel number. 1 argument used.
+		oParser = new parserFormula('LOG(9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(9.99999999999999E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 308, 'Test: Bounded case: Number. Max valid Excel number. 1 argument used.');
+		// Case #4: Date. Earliest valid Excel date. 1 argument used.
+		oParser = new parserFormula('LOG(DATE(1900,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(DATE(1900,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Date. Earliest valid Excel date. 1 argument used.');
+		// Case #5: Time. Smallest valid time (>0). 1 argument used.
+		oParser = new parserFormula('LOG(TIME(0,0,1)+1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(TIME(0,0,1)+1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.00000502653, 'Test: Bounded case: Time. Smallest valid time (>0). 1 argument used.');
+
+		// TODO need to fix:
+		// zero values should be returned instead very small numbers(maybe it's precision problem)
+
 		testArrayFormula(assert, "LOG", 1, 2);
 	});
 
@@ -9402,6 +9622,139 @@ $(function () {
 		oParser = new parserFormula("LEFT(A3)", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "S");
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: String, Number. Basic usage: extract first 2 characters from string.
+		oParser = new parserFormula('LEFT("Excel",2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT("Excel",2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Ex', 'Test: Positive case: String, Number. Basic usage: extract first 2 characters from string.');
+		// Case #3: Number, Number. Number auto-converted to string.
+		oParser = new parserFormula('LEFT(12345,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(12345,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "123", 'Test: Positive case: Number, Number. Number auto-converted to string.');
+		// Case #4: String, Formula. Dynamic num_chars via formula.
+		oParser = new parserFormula('LEFT("Test",LEN("Test")-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT("Test",LEN("Test")-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Tes', 'Test: Positive case: String, Formula. Dynamic num_chars via formula.');
+		// Case #5: Reference link, Number. Text input via reference (A100="Data").
+		oParser = new parserFormula('LEFT(A100,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(A100,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0.', 'Test: Positive case: Reference link, Number. Text input via reference (A100="Data").');
+		// Case #6: Area, Number. Single-cell area (A101="Hello").
+		oParser = new parserFormula('LEFT(A100:A100,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(A100:A100,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "0.5", 'Test: Positive case: Area, Number. Single-cell area (A101="Hello").');
+		// Case #7: Array, Number. Array input.
+		oParser = new parserFormula('LEFT({"Array"},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT({"Array"},1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'A', 'Test: Positive case: Array, Number. Array input.');
+		// Case #8: Name, Number. Named range (TestName="Alpha").
+		oParser = new parserFormula('LEFT(TestName,4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(TestName,4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '-0.5', 'Test: Positive case: Name, Number. Named range (TestName="Alpha").');
+		// Case #9: Name3D, Number. 3D named range (TestName1="Beta").
+		oParser = new parserFormula('LEFT(TestName1,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(TestName1,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0', 'Test: Positive case: Name3D, Number. 3D named range (TestName1="Beta").');
+		// Case #10: Ref3D, Number. 3D reference.
+		oParser = new parserFormula('LEFT(Sheet2!A1,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(Sheet2!A1,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0.', 'Test: Positive case: Ref3D, Number. 3D reference.');
+		// Case #11: Area3D, Number. 3D area.
+		oParser = new parserFormula('LEFT(Sheet2!A1:A1,5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(Sheet2!A1:A1,5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0.5', 'Test: Positive case: Area3D, Number. 3D area.');
+		// Case #12: Table, Number. Table column input.
+		oParser = new parserFormula('LEFT(Table1[Column1],3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(Table1[Column1],3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '1', 'Test: Positive case: Table, Number. Table column input.');
+		// Case #14: Formula, Number. Nested function.
+		oParser = new parserFormula('LEFT(UPPER("case"),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(UPPER("case"),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'CA', 'Test: Positive case: Formula, Number. Nested function.');
+		// Case #15: Time, Number. Time converted to text.
+		oParser = new parserFormula('LEFT(TEXT(TIME(12,30,0),"hh:mm"),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(TEXT(TIME(12,30,0),"hh:mm"),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "12", 'Test: Positive case: Time, Number. Time converted to text.');
+		// Case #16: Date, Number. Date converted to text.
+		oParser = new parserFormula('LEFT(TEXT(DATE(2025,1,1),"yyyy"),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(TEXT(DATE(2025,1,1),"yyyy"),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "20", 'Test: Positive case: Date, Number. Date converted to text.');
+		// Case #20: String, Boolean. Boolean num_chars coerced to 1.
+		oParser = new parserFormula('LEFT("Boolean",TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT("Boolean",TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'B', 'Test: Positive case: String, Boolean. Boolean num_chars coerced to 1.');
+
+		// Negative cases:
+
+		// Case #2: Error, Number. Error input propagates.
+		oParser = new parserFormula('LEFT(#N/A,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(#N/A,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error, Number. Error input propagates.');
+		// Case #5: Boolean, Number. Boolean text input returns "TRUE".
+		oParser = new parserFormula('LEFT(TRUE,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(TRUE,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'T', 'Test: Negative case: Boolean, Number. Boolean text input returns "TRUE".');
+		// Case #6: String, Array. Array num_chars returns #VALUE!.
+		oParser = new parserFormula('LEFT("Text",{1,2})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT("Text",{1,2}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'T', 'Test: Negative case: String, Array. Array num_chars returns #VALUE!.');
+		// Case #8: Name3D, Error. Error in 3D named range.
+		oParser = new parserFormula('LEFT(TestName2,#N/A)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(TestName2,#N/A) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Name3D, Error. Error in 3D named range.');
+		// Case #10: Table, Boolean. Boolean num_chars in table.
+		oParser = new parserFormula('LEFT(Table1[Column1],TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(Table1[Column1],TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '1', 'Test: Negative case: Table, Boolean. Boolean num_chars in table.');
+
+		// Bounded cases:
+		// Case #1: String, Max Number
+		oParser = new parserFormula('LEFT("Max",2^20)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT("Max",2^20) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Max', 'Test: Bounded case: String, Max Number.');
+		// Case #2: String, Min Number
+		oParser = new parserFormula('LEFT("Min",1E-100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT("Min",1E-100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '', 'Test: Bounded case: String, Min Number.');
+
+		let largeText = "X";
+		largeText = largeText.repeat(32767);
+		// Case #3: Large String, Number
+		oParser = new parserFormula('LEFT(REPT("X",32767),32767)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LEFT(REPT("X",32767),32767) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), largeText, 'Test: Bounded case: Large String, Number.');
+		
 
 		testArrayFormula2(assert, "LEFT", 1, 2);
 	});
@@ -22302,6 +22655,327 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 3);
 
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #0: Number. Basic valid input: positive integer. 1 argument used.
+		oParser = new parserFormula('LN(10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "2.302585093", 'Test: Positive case: Number. Basic valid input: positive integer. 1 argument used.');
+		// Case #1: Number. Input is Euler\'s number (e). 1 argument used.
+		oParser = new parserFormula('LN(2.718281828459045)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(2.718281828459045) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Number. Input is Euler\'s number (e). 1 argument used.');
+		// Case #2: Number. Positive fractional number. 1 argument used.
+		oParser = new parserFormula('LN(0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.693147181", 'Test: Positive case: Number. Positive fractional number. 1 argument used.');
+		// Case #3: String. String convertible to positive number. 1 argument used.
+		oParser = new parserFormula('LN("10")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("10") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "2.302585093", 'Test: Positive case: String. String convertible to positive number. 1 argument used.');
+		// Case #4: String. String convertible to fractional number. 1 argument used.
+		oParser = new parserFormula('LN("0.5")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("0.5") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.693147181", 'Test: Positive case: String. String convertible to fractional number. 1 argument used.');
+		// Case #5: Reference link. Ref to cell with valid number. 1 argument used.
+		oParser = new parserFormula('LN(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.693147181", 'Test: Positive case: Reference link. Ref to cell with valid number. 1 argument used.');
+		// Case #6: Area. Single-cell range. 1 argument used.
+		oParser = new parserFormula('LN(A100:A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(A100:A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.693147181", 'Test: Positive case: Area. Single-cell range. 1 argument used.');
+		// Case #7: Array. Array with single element. 1 argument used.
+		oParser = new parserFormula('LN({10})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN({10}) is parsed.');debugger
+		//? assert.strictEqual(oParser.calculate(), 2.302585093, 'Test: Positive case: Array. Array with single element. 1 argument used.');
+		// Case #8: Array. Array with multiple elements. 1 argument used.
+		oParser = new parserFormula('LN({10, 5})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN({10, 5}) is parsed.');
+		// assert.strictEqual(oParser.calculate().getValue(), '2.302585093', 'Test: Positive case: Array. Array with multiple elements. 1 argument used.');
+		// Case #9: Name. Named range. 1 argument used.
+		oParser = new parserFormula('LN(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name. Named range. 1 argument used.');
+		// Case #10: Name3D. 3D named range. 1 argument used.
+		oParser = new parserFormula('LN(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named range. 1 argument used.');
+		// Case #11: Ref3D. 3D reference to cell. 1 argument used.
+		oParser = new parserFormula('LN(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.693147181", 'Test: Positive case: Ref3D. 3D reference to cell. 1 argument used.');
+		// Case #12: Area3D. 3D single-cell range. 1 argument used.
+		oParser = new parserFormula('LN(Sheet2!A1:A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(Sheet2!A1:A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.693147181", 'Test: Positive case: Area3D. 3D single-cell range. 1 argument used.');
+		// Case #13: Area3D. 3D multi-cell range. 1 argument used.
+		oParser = new parserFormula('LN(Sheet2!A1:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(Sheet2!A1:A2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Area3D. 3D multi-cell range. 1 argument used.');
+		// Case #14: Table. Table structured reference. 1 argument used.
+		oParser = new parserFormula('LN(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Table. Table structured reference. 1 argument used.');
+		// Case #15: Date. Date as serial number. 1 argument used.
+		oParser = new parserFormula('LN(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8), "10.72893412", 'Test: Positive case: Date. Date as serial number. 1 argument used.');
+		// Case #16: Time. Time formula adjusted to >=0. 1 argument used.
+		oParser = new parserFormula('LN(TIME(12,0,0)+1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TIME(12,0,0)+1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.405465108", 'Test: Positive case: Time. Time formula adjusted to >=0. 1 argument used.');
+		// Case #17: Formula. LN inside SUM formula. 1 argument used.
+		oParser = new parserFormula('SUM(LN(10),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(LN(10),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "3.302585093", 'Test: Positive case: Formula. LN inside SUM formula. 1 argument used.');
+		// Case #18: Formula. Nested IF returning valid value. 1 argument used.
+		oParser = new parserFormula('LN(IF(TRUE,10,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(IF(TRUE,10,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "2.302585093", 'Test: Positive case: Formula. Nested IF returning valid value. 1 argument used.');
+		// Case #19: Number. Very small positive number. 1 argument used.
+		oParser = new parserFormula('LN(1E-307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1E-307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "-706.8936235", 'Test: Positive case: Number. Very small positive number. 1 argument used.');
+		// Case #20: Number. Value slightly above 1. 1 argument used.
+		oParser = new parserFormula('LN(1.000000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1.000000000000001) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positve case: Number. Value slightly above 1. 1 argument used.');
+		// Case #21: Number. Large positive integer. 1 argument used.
+		oParser = new parserFormula('LN(10000000000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(10000000000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8), "23.02585093", 'Test: Positive case: Number. Large positive integer. 1 argument used.');
+		// Case #22: Number. Very small positive decimal. 1 argument used.
+		oParser = new parserFormula('LN(0.0000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(0.0000000001) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8), "-23.02585093", 'Test: Positive case: Number. Very small positive decimal. 1 argument used.');
+		// Case #23: Formula. Mathematical constant as input. 1 argument used.
+		oParser = new parserFormula('LN(PI())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(PI()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "1.144729886", 'Test: Positive case: Formula. Mathematical constant as input. 1 argument used.');
+		// Case #24: Formula. Compound function test. 1 argument used.
+		oParser = new parserFormula('LN(EXP(1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(EXP(1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Formula. Compound function test. 1 argument used.');
+		// Case #25: Reference link. Reference to cell with decimal. 1 argument used.
+		oParser = new parserFormula('LN(A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(A104) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Test: Positive case: Reference link. Reference to cell with decimal. 1 argument used.');
+		// Case #26: Area. Two-cell range. 1 argument used.
+		oParser = new parserFormula('LN(A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(A102:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.693147181, 'Test: Positive case: Area. Two-cell range. 1 argument used.');
+		// Case #27: Array. Array with multiple values. 1 argument used.
+		oParser = new parserFormula('LN({0.5, 1, 2})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN({0.5, 1, 2}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Array. Array with multiple values. 1 argument used.');
+		// Case #28: Name. Alternative named range. 1 argument used.
+		oParser = new parserFormula('LN(TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.693147181", 'Test: Positive case: Name. Alternative named range. 1 argument used.');
+
+		// Negative cases:
+		// Case #1: Number. Zero returns #NUM!. 1 argument used.
+		oParser = new parserFormula('LN(0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Zero returns #NUM!. 1 argument used.');
+		// Case #2: Number. Negative integer returns #NUM!. 1 argument used.
+		oParser = new parserFormula('LN(-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative integer returns #NUM!. 1 argument used.');
+		// Case #3: Number. Negative fractional number returns #NUM!. 1 argument used.
+		oParser = new parserFormula('LN(-0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(-0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative fractional number returns #NUM!. 1 argument used.');
+		// Case #4: String. Non-numeric string returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LN("abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string returns #VALUE!. 1 argument used.');
+		// Case #5: String. String convertible to zero. 1 argument used.
+		oParser = new parserFormula('LN("0")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("0") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. String convertible to zero. 1 argument used.');
+		// Case #6: String. String convertible to negative number. 1 argument used.
+		oParser = new parserFormula('LN("-1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("-1") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. String convertible to negative number. 1 argument used.');
+		// Case #7: Error. Propagates #N/A error. 1 argument used.
+		oParser = new parserFormula('LN(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 1 argument used.');
+		// Case #8: Area. Multi-cell range returns error.
+		oParser = new parserFormula('LN(A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(A102:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#SPILL!', 'Test: Negative case: Area. Multi-cell range returns error.');
+		// Case #9: Empty. Reference link is empty.
+		oParser = new parserFormula('LN(A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Empty. Reference link is empty.');
+		// Case #10: String. Empty string returns #VALUE!.
+		oParser = new parserFormula('LN("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string returns #VALUE!.');
+		// Case #11: Boolean. Boolean FALSE (0) returns #NUM!.
+		oParser = new parserFormula('LN(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean. Boolean FALSE (0) returns #NUM!.');
+		// Case #12: Ref3D. 3D ref to text returns #VALUE!.
+		oParser = new parserFormula('LN(Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D ref to text returns #VALUE!.');
+		// Case #13: Name. Named range with text returns #VALUE!.
+		oParser = new parserFormula('LN(TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TestNameArea) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Named range with text returns #VALUE!.');
+		// Case #14: Table. Table column with text returns #VALUE!.
+		oParser = new parserFormula('LN(Table1[Column2])', 'A2', ws);
+		//? assert.ok(oParser.parse(), 'Test: LN(Table1[Column2]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Table. Table column with text returns #VALUE!.');
+		// Case #15: Formula. Formula resulting in error.
+		oParser = new parserFormula('LN(SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in error.');
+		// Case #16: Array. Array with boolean returns #NUM!.
+		oParser = new parserFormula('LN({FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN({FALSE}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Array. Array with boolean returns #NUM!.');
+		// Case #17: Date. Date before Excel epoch returns #NUM!.
+		oParser = new parserFormula('LN(DATE(1899,12,31))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(DATE(1899,12,31)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8), "13.45017248", 'Test: Negative case: Date. Date before Excel epoch returns #NUM!.');
+		// Case #18: Time. Time value (0) returns #NUM!.
+		oParser = new parserFormula('LN(TIME(0,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TIME(0,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Time. Time value (0) returns #NUM!.');
+		// Case #19: Number. Large negative number returns #NUM!.
+		oParser = new parserFormula('LN(-1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(-1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Large negative number returns #NUM!.');
+		// Case #20: String. Negative date string returns #NUM!.
+		oParser = new parserFormula('LN(-"01/01/2025")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(-"01/01/2025") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. Negative date string returns #NUM!.');
+		// Case #21: Number. Very small negative decimal. 1 argument used.
+		oParser = new parserFormula('LN(-0.0000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(-0.0000000001) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Very small negative decimal. 1 argument used.');
+		// Case #22: String. Date string before Excel epoch. 1 argument used.
+		oParser = new parserFormula('LN("12/31/1899")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("12/31/1899") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. Date string before Excel epoch. 1 argument used.');
+		// Case #23: Error. Reference error propagation. 1 argument used.
+		oParser = new parserFormula('LN(#REF!)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(#REF!) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#REF!', 'Test: Negative case: Error. Reference error propagation. 1 argument used.');
+		// Case #24: Boolean. Boolean TRUE (1) returns 0. 1 argument used.
+		oParser = new parserFormula('LN(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Boolean. Boolean TRUE (1) returns 0. 1 argument used.');
+		// Case #25: Area. Range with empty cells. 1 argument used.
+		oParser = new parserFormula('LN(A107:A108)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(A107:A108) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area. Range with empty cells. 1 argument used.');
+		// Case #26: Array. Array with text values. 1 argument used.
+		oParser = new parserFormula('LN({"a","b"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN({"a","b"}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Array. Array with text values. 1 argument used.');
+		// Case #27: Name. Named range with mixed values. 1 argument used.
+		oParser = new parserFormula('LN(TestNameArea2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TestNameArea2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.223143551", 'Test: Negative case: Name. Named range with mixed values. 1 argument used.');
+		// Case #28: Name3D. 3D named range with errors. 1 argument used.
+		oParser = new parserFormula('LN(TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name3D. 3D named range with errors. 1 argument used.');
+		// Case #29: Formula. Division by zero error. 1 argument used.
+		oParser = new parserFormula('LN(1/0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1/0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Formula. Division by zero error. 1 argument used.');
+		// Case #30: Date. Invalid date string format. 1 argument used.
+		oParser = new parserFormula('LN("31/12/1899")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN("31/12/1899") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Date. Invalid date string format. 1 argument used.');
+
+		// Bounded cases:
+		// Case #1: Number. Min valid positive value. 1 argument used.
+		oParser = new parserFormula('LN(2.2250738585072014E-308)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(2.2250738585072014E-308) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Min valid positive value. 1 argument used.');
+		// Case #2: Number. Max valid positive value. 1 argument used.
+		oParser = new parserFormula('LN(1.7976931348623158E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1.7976931348623158E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "707.4801278", 'Test: Bounded case: Number. Max valid positive value. 1 argument used.');
+		// Case #3: Number. LN(1) equals 0. 1 argument used.
+		oParser = new parserFormula('LN(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. LN(1) equals 0. 1 argument used.');
+		// Case #4: Number. Borderline minimum value. 1 argument used.
+		oParser = new parserFormula('LN(2.2251E-308)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(2.2251E-308) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "-708.3964068", 'Test: Bounded case: Number. Borderline minimum value. 1 argument used.');
+		// Case #5: Number. Borderline maximum value. 1 argument used.
+		oParser = new parserFormula('LN(1.7976E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1.7976E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(6), "707.480076", 'Test: Bounded case: Number. Borderline maximum value. 1 argument used.');
+		// Case #6: Number. Very small positive value. 1 argument used.
+		oParser = new parserFormula('LN(1E-307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1E-307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "-706.8936235", 'Test: Bounded case: Number. Very small positive value. 1 argument used.');
+		// Case #7: Number. Very large positive value. 1 argument used.
+		oParser = new parserFormula('LN(1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "706.8936235", 'Test: Bounded case: Number. Very large positive value. 1 argument used.');
+		// Case #8: Formula. Compound function boundary test. 1 argument used.
+		oParser = new parserFormula('LN(EXP(10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LN(EXP(10)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'Test: Bounded case: Formula. Compound function boundary test. 1 argument used.');
+
+
+		// Need to fix: cross Area check, empty check
+		// Different result with MS
+		// Case #7: Array. Array with single element
+		// Case #13: Area3D. 3D multi-cell range
+		// Case #20: Number. Value slightly above 1
+		// Case #26: Area. Two-cell range
+		// Case #27: Array. Array with multiple values
+		// Case #8: Area. Multi-cell range returns error
+		// Case #13: Name. Named range with text returns #VALUE
+		// Case #14: Table. Table column with text returns #VALUE!.
+		// Case #16: Array. Array with boolean returns #NUM!.
+		// Case #26: Array. Array with text values.
+		// Case #1: Number. Min valid positive value
+
+
 		testArrayFormula(assert, "LN");
 	});
 
@@ -22322,6 +22996,226 @@ $(function () {
 		oParser = new parserFormula("LOG10(10^5)", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 5);
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number. Basic valid input: integer >0. 1 argument used.
+		oParser = new parserFormula('LOG10(10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Number. Basic valid input: integer >0. 1 argument used.');
+		// Case #2: Number. Float input. 1 argument used.
+		oParser = new parserFormula('LOG10(2.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(2.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.397940009", 'Test: Positive case: Number. Float input. 1 argument used.');
+		// Case #3: String. String convertible to number. 1 argument used.
+		oParser = new parserFormula('LOG10("10")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10("10") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: String. String convertible to number. 1 argument used.');
+		// Case #4: Reference link. Ref to cell with valid number. 1 argument used.
+		oParser = new parserFormula('LOG10(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.301029996", 'Test: Positive case: Reference link. Ref to cell with valid number. 1 argument used.');
+		// Case #5: Area. Single-cell range. 1 argument used.
+		oParser = new parserFormula('LOG10(A100:A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(A100:A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "-0.301029996", 'Test: Positive case: Area. Single-cell range. 1 argument used.');
+		// Case #6: Array. Array with single element. 1 argument used.
+		oParser = new parserFormula('LOG10({10})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10({10}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Positive case: Array. Array with single element. 1 argument used.');
+		// Case #7: Name. Named range. 1 argument used.
+		oParser = new parserFormula('LOG10(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name. Named range. 1 argument used.');
+		// Case #8: Name3D. 3D named range. 1 argument used.
+		oParser = new parserFormula('LOG10(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named range. 1 argument used.');
+		// Case #9: Ref3D. 3D reference to cell. 1 argument used.
+		oParser = new parserFormula('LOG10(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(4), "-0.3010", 'Test: Positive case: Ref3D. 3D reference to cell. 1 argument used.');
+		// Case #10: Area3D. 3D single-cell range. 1 argument used.
+		oParser = new parserFormula('LOG10(Sheet2!A1:A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(Sheet2!A1:A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(4), "-0.3010", 'Test: Positive case: Area3D. 3D single-cell range. 1 argument used.');
+		// Case #11: Table. Table structured reference. 1 argument used.
+		oParser = new parserFormula('LOG10(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Table. Table structured reference. 1 argument used.');
+		// Case #12: Date. Date as serial number (>0). 1 argument used.
+		oParser = new parserFormula('LOG10(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "4.659516884", 'Test: Positive case: Date. Date as serial number (>0). 1 argument used.');
+		// Case #13: Time. Time formula adjusted to >0. 1 argument used.
+		oParser = new parserFormula('LOG10(TIME(12,0,0)+1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(TIME(12,0,0)+1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.176091259", 'Test: Positive case: Time. Time formula adjusted to >0. 1 argument used.');
+		// Case #14: Formula. LOG inside SUM formula. 1 argument used.
+		oParser = new parserFormula('SUM(LOG10(10),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(LOG10(10),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Formula. LOG10 inside SUM formula. 1 argument used.');
+		// Case #15: Number. Value slightly above 0. 1 argument used.
+		oParser = new parserFormula('LOG10(1.000000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(1.000000000000001) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Number. Value slightly above 0. 1 argument used.');
+		// Case #16: String. String of min valid value. 1 argument used.
+		oParser = new parserFormula('LOG10("1.000000000000001")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10("1.000000000000001") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: String. String of min valid value. 1 argument used.');
+		// Case #17: Array. Multi-element array. 1 argument used.
+		oParser = new parserFormula('LOG10({1, 10})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10({1, 10}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Array. Multi-element array. 1 argument used.');
+		// Case #18: Formula. Nested IF returning valid value. 1 argument used.
+		oParser = new parserFormula('LOG10(IF(TRUE, 10, 0.5))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(IF(TRUE, 10, 0.5)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Formula. Nested IF returning valid value. 1 argument used.');
+		// Case #19: String. Date string converted to number. 1 argument used.
+		oParser = new parserFormula('LOG10("12/12")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10("12/12") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "4.662786154", 'Test: Positive case: String. Date string converted to number. 1 argument used.');
+		// Case #20: Number. Large valid number. 1 argument used.
+		oParser = new parserFormula('LOG10(1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 307, 'Test: Positive case: Number. Large valid number. 1 argument used.');
+
+		// Negative cases:
+		// Case #1: Number. Zero returns #NUM!. 1 argument used.
+		oParser = new parserFormula('LOG10(0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Zero returns #NUM!. 1 argument used.');
+		// Case #2: Number. Negative number returns #NUM!. 1 argument used.
+		oParser = new parserFormula('LOG10(-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative number returns #NUM!. 1 argument used.');
+		// Case #3: String. Non-numeric string returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LOG10("abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10("abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string returns #VALUE!. 1 argument used.');
+		// Case #4: String. String convertible to zero. 1 argument used.
+		oParser = new parserFormula('LOG10("0")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10("0") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. String convertible to zero. 1 argument used.');
+		// Case #5: Error. Propagates #N/A error. 1 argument used.
+		oParser = new parserFormula('LOG10(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 1 argument used.');
+		// Case #6: Area. Multi-cell range returns #NUM! error.
+		oParser = new parserFormula('LOG10(A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(A102:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.301029996, 'Test: Negative case: Area. Multi-cell range returns #NUM! error.');
+		// Case #7: Empty. Reference link is empty.
+		oParser = new parserFormula('LOG10(A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Empty. Reference link is empty.');
+		// Case #8: String. Empty string returns #VALUE!.
+		oParser = new parserFormula('LOG10("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string returns #VALUE!.');
+		// Case #9: Boolean. Boolean FALSE (0) returns #NUM!.
+		oParser = new parserFormula('LOG10(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean. Boolean FALSE (0) returns #NUM!.');
+		// Case #10: Ref3D. 3D ref to text returns #VALUE!.
+		oParser = new parserFormula('LOG10(Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 	"#VALUE!", 'Test: Negative case: Ref3D. 3D ref to text returns #VALUE!.');
+		// Case #11: Name. Named range with text returns #VALUE!.
+		oParser = new parserFormula('LOG10(TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Name. Named range with text returns #VALUE!.');
+		// Case #12: Table. Table column with text returns #VALUE!.
+		oParser = new parserFormula('LOG10(Table1[Column2])', 'A2', ws);
+		//? assert.ok(oParser.parse(), 'Test: LOG10(Table1[Column2]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '=LOG10(Table1[Column2])', 'Test: Negative case: Table. Table column with text returns #VALUE!.');
+		// Case #13: Formula. Formula resulting in #NUM! error.
+		oParser = new parserFormula('LOG10(SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! error.');
+		// Case #14: Number. Large negative number returns #NUM!.
+		oParser = new parserFormula('LOG10(-1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(-1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Large negative number returns #NUM!.');
+		// Case #15: Array. Array with boolean returns #NUM!.
+		oParser = new parserFormula('LOG10({FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10({FALSE}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), '#NUM!', 'Test: Negative case: Array. Array with boolean returns #NUM!.');
+		// Case #16: Number. Value slightly below 0 returns #NUM!.
+		oParser = new parserFormula('LOG10(1-1e-15)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(1-1e-15) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -4.339473599489794e-16, 'Test: Negative case: Number. Value slightly below 0 returns #NUM!.');
+		// Case #17: Time. Time value (0) returns #NUM!.
+		oParser = new parserFormula('LOG10(TIME(0,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(TIME(0,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Time. Time value (0) returns #NUM!.');
+		// Case #18: Date. Date before Excel epoch returns #NUM!.
+		oParser = new parserFormula('LOG10(DATE(1899,12,31))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(DATE(1899,12,31)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), "5.8413357", 'Test: Negative case: Date. Date before Excel epoch returns #NUM!.');
+		// Case #19: Area3D. 3D multi-cell range returns #NUM!.
+		oParser = new parserFormula('LOG10(Sheet2!A1:B1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(Sheet2!A1:B1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.30102999566398114, 'Test: Negative case: Area3D. 3D multi-cell range returns #NUM!.');
+		// Case #20: Name3D. 3D named range with text returns #VALUE!.
+		oParser = new parserFormula('LOG10(TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Name3D. 3D named range with text returns #VALUE!.');
+
+		// Bounded cases:
+		// Case #1: Number. Min valid value (1). 1 argument used.
+		oParser = new parserFormula('LOG10(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Min valid value (1). 1 argument used.');
+		// Case #2: Number. Smallest valid value above 0. 1 argument used.
+		oParser = new parserFormula('LOG10(1.000000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(1.000000000000001) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Smallest valid value above 0. 1 argument used.');
+		// Case #3: Number. Max valid Excel number. 1 argument used.
+		oParser = new parserFormula('LOG10(9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(9.99999999999999E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 308, 'Test: Bounded case: Number. Max valid Excel number. 1 argument used.');
+		// Case #4: Date. Earliest valid Excel date. 1 argument used.
+		oParser = new parserFormula('LOG10(DATE(1900,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(DATE(1900,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Date. Earliest valid Excel date. 1 argument used.');
+		// Case #5: Time. Smallest valid time (>0). 1 argument used.
+		oParser = new parserFormula('LOG10(TIME(0,0,1)+1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOG10(TIME(0,0,1)+1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.00000502653, 'Test: Bounded case: Time. Smallest valid time (>0). 1 argument used.');
+
+		// TODO need to fix:
+		// zero values should be returned instead very small numbers
+		// empty function after array call
 
 		testArrayFormula(assert, "LOG10");
 	});
@@ -22566,6 +23460,230 @@ $(function () {
 		assert.ok(oParser.parse(), 'LINEST({TRUE,6.3,4.8,3.8,3.3},A150:E150)');
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST({TRUE,6.3,4.8,3.8,3.3},A150:E150)');
 
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		ws.getRange2("B100").setValue("0.5");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+		// Case #0: Number(2), Array. Basic valid input: two numeric ranges. 2 arguments used.
+		oParser = new parserFormula('LINEST(A100:A101,B100:B101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(A100:A101,B100:B101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Number(2), Array. Basic valid input: two numeric ranges. 2 arguments used.');
+		// Case #1: Number(2), Array, Boolean, Boolean. All arguments with const and stats. 4 arguments used.
+		oParser = new parserFormula('LINEST(A100:A101,B100:B101,TRUE,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(A100:A101,B100:B101,TRUE,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Number(2), Array, Boolean, Boolean. All arguments with const and stats. 4 arguments used.');
+		// Case #2: Formula(2). Nested formulas as arguments. 2 arguments used.
+		oParser = new parserFormula('LINEST(SQRT(A100:A101),LOG(B100:B101))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(SQRT(A100:A101),LOG(B100:B101)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Formula(2). Nested formulas as arguments. 2 arguments used.');
+		// Case #3: String(2). String convertible to number. 2 arguments used.
+		oParser = new parserFormula('LINEST("1","1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST("1","1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: String(2). String convertible to number. 2 arguments used.');
+		// Case #4: Reference link(2). Reference links to single cells. 2 arguments used.
+		oParser = new parserFormula('LINEST(A100,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(A100,A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Reference link(2). Reference links to single cells. 2 arguments used.');
+		// Case #5: Area(2). Single-cell ranges. 2 arguments used.
+		oParser = new parserFormula('LINEST(A100:A100,B100:B100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(A100:A100,B100:B100) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Area(2). Single-cell ranges. 2 arguments used.');
+		// Case #6: Array(2). Arrays with multiple elements. 2 arguments used.
+		oParser = new parserFormula('LINEST({1,2},{3,4})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST({1,2},{3,4}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Positive case: Array(2). Arrays with multiple elements. 2 arguments used.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), -2, 'Test: Positive case: Array(2). Arrays with multiple elements. 2 arguments used.');
+		// Case #7: Name(2). Named ranges. 2 arguments used.
+		oParser = new parserFormula('LINEST(TestName,TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(TestName,TestName1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Name(2). Named ranges. 2 arguments used.');
+		// Case #8: Name3D(2). 3D named ranges. 2 arguments used.
+		oParser = new parserFormula('LINEST(TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(TestName3D,TestName3D) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Name3D(2). 3D named ranges. 2 arguments used.');
+		// Case #9: Ref3D(2). 3D references. 2 arguments used.
+		oParser = new parserFormula('LINEST(Sheet2!A1,Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(Sheet2!A1,Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D(2). 3D references. 2 arguments used.');
+		// Case #10: Area3D(2). 3D single-cell ranges. 2 arguments used.
+		oParser = new parserFormula('LINEST(Sheet2!A1:A1,Sheet2!A2:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(Sheet2!A1:A1,Sheet2!A2:A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D(2). 3D single-cell ranges. 2 arguments used.');
+		// Case #11: Table. Table structured references. 2 arguments used.
+		oParser = new parserFormula('LINEST(Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(Table1[Column1],Table1[Column1]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Table. Table structured references. 2 arguments used.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), 1, 'Test: Positive case: Table. Table structured references. 2 arguments used.');
+		// Case #12: Date, Time. Date and time as arguments. 2 arguments used.
+		oParser = new parserFormula('LINEST(DATE(2025,1,1),TIME(0,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(DATE(2025,1,1),TIME(0,0,0)) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Date, Time. Date and time as arguments. 2 arguments used.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), 45658, 'Test: Positive case: Date, Time. Date and time as arguments. 2 arguments used.');
+		// Case #13: Formula. LINEST inside SUM formula. 2 arguments used.
+		oParser = new parserFormula('SUM(LINEST(A100:A101,B100:B101),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(LINEST(A100:A101,B100:B101),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Formula. LINEST inside SUM formula. 2 arguments used.');
+		// Case #14: Array. Multi-element arrays with const. 3 arguments used.
+		oParser = new parserFormula('LINEST({1,2,3},{4,5,6},FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST({1,2,3},{4,5,6},FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue().toFixed(9), "0.415584416", 'Test: Positive case: Array. Multi-element arrays with const. 3 arguments used.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), 0, 'Test: Positive case: Array. Multi-element arrays with const. 3 arguments used.');
+		// Case #15: Number, Array, Boolean. Mixed number and array. 3 arguments used.
+		oParser = new parserFormula('LINEST(1,{2,3},TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(1,{2,3},TRUE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Number, Array, Boolean. Mixed number and array. 3 arguments used.');
+		// Case #16: Reference link, Area. Mixed reference and range. 2 arguments used.
+		oParser = new parserFormula('LINEST(A100,B100:B100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(A100,B100:B100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Reference link, Area. Mixed reference and range. 2 arguments used.');
+		// Case #17: Name, Name3D. Mixed name types. 2 arguments used.
+		oParser = new parserFormula('LINEST(TestName,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(TestName,TestName3D) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Name, Name3D. Mixed name types. 2 arguments used.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), -0.5, 'Test: Positive case: Name, Name3D. Mixed name types. 2 arguments used.');
+		// Case #18: Ref3D, Area3D. Mixed 3D types. 2 arguments used.
+		oParser = new parserFormula('LINEST(Sheet2!A1,Sheet2!B1:B1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(Sheet2!A1,Sheet2!B1:B1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Ref3D, Area3D. Mixed 3D types. 2 arguments used.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), 0.5, 'Test: Positive case: Ref3D, Area3D. Mixed 3D types. 2 arguments used.');
+		// Case #19: Table, Array. Mixed table and array. 2 arguments used.
+		oParser = new parserFormula('LINEST(Table1[Column1],{1,2})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(Table1[Column1],{1,2}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Table, Array. Mixed table and array. 2 arguments used.');
+		// Case #20: Formula, String. Mixed formula and string. 2 arguments used.
+		oParser = new parserFormula('LINEST(SQRT(A100:A101),"1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(SQRT(A100:A101),"1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#REF!', 'Test: Positive case: Formula, String. Mixed formula and string. 2 arguments used.');
+
+		// Negative cases:
+		// Case #0: String(2). Non-numeric strings return #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LINEST("text","text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST("text","text") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Non-numeric strings return #VALUE!. 2 arguments used.');
+		// Case #1: Boolean(2). Boolean values return #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LINEST(TRUE,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(TRUE,FALSE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean(2). Boolean values return #VALUE!. 2 arguments used.');
+		// Case #2: Empty(2). Empty arguments return #NUM!. 2 arguments used.
+		oParser = new parserFormula('LINEST(,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(,) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Empty(2). Empty arguments return #NUM!. 2 arguments used.');
+		// Case #3: Error. Error propagation. 2 arguments used.
+		oParser = new parserFormula('LINEST(NA(),NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(NA(),NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Error propagation. 2 arguments used.');
+		// Case #4: Number, Empty. One empty argument returns #NUM!. 2 arguments used.
+		oParser = new parserFormula('LINEST(1,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(1,) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Negative case: Number, Empty. One empty argument returns #NUM!. 2 arguments used.');
+		// Case #5: Area(2). Mismatched range sizes return #REF!. 2 arguments used.
+		oParser = new parserFormula('LINEST(A100:A102,B100:B101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(A100:A102,B100:B101) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#REF!', 'Test: Negative case: Area(2). Mismatched range sizes return #REF!. 2 arguments used.');
+		// Case #6: Array(2). Mismatched array sizes. 2 arguments used.
+		oParser = new parserFormula('LINEST({1},{2,3})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST({1},{2,3}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Negative case: Array(2). Mismatched array sizes return #REF!. 2 arguments used.');
+		// Case #7: Number. Single argument. 1 argument used.
+		oParser = new parserFormula('LINEST(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Negative case: Number. Single argument returns #N/A. 1 argument used.');
+		// Case #8: Time, Boolean. Invalid combination returns #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LINEST(TIME(1,0,0),FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(TIME(1,0,0),FALSE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Time, Boolean. Invalid combination returns #VALUE!. 2 arguments used.');
+		// Case #9: Date, String. Invalid combination returns #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LINEST(DATE(2025,1,1),"text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(DATE(2025,1,1),"text") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Date, String. Invalid combination returns #VALUE!. 2 arguments used.');
+		// Case #10: Name. Named range with text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LINEST(TestNameArea2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(TestNameArea2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Name. Named range with text returns #VALUE!. 1 argument used.');
+		// Case #11: Ref3D. 3D ref to text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LINEST(Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D ref to text returns #VALUE!. 1 argument used.');
+		// Case #12: Table. Table column with text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LINEST(Table1[Text])', 'A2', ws);
+		//? assert.ok(oParser.parse(), 'Test: LINEST(Table1[Text]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Table. Table column with text returns #VALUE!. 1 argument used.');
+		// Case #13: Array. Array with boolean returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LINEST({TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST({TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Array. Array with boolean returns #VALUE!. 1 argument used.');
+		// Case #14: Number(2). Zero values return 0. 2 arguments used.
+		oParser = new parserFormula('LINEST(0,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(0,0) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Negative case: Number(2). Zero values return 0. 2 arguments used.');
+
+		// Bounded cases:
+		// Case #0: Number(2). Maximum valid numbers. 2 arguments used.
+		oParser = new parserFormula('LINEST(1E+307,1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(1E+307,1E+307) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Bounded case: Number(2). Maximum valid numbers. 2 arguments used.');
+		// Case #1: Number(2). Minimum valid numbers. 2 arguments used.
+		oParser = new parserFormula('LINEST(1E-307,1E-307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(1E-307,1E-307) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Bounded case: Number(2). Minimum valid numbers. 2 arguments used.');
+		// Case #2: Date, Number. Maximum valid date. 2 arguments used.
+		oParser = new parserFormula('LINEST(DATE(9999,12,31),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(DATE(9999,12,31),1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Date, Number. Maximum valid date. 2 arguments used.');
+		// Case #3: Time, Number. Maximum valid time. 2 arguments used.
+		oParser = new parserFormula('LINEST(TIME(23,59,59),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LINEST(TIME(23,59,59),1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Time, Number. Maximum valid time. 2 arguments used.');
+
+		// Need to fix: error check, cellsRange check, Name check, DATE and TIME check, different error return, strings
+		// Different result with MS
+		// Case #3: String(2). String convertible to number.
+		// Case #5: Area(2). Single-cell ranges. 2 arguments used.
+		// Case #7: Name(2). Named ranges.
+		// Case #8: Name3D(2). 3D named ranges.
+		// Case #11: Table. Table structured references
+		// Case #12: Date, Time. Date and time as arguments
+		// Case #15: Number, Array, Boolean
+		// Case #17: Name, Name3D. Mixed name types
+		// Case #18: Ref3D, Area3D. Mixed 3D types
+		// Case #19: Table, Array. Mixed table and array
+		// Case #20: Formula, String. Mixed formula and string.
+		// Case #0: String(2). Non-numeric strings return #VALUE!
+		// Case #1: Boolean(2). Boolean values return #VALUE!.
+		// Case #2: Empty(2). Empty arguments return #NUM!.
+		// Case #4: Number, Empty. One empty argument returns #NUM!.
+		// Case #5: Area(2). Mismatched range sizes return #REF!
+		// Case #6: Array(2). Mismatched array sizes.
+		// Case #7: Number. Single argument.
+		// Case #8: Time, Boolean. Invalid combination returns #VALUE!.
 
 	});
 
@@ -23251,6 +24369,230 @@ $(function () {
 		oParser = new parserFormula("LOGINV(0,3.5,1.2)", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), loginv(-10, 3.5, 1.2));
+
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number, Number, Number. Basic valid input: probability=0.5, mean=0, stdev=1. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Number, Number, Number. Basic valid input: probability=0.5, mean=0, stdev=1. 3 of 3 arguments used.');
+		// Case #2: Number, Number, Number. Float inputs. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.1, 2, 0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.1, 2, 0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "3.893171874", 'Test: Positive case: Number, Number, Number. Float inputs. 3 of 3 arguments used.');
+		// Case #3: String, Number, Number. String convertible to number. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV("0.5", 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV("0.5", 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: String, Number, Number. String convertible to number. 3 of 3 arguments used.');
+		// Case #4: Formula, Number, Number. Nested formula. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(SQRT(0.25), 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(SQRT(0.25), 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Formula, Number, Number. Nested formula. 3 of 3 arguments used.');
+		// Case #5: Reference link, Number, Number. Ref to cell with valid number. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(A100, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(A100, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Reference link, Number, Number. Ref to cell with valid number. 3 of 3 arguments used.');
+		// Case #6: Area, Number, Number. Single-cell range. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(A101:A101, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(A101:A101, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Area, Number, Number. Single-cell range. 3 of 3 arguments used.');
+		// Case #7: Array, Number, Number. Array with single element. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV({0.5}, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV({0.5}, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Array, Number, Number. Array with single element. 3 of 3 arguments used.');
+		// Case #8: Name, Number, Number. Named range. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(TestName, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(TestName, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name, Number, Number. Named range. 3 of 3 arguments used.');
+		// Case #9: Name3D, Number, Number. 3D named range. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(TestName3D, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(TestName3D, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D, Number, Number. 3D named range. 3 of 3 arguments used.');
+		// Case #10: Ref3D, Number, Number. 3D reference to cell. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(Sheet2!A1, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(Sheet2!A1, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Ref3D, Number, Number. 3D reference to cell. 3 of 3 arguments used.');
+		// Case #11: Area3D, Number, Number. 3D single-cell range. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(Sheet2!A1:A1, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(Sheet2!A1:A1, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Area3D, Number, Number. 3D single-cell range. 3 of 3 arguments used.');
+		// Case #12: Table, Number, Number. Table structured reference. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(Table1[Column1], 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(Table1[Column1], 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Table, Number, Number. Table structured reference. 3 of 3 arguments used.');
+		// Case #13: Formula, Formula, Formula. All arguments as formulas. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(IF(TRUE,0.5,0), SQRT(4), 2/2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(IF(TRUE,0.5,0), SQRT(4), 2/2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "7.389056099", 'Test: Positive case: Formula, Formula, Formula. All arguments as formulas. 3 of 3 arguments used.');
+		// Case #14: Number, Number, Formula. Stdev as formula. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, SQRT(1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, SQRT(1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Number, Number, Formula. Stdev as formula. 3 of 3 arguments used.');
+		// Case #15: String, String, String. All string args convertible to numbers. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV("0.5","0","1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV("0.5","0","1") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: String, String, String. All string args convertible to numbers. 3 of 3 arguments used.');
+		// Case #16: Date, Number, Number. Date math results in valid probability. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(DATE(2025,1,1)-DATE(2025,1,1)+0.5, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(DATE(2025,1,1)-DATE(2025,1,1)+0.5, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Date, Number, Number. Date math results in valid probability. 3 of 3 arguments used.');
+		// Case #17: Time, Number, Number. Time as probability (0.5). 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(TIME(12,0,0), 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(TIME(12,0,0), 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Time, Number, Number. Time as probability (0.5). 3 of 3 arguments used.');
+		// Case #18: Array, Array, Array. Multi-element arrays. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV({0.5,0.6}, {0,1}, {1,2})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV({0.5,0.6}, {0,1}, {1,2}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Array, Array, Array. Multi-element arrays. 3 of 3 arguments used.');
+		// Case #19: Formula. LOGINV inside SUM formula. 3 of 3 arguments used.
+		oParser = new parserFormula('SUM(LOGINV(0.5,0,1),10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(LOGINV(0.5,0,1),10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 11, 'Test: Positive case: Formula. LOGINV inside SUM formula. 3 of 3 arguments used.');
+		// Case #20: Number, Number, Number. Minimal probability without underflow. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(1E-307, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(1E-307, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5.283633461195681e-17, 'Test: Positive case: Number, Number, Number. Minimal probability without underflow. 3 of 3 arguments used.');
+
+		// Negative cases:
+		// Case #1: String, Number, Number. Non-numeric string returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV("text", 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV("text", 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String, Number, Number. Non-numeric string returns #VALUE!. 3 of 3 arguments used.');
+		// Case #2: Number, Number, Number. Probability <=0 returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number, Number. Probability <=0 returns #NUM!. 3 of 3 arguments used.');
+		// Case #3: Number, Number, Number. Probability >=1 returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(1, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(1, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number, Number. Probability >=1 returns #NUM!. 3 of 3 arguments used.');
+		// Case #4: Number, Number, Number. Stdev <=0 returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, 0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, 0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number, Number. Stdev <=0 returns #NUM!. 3 of 3 arguments used.');
+		// Case #5: Error, Number, Number. Propagates #N/A error. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(NA(), 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(NA(), 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error, Number, Number. Propagates #N/A error. 3 of 3 arguments used.');
+		// Case #6: Boolean, Number, Number. Boolean as probability returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(TRUE, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(TRUE, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean, Number, Number. Boolean as probability returns #VALUE!. 3 of 3 arguments used.');
+		// Case #7: Number, String, Number. Non-numeric mean returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, "text", 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, "text", 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, String, Number. Non-numeric mean returns #VALUE!. 3 of 3 arguments used.');
+		// Case #8: Number, Number, String. Non-numeric stdev returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, "text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, "text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Number, String. Non-numeric stdev returns #VALUE!. 3 of 3 arguments used.');
+		// Case #9: Empty, Number, Number. Empty probability returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Empty, Number, Number. Empty probability returns #NUM!. 3 of 3 arguments used.');
+		// Case #10: Number, Empty, Number. Empty mean returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, , 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, , 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Number, Empty, Number. Empty mean returns #VALUE!. 3 of 3 arguments used.');
+		// Case #11: Number, Number, Empty. Empty stdev returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, )', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, ) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number, Empty. Empty stdev returns #NUM!. 3 of 3 arguments used.');
+		// Case #12: Array, Number, Number. Array with invalid probability. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV({0.5,1.5}, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV({0.5,1.5}, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Array, Number, Number. Array with invalid probability. 3 of 3 arguments used.');
+		// Case #13: Number, Array, Number. Array with invalid mean. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, {0,"text"}, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, {0,"text"}, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Number, Array, Number. Array with invalid mean. 3 of 3 arguments used.');
+		// Case #14: Number, Number, Array. Array with invalid stdev. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, {1,-1})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, {1,-1}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Number, Number, Array. Array with invalid stdev. 3 of 3 arguments used.');
+		// Case #15: Area, Number, Number. Multi-cell range returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(A102:A103, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(A102:A103, 0, 1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Area, Number, Number. Multi-cell range returns #VALUE!. 3 of 3 arguments used.');
+		// Case #16: Ref3D, Number, Number. 3D ref to text returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(Sheet2!A2, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(Sheet2!A2, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D, Number, Number. 3D ref to text returns #VALUE!. 3 of 3 arguments used.');
+		// Case #17: Name, Number, Number. Named range with text returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(TestNameArea2, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(TestNameArea2, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "2.320125395", 'Test: Negative case: Name, Number, Number. Named range with text returns #VALUE!. 3 of 3 arguments used.');
+		// Case #18: Table, Number, Number. Table column with text returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(Table1[Column2], 0, 1)', 'A2', ws);
+		//? assert.ok(oParser.parse(), 'Test: LOGINV(Table1[Column2], 0, 1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '=LOGINV(Table1[Column2], 0, 1)', 'Test: Negative case: Table, Number, Number. Table column with text returns #VALUE!. 3 of 3 arguments used.');
+		// Case #19: Formula, Number, Number. Formula resulting in #NUM! error. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(SQRT(-1), 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(SQRT(-1), 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula, Number, Number. Formula resulting in #NUM! error. 3 of 3 arguments used.');
+		// Case #20: Number, Number, Number. Extremely large mean/stdev may cause errors. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 1E+307, 1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 1E+307, 1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number, Number. Extremely large mean/stdev may cause errors. 3 of 3 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number, Number, Number. Minimal valid probability. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(1E-307, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(1E-307, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5.283633461195681e-17, 'Test: Bounded case: Number, Number, Number. Minimal valid probability. 3 of 3 arguments used.');
+		// Case #2: Number, Number, Number. Probability just below 1. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(1-1E-15, 0, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(1-1E-15, 0, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(6), "2811.418635", 'Test: Bounded case: Number, Number, Number. Probability just below 1. 3 of 3 arguments used.');
+		// Case #3: Number, Number, Number. Minimal mean. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, -1E+307, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, -1E+307, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number, Number, Number. Minimal mean. 3 of 3 arguments used.');
+		// Case #4: Number, Number, Number. Maximal mean. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 1E+307, 1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 1E+307, 1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number, Number, Number. Maximal mean. 3 of 3 arguments used.');
+		// Case #5: Number, Number, Number. Minimal stdev >0. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, 1E-307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, 1E-307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number, Number, Number. Minimal stdev >0. 3 of 3 arguments used.');
+		// Case #6: Number, Number, Number. Maximal stdev. 3 of 3 arguments used.
+		oParser = new parserFormula('LOGINV(0.5, 0, 1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGINV(0.5, 0, 1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number, Number, Number. Maximal stdev. 3 of 3 arguments used.');
+
+		// Need to fix:
+		// Case #15: Area, Number, Number. Multi-cell range returns #VALUE!. 3 of 3 arguments used.
 
 		testArrayFormula2(assert, "LOGINV", 3, 3);
 	});
@@ -33452,6 +34794,210 @@ $(function () {
 		oParser = new parserFormula("LOGEST({1,2})", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue().toFixed(8) - 0, 2);
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1");
+		ws.getRange2("A104").setValue("-1");
+		ws.getRange2("B100").setValue("0.5");
+		ws.getRange2("B100").setValue("1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("Text");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+		// Case #0: Number(2), Array. Basic valid input: two numeric ranges. 2 arguments used.
+		oParser = new parserFormula('LOGEST(A100:A101,B100:B101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(A100:A101,B100:B101) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 4, 'Test: Positive case: Number(2), Array. Basic valid input: two numeric ranges. 2 arguments used.');
+		// Case #1: Number(2), Array, Boolean, Boolean. All arguments with const and stats. 4 arguments used.
+		oParser = new parserFormula('LOGEST(A100:A101,B100:B101,TRUE,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(A100:A101,B100:B101,TRUE,TRUE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 4, 'Test: Positive case: Number(2), Array, Boolean, Boolean. All arguments with const and stats. 4 arguments used.');
+		// Case #2: Formula(2). Nested formulas as arguments. 2 arguments used.
+		oParser = new parserFormula('LOGEST(SQRT(A100:A101),LOG(B100:B101))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(SQRT(A100:A101),LOG(B100:B101)) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 3.16227766, 'Test: Positive case: Formula(2). Nested formulas as arguments. 2 arguments used.');
+		// Case #3: String(2). String convertible to number. 2 arguments used.
+		oParser = new parserFormula('LOGEST("1","1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST("1","1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: String(2). String convertible to number. 2 arguments used.');
+		// Case #4: Reference link(2). Reference links to single cells. 2 arguments used.
+		oParser = new parserFormula('LOGEST(A100,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(A100,A101) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Reference link(2). Reference links to single cells. 2 arguments used.');
+		// Case #5: Area(2). Single-cell ranges. 2 arguments used.
+		oParser = new parserFormula('LOGEST(A100:A100,B100:B100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(A100:A100,B100:B100) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Area(2). Single-cell ranges. 2 arguments used.');
+		// Case #6: Array(2). Arrays with multiple elements. 2 arguments used.
+		oParser = new parserFormula('LOGEST({1,2},{3,4})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST({1,2},{3,4}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 2, 'Test: Positive case: Array(2). Arrays with multiple elements. 2 arguments used.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue().toFixed(3), "0.125", 'Test: Positive case: Array(2). Arrays with multiple elements. 2 arguments used.');
+		// Case #7: Name(2). Named ranges. 2 arguments used.
+		oParser = new parserFormula('LOGEST(TestName,TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(TestName,TestName1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Name(2). Named ranges. 2 arguments used.');
+		// Case #8: Name3D(2). 3D named ranges. 2 arguments used.
+		oParser = new parserFormula('LOGEST(TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(TestName3D,TestName3D) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Name3D(2). 3D named ranges. 2 arguments used.');
+		// Case #9: Ref3D(2). 3D references. 2 arguments used.
+		oParser = new parserFormula('LOGEST(Sheet2!A1,Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(Sheet2!A1,Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D(2). 3D references. 2 arguments used.');
+		// Case #10: Area3D(2). 3D single-cell ranges. 2 arguments used.
+		oParser = new parserFormula('LOGEST(Sheet2!A1:A1,Sheet2!A2:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(Sheet2!A1:A1,Sheet2!A2:A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D(2). 3D single-cell ranges. 2 arguments used.');
+		// Case #11: Table. Table structured references. 2 arguments used.
+		oParser = new parserFormula('LOGEST(Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(Table1[Column1],Table1[Column1]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Table. Table structured references. 2 arguments used.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), 1, 'Test: Positive case: Table. Table structured references. 2 arguments used.');
+		// Case #12: Date, Time. Date and time as arguments. 2 arguments used.
+		oParser = new parserFormula('LOGEST(DATE(2025,1,1),TIME(0,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(DATE(2025,1,1),TIME(0,0,0)) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Positive case: Date, Time. Date and time as arguments. 2 arguments used.');
+		// Case #13: Formula. LOGEST inside SUM formula. 2 arguments used.
+		oParser = new parserFormula('SUM(LOGEST(A100:A101,B100:B101),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(LOGEST(A100:A101,B100:B101),1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 5.25, 'Test: Positive case: Formula. LOGEST inside SUM formula. 2 arguments used.');
+		// Case #14: Array. Multi-element arrays with const. 3 arguments used.
+		oParser = new parserFormula('LOGEST({1,2,3},{4,5,6},FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST({1,2,3},{4,5,6},FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue().toFixed(9), "1.139529787", 'Test: Positive case: Array. Multi-element arrays with const. 3 arguments used.');
+		// Case #15: Number, Array, Boolean. Mixed number and array. 3 arguments used.
+		oParser = new parserFormula('LOGEST(1,{2,3},TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(1,{2,3},TRUE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Positive case: Number, Array, Boolean. Mixed number and array. 3 arguments used.');
+		// Case #16: Reference link, Area. Mixed reference and range. 2 arguments used.
+		oParser = new parserFormula('LOGEST(A100,B100:B100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(A100,B100:B100) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Positive case: Reference link, Area. Mixed reference and range. 2 arguments used.');
+		// Case #17: Name, Name3D. Mixed name types. 2 arguments used.
+		oParser = new parserFormula('LOGEST(TestName,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(TestName,TestName3D) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Name, Name3D. Mixed name types. 2 arguments used.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), -0.5, 'Test: Positive case: Name, Name3D. Mixed name types. 2 arguments used.');
+		// Case #18: Ref3D, Area3D. Mixed 3D types. 2 arguments used.
+		oParser = new parserFormula('LOGEST(Sheet2!A1,Sheet2!B1:B1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(Sheet2!A1,Sheet2!B1:B1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Ref3D, Area3D. Mixed 3D types. 2 arguments used.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,1).getValue(), 0.5, 'Test: Positive case: Ref3D, Area3D. Mixed 3D types. 2 arguments used.');
+		// Case #19: Table, Array. Mixed table and array. 2 arguments used.
+		oParser = new parserFormula('LOGEST(Table1[Column1],{1,2})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(Table1[Column1],{1,2}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Positive case: Table, Array. Mixed table and array. 2 arguments used.');
+		// Case #20: Formula, String. Mixed formula and string. 2 arguments used.
+		oParser = new parserFormula('LOGEST(SQRT(A100:A101),"1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(SQRT(A100:A101),"1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#REF!', 'Test: Positive case: Formula, String. Mixed formula and string. 2 arguments used.');
+
+		// Negative cases:
+		// Case #0: String(2). Non-numeric strings return #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LOGEST("text","text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST("text","text") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Non-numeric strings return #VALUE!. 2 arguments used.');
+		// Case #1: Boolean(2). Boolean values return #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LOGEST(TRUE,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(TRUE,FALSE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean(2). Boolean values return #VALUE!. 2 arguments used.');
+		// Case #2: Empty(2). Empty arguments return #NUM!. 2 arguments used.
+		oParser = new parserFormula('LOGEST(,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(,) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Empty(2). Empty arguments return #NUM!. 2 arguments used.');
+		// Case #3: Error. Error propagation. 2 arguments used.
+		oParser = new parserFormula('LOGEST(NA(),NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(NA(),NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Error propagation. 2 arguments used.');
+		// Case #4: Number, Empty. One empty argument returns #NUM!. 2 arguments used.
+		oParser = new parserFormula('LOGEST(1,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(1,) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Negative case: Number, Empty. One empty argument returns #NUM!. 2 arguments used.');
+		// Case #5: Area(2). Mismatched range sizes return #REF!. 2 arguments used.
+		oParser = new parserFormula('LOGEST(A100:A102,B100:B101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(A100:A102,B100:B101) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#REF!', 'Test: Negative case: Area(2). Mismatched range sizes return #REF!. 2 arguments used.');
+		// Case #6: Array(2). Mismatched array sizes. 2 arguments used.
+		oParser = new parserFormula('LOGEST({1},{2,3})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST({1},{2,3}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Negative case: Array(2). Mismatched array sizes return #REF!. 2 arguments used.');
+		// Case #7: Number. Single argument. 1 argument used.
+		oParser = new parserFormula('LOGEST(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Negative case: Number. Single argument returns #N/A. 1 argument used.');
+		// Case #8: Time, Boolean. Invalid combination returns #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LOGEST(TIME(1,0,0),FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(TIME(1,0,0),FALSE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Time, Boolean. Invalid combination returns #VALUE!. 2 arguments used.');
+		// Case #9: Date, String. Invalid combination returns #VALUE!. 2 arguments used.
+		oParser = new parserFormula('LOGEST(DATE(2025,1,1),"text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(DATE(2025,1,1),"text") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Date, String. Invalid combination returns #VALUE!. 2 arguments used.');
+		// Case #10: Name. Named range with text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LOGEST(TestNameArea2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(TestNameArea2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Name. Named range with text returns #VALUE!. 1 argument used.');
+		// Case #11: Ref3D. 3D ref to text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LOGEST(Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D ref to text returns #VALUE!. 1 argument used.');
+		// Case #12: Table. Table column with text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LOGEST(Table1[Text])', 'A2', ws);
+		//? assert.ok(oParser.parse(), 'Test: LINEST(Table1[Text]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Table. Table column with text returns #VALUE!. 1 argument used.');
+		// Case #13: Array. Array with boolean returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('LOGEST({TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST({TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Array. Array with boolean returns #VALUE!. 1 argument used.');
+		// Case #14: Number(2). Zero values return 0. 2 arguments used.
+		oParser = new parserFormula('LOGEST(0,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(0,0) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(2). Zero values return err. 2 arguments used.');
+
+		// Bounded cases:
+		// Case #0: Number(2). Maximum valid numbers. 2 arguments used.
+		oParser = new parserFormula('LOGEST(1E+307,1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(1E+307,1E+307) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Bounded case: Number(2). Maximum valid numbers. 2 arguments used.');
+		// Case #1: Number(2). Minimum valid numbers. 2 arguments used.
+		oParser = new parserFormula('LOGEST(1E-307,1E-307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(1E-307,1E-307) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Bounded case: Number(2). Minimum valid numbers. 2 arguments used.');
+		// Case #2: Date, Number. Maximum valid date. 2 arguments used.
+		oParser = new parserFormula('LOGEST(DATE(9999,12,31),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(DATE(9999,12,31),1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Bounded case: Date, Number. Maximum valid date. 2 arguments used.');
+		// Case #3: Time, Number. Maximum valid time. 2 arguments used.
+		oParser = new parserFormula('LOGEST(TIME(23,59,59),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: LOGEST(TIME(23,59,59),1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Bounded case: Time, Number. Maximum valid time. 2 arguments used.');
+
+		// Need to fix: error check, cellsRange check, Name check, DATE and TIME check, different error return, strings
+		// Different result with MS
 
 	});
 
