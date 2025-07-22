@@ -5494,6 +5494,10 @@
 
 				var shape_drawer = new AscCommon.CShapeDrawer();
 				shape_drawer.fromShape2(this, graphics, geometry);
+				if (Asc.editor.isPdfEditor() && this.IsAnnot() && this.IsLine()) {
+					shape_drawer.isLineAnnot = true;
+				}
+				
 				shape_drawer.draw(geometry);
 			}
 

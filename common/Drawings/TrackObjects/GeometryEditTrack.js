@@ -1378,10 +1378,10 @@
 
     EditLineAnnotGeometryTrack.prototype.track = function (e, posX, posY) {
         AscFormat.ExecuteNoHistory(function () {
-            const geom    = this.geometry;
-            const overlay = this.overlayGeometry;
-            const annot   = this.originalObject;
-            const coef    = g_dKoef_pt_to_mm;
+            const geom          = this.geometry;
+            const overlayGeom   = this.overlayGeometry;
+            const annot         = this.originalObject;
+            const coef          = g_dKoef_pt_to_mm;
 
             // Convert global cursor coordinates to local
             const inv  = this.originalShape.invertTransform;
@@ -1427,26 +1427,56 @@
             /******************************************************/
 
             // Clear overlay paths
-            overlay.pathLst.forEach(p => { p.ArrPathCommand.length = 0; });
+            overlayGeom.pathLst.forEach(p => { p.ArrPathCommand.length = 0; });
 
             // Main line
-            overlay.pathLst[0].ArrPathCommand.push(
+            overlayGeom.pathLst[0].ArrPathCommand.push(
                 { id: AscFormat.moveTo, X: baseX1 + nx * liftMM, Y: baseY1 + ny * liftMM },
                 { id: AscFormat.lineTo, X: baseX2 + nx * liftMM, Y: baseY2 + ny * liftMM }
             );
 
             // Left leg
-            overlay.pathLst[1].ArrPathCommand.push(
+            overlayGeom.pathLst[1].ArrPathCommand.push(
                 { id: AscFormat.moveTo, X: baseX1, Y: baseY1 },
                 { id: AscFormat.lineTo, X: baseX1 + nx * legLenMM, Y: baseY1 + ny * legLenMM }
             );
 
             // Right leg
-            overlay.pathLst[2].ArrPathCommand.push(
+            overlayGeom.pathLst[2].ArrPathCommand.push(
                 { id: AscFormat.moveTo, X: baseX2, Y: baseY2 },
                 { id: AscFormat.lineTo, X: baseX2 + nx * legLenMM, Y: baseY2 + ny * legLenMM }
             );
         }, this);
+    };
+
+    EditLineAnnotGeometryTrack.prototype.trackEnd = function () {
+        const overlay = this.overlayGeometry;
+        const annot   = this.originalObject;
+        const coef    = g_dKoef_pt_to_mm;          // pt → mm
+        const xfrm    = annot.getXfrm();
+
+        // overlay.pathLst: 0 – main, 1 – левая ножка, 2 – правая ножка
+        const main  = overlay.pathLst[0].ArrPathCommand;
+        const left  = overlay.pathLst[1].ArrPathCommand;
+        const right = overlay.pathLst[2].ArrPathCommand;
+
+        /* ---------- 1. Базовая (оригинальная) линия ---------- */
+        const p1 = left[0];           // основание левой ножки (мм)
+        const p2 = right[0];          // основание правой ножки (мм)
+
+        // мм → pt и сохраняем
+        annot.SetLinePoints([
+            (p1.X + xfrm.offX) / coef, (p1.Y + xfrm.offY) / coef,
+            (p2.X + xfrm.offX) / coef, (p2.Y + xfrm.offY) / coef
+        ]);
+
+        /* ---------- 2. LeaderLength / LeaderExtend ---------- */
+        const liftMM   = Math.hypot(main[0].X - p1.X,  main[0].Y - p1.Y); // подъём
+        const legLenMM = Math.hypot(left[1].X - p1.X, left[1].Y - p1.Y); // вся ножка
+        const extMM    = Math.max(0, legLenMM - liftMM);                 // вылет
+
+        annot.SetLeaderLength(liftMM / coef);
+        annot.SetLeaderExtend(extMM  / coef);
     };
 
     function CGeomHitData(gmEditPointIdx, isHitInFirstCPoint, isHitInSecondCPoint, addingNewPoint) {

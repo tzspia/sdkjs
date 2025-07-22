@@ -879,17 +879,17 @@ RotateState.prototype =
                                 
                                 if (oAnnot.IsLine()) {
                                     
-                                    let aPaths = oTrack.geometry.pathLst[0].ArrPathCommand;
+                                    // let aPaths = oTrack.geometry.pathLst[0].ArrPathCommand;
     
-                                    let aLinePoints = [];
-                                    let oTranform   = oAnnot.transform;
-                                    // считаем новые точки linePoints (в оригинальных координатах - в пикселях, без скейлов)
-                                    aLinePoints.push(oTranform.TransformPointX(aPaths[0].X, 0) * g_dKoef_mm_to_pt)
-                                    aLinePoints.push(oTranform.TransformPointY(0, aPaths[0].Y) * g_dKoef_mm_to_pt)
-                                    aLinePoints.push(oTranform.TransformPointX(aPaths[1].X, 0) * g_dKoef_mm_to_pt)
-                                    aLinePoints.push(oTranform.TransformPointY(0, aPaths[1].Y) * g_dKoef_mm_to_pt)
+                                    // let aLinePoints = [];
+                                    // let oTranform   = oAnnot.transform;
+                                    // // считаем новые точки linePoints (в оригинальных координатах - в пикселях, без скейлов)
+                                    // aLinePoints.push(oTranform.TransformPointX(aPaths[0].X, 0) * g_dKoef_mm_to_pt)
+                                    // aLinePoints.push(oTranform.TransformPointY(0, aPaths[0].Y) * g_dKoef_mm_to_pt)
+                                    // aLinePoints.push(oTranform.TransformPointX(aPaths[1].X, 0) * g_dKoef_mm_to_pt)
+                                    // aLinePoints.push(oTranform.TransformPointY(0, aPaths[1].Y) * g_dKoef_mm_to_pt)
     
-                                    oAnnot.SetLinePoints(aLinePoints);
+                                    // oAnnot.SetLinePoints(aLinePoints);
                                     oAnnot.SetRect(oAnnot.GetMinShapeRect());
                                 }
                                 else if (oAnnot.IsPolygon()) {

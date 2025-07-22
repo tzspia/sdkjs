@@ -2084,6 +2084,18 @@ CShapeDrawer.prototype =
 		var arr = this.Graphics.isTrack() ? this.Graphics.Graphics.ArrayPoints : this.Graphics.ArrayPoints;
         var isArrowsPresent = (arr != null && arr.length > 1 && this.IsCurrentPathCanArrows === true) ? true : false;
 
+        // draw line end only for main line in Line annot
+        if (Asc.editor.isPdfEditor() && isArrowsPresent) {
+            if (this.isLineAnnot) {
+                if (this.isArrowDrawed) {
+                    isArrowsPresent = false;
+                }
+                else {
+                    this.isArrowDrawed = true;
+                }
+            }
+        }
+
         var rgba = this.StrokeUniColor;
         let nAlpha = 0xFF;
         if(!isArrowsPresent && !this.IsArrowsDrawing || Asc.editor.isPdfEditor() || this.Shape.isShadowSp)
