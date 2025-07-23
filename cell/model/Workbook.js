@@ -18033,6 +18033,7 @@
 		}
 
 		AscCommon.History.EndTransaction();
+		this.worksheet.workbook.oApi.onWorksheetChange(this.bbox);
 	};
 	Range.prototype.setValue2=function(array, pushOnlyFirstMergedCell){
 		AscCommon.History.Create_NewPoint();
