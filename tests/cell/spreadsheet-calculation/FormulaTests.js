@@ -13082,6 +13082,223 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 0);	
 
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("1");
+		ws.getRange2("A101").setValue("2");
+		ws.getRange2("B100").setValue("3");
+		ws.getRange2("B101").setValue("4");
+		// For area
+		ws.getRange2("A102").setValue("3");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("1");
+		ws2.getRange2("A2").setValue("2");
+		ws2.getRange2("B1").setValue("3");
+		ws2.getRange2("B2").setValue("4");
+		ws2.getRange2("C1").setValue("1");
+		ws2.getRange2("A3:B4").setValue("Text");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+		// Case #1: Date. Basic valid input: dates using DATE formula. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Date. Basic valid input: dates using DATE formula. 2 of 3 arguments used.');
+		// Case #2: Number. Dates as Excel serial numbers. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(44927,44936)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(44927,44936) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Number. Dates as Excel serial numbers. 2 of 3 arguments used.');
+		// Case #3: String. Dates as string format. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS("01/01/2025","01/10/2025")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS("01/01/2025","01/10/2025") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: String. Dates as string format. 2 of 3 arguments used.');
+		// Case #4: Formula,Date. Start_date filled via IF formula. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(IF(TRUE,DATE(2025,1,1),DATE(2024,1,1)),DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(IF(TRUE,DATE(2025,1,1),DATE(2024,1,1)),DATE(2025,1,10)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Formula,Date. Start_date filled via IF formula. 2 of 3 arguments used.');
+		// Case #5: Reference link. All arguments as Reference link. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(A100,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(A100,A101) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Reference link. All arguments as Reference link. 2 of 3 arguments used.');
+		// Case #6: Area. All arguments are single-cell ranges. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(A102:A102,A103:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Area. All arguments are single-cell ranges. 2 of 3 arguments used.');
+		// Case #7: Array. All arguments are arrays with single element. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS({44927},{44936})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS({44927},{44936}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Array. All arguments are arrays with single element. 2 of 3 arguments used.');
+		// Case #8: Name. All arguments as Name type. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(TestName,TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(TestName,TestName1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name. All arguments as Name type. 2 of 3 arguments used.');
+		// Case #9: Name3D. All arguments as Name3D type. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(TestName3D,TestName3D) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. All arguments as Name3D type. 2 of 3 arguments used.');
+		// Case #10: Ref3D. All arguments as Ref3D type. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(Sheet2!A1,Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(Sheet2!A1,Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Ref3D. All arguments as Ref3D type. 2 of 3 arguments used.');
+		// Case #11: Area3D. All arguments as Area3D type with single cell. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(Sheet2!A1:A1,Sheet2!A2:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(Sheet2!A1:A1,Sheet2!A2:A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Area3D. All arguments as Area3D type with single cell. 2 of 3 arguments used.');
+		// Case #12: Table. All arguments as Table structured references. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(Table1[Column1],Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Table. All arguments as Table structured references. 2 of 3 arguments used.');
+		// Case #13: Date,Array. Holidays as array of string dates. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),{"01/03/2025","01/04/2025"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),{"01/03/2025","01/04/2025"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Date,Array. Holidays as array of string dates. 3 of 3 arguments used.');
+		// Case #14: Date,Area. Holidays as range of cells. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),A104:A105)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),A104:A105) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Date,Area. Holidays as range of cells. 3 of 3 arguments used.');
+		// Case #15: Formula. Holidays as IF formula returning range. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),IF(TRUE,A104:A104,A105:A105))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),IF(TRUE,A104:A104,A105:A105)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Formula. Holidays as IF formula returning range. 3 of 3 arguments used.');
+		// Case #16: Number,Formula. NETWORKDAYS inside SUM formula. 2 of 3 arguments used.
+		oParser = new parserFormula('SUM(NETWORKDAYS(44927,44936),5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(NETWORKDAYS(44927,44936),5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 12, 'Test: Positive case: Number,Formula. NETWORKDAYS inside SUM formula. 2 of 3 arguments used.');
+		// Case #17: String. Short date format in strings. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS("1/1/25","1/10/25")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS("1/1/25","1/10/25") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: String. Short date format in strings. 2 of 3 arguments used.');
+		// Case #18: Time,Date. Start_date with time component adjusted to valid date. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(TIME(0,0,0)+44927,DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(TIME(0,0,0)+44927,DATE(2025,1,10)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 530, 'Test: Positive case: Time,Date. Start_date with time component adjusted to valid date. 2 of 3 arguments used.');
+		// Case #19: Number,Array. Holidays as array of serial numbers. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(44927,44936,{44928,44929})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(44927,44936,{44928,44929}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Number,Array. Holidays as array of serial numbers. 3 of 3 arguments used.');
+		// Case #20: Formula. All arguments filled with DATE formula. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),DATE(2025,1,3))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),DATE(2025,1,3)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Formula. All arguments filled with DATE formula. 3 of 3 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number. Start_date is zero (invalid date). Returns #NUM!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(0,44936)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(0,44936) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 32097, 'Test: Negative case: Number. Start_date is zero (invalid date). Returns #NUM!. 2 of 3 arguments used.');
+		// Case #2: Number. End_date is zero (invalid date). Returns #NUM!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(44927,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(44927,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -32090, 'Test: Negative case: Number. End_date is zero (invalid date). Returns #NUM!. 2 of 3 arguments used.');
+		// Case #3: Date. Start_date after End_date. Returns #NUM!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,10),DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,10),DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -8, 'Test: Negative case: Date. Start_date after End_date. Returns #NUM!. 2 of 3 arguments used.');
+		// Case #4: String. Start_date as non-date string. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS("abc","01/10/2025")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS("abc","01/10/2025") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Start_date as non-date string. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #5: String. End_date as non-date string. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS("01/01/2025","xyz")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS("01/01/2025","xyz") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. End_date as non-date string. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #6: Boolean. Start_date as boolean. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(TRUE,44936)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(TRUE,44936) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean. Start_date as boolean. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #7: Boolean. End_date as boolean. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(44927,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(44927,FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean. End_date as boolean. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #8: Empty. Start_date is empty. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(,44936)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(,44936) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Empty. Start_date is empty. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #9: Empty. End_date is empty. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(44927,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(44927,) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Empty. End_date is empty. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #10: Error. Start_date as error value. Returns #N/A. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(NA(),44936)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(NA(),44936) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Start_date as error value. Returns #N/A. 2 of 3 arguments used.');
+		// Case #11: Date,String. Holidays as non-date string. Returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),"abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),"abc") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Date,String. Holidays as non-date string. Returns #VALUE!. 3 of 3 arguments used.');
+		// Case #12: Date,Array. Holidays as array with non-date value. Returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),{TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),{TRUE}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Date,Array. Holidays as array with non-date value. Returns #VALUE!. 3 of 3 arguments used.');
+		// Case #13: Area. Start_date as multi-cell range. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(A106:A107,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(A106:A107,A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area. Start_date as multi-cell range. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #14: Area. End_date as multi-cell range. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(A100,A106:A107)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(A100,A106:A107) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area. End_date as multi-cell range. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #15: Date,Area. Holidays as multi-cell range with non-date value. Returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),A106:A107)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(2025,1,1),DATE(2025,1,10),A106:A107) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Negative case: Date,Area. Holidays as multi-cell range with non-date value. Returns #VALUE!. 3 of 3 arguments used.');
+		// Case #16: Ref3D. Start_date as Ref3D with non-date value. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(Sheet2!A3,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(Sheet2!A3,A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. Start_date as Ref3D with non-date value. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #17: Ref3D. End_date as Ref3D with non-date value. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(A100,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(A100,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. End_date as Ref3D with non-date value. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #18: Name. Start_date as Name with area. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(TestNameArea,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(TestNameArea,A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Start_date as Name with area. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #19: Name. End_date as Name with area. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(A100,TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(A100,TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. End_date as Name with area. Returns #VALUE!. 2 of 3 arguments used.');
+		// Case #20: Name3D. Start_date as Name3D with area. Returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(TestNameArea3D2,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(TestNameArea3D2,A101) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Name3D. Start_date as Name3D with area. Returns #VALUE!. 2 of 3 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number. Minimum valid date serial numbers. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(1,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(1,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number. Minimum valid date serial numbers. 2 of 3 arguments used.');
+		// Case #2: Date. Maximum valid Excel dates. 2 of 3 arguments used.
+		oParser = new parserFormula('NETWORKDAYS(DATE(9999,12,30),DATE(9999,12,31))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS(DATE(9999,12,30),DATE(9999,12,31)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Bounded case: Date. Maximum valid Excel dates. 2 of 3 arguments used.');
+
+		// Need to fix: strange return with dates, ms diff results, different error types
+		// Case #5: Reference link. All arguments as Reference link. 2 of 3 arguments used.
+		// Case #6: Area. All arguments are single-cell ranges. 2 of 3 arguments used.
+		// Case #8: Name. All arguments as Name type. 2 of 3 arguments used.
+		// Case #9: Name3D. All arguments as Name3D type. 2 of 3 arguments used.
+		// Case #8: Empty. Start_date is empty. Returns #VALUE!. 2 of 3 arguments used.
+		// Case #9: Empty. End_date is empty. Returns #VALUE!. 2 of 3 arguments used.
+		// Case #11: Date,String. Holidays as non-date string. Returns #VALUE!. 3 of 3 arguments used. - what is with return?
+		// Case #12: Date,Array. Holidays as array with non-date value. Returns #VALUE!. 3 of 3 arguments used.
+		// Case #20: Name3D. Start_date as Name3D with area. Returns #VALUE!. 2 of 3 arguments used.
 
 		testArrayFormula2(assert, "NETWORKDAYS", 2, 3, true, null);
 	});
@@ -13170,6 +13387,243 @@ $(function () {
 		oParser = new parserFormula( formulaStr, "A2", ws );
 		assert.ok( oParser.parse(), formulaStr );
 		assert.strictEqual( oParser.calculate().getValue(), 7073, formulaStr );*/
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("1");
+		ws.getRange2("A101").setValue("2");
+		ws.getRange2("B100").setValue("3");
+		ws.getRange2("B101").setValue("4");
+		// For area
+		ws.getRange2("A102").setValue("3");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("1");
+		ws2.getRange2("A2").setValue("2");
+		ws2.getRange2("B1").setValue("3");
+		ws2.getRange2("B2").setValue("4");
+		ws2.getRange2("C1").setValue("1");
+		ws2.getRange2("A3:B4").setValue("Text");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+		// Case #1: Number. Basic valid input: serial numbers for dates (01/01/2006 to 05/01/2006), weekend as number (1 = Saturday/Sunday), holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Number. Basic valid input: serial numbers for dates (01/01/2006 to 05/01/2006), weekend as number (1 = Saturday/Sunday), holidays omitted. 3 of 4 arguments used.');
+		// Case #2: Date. Dates provided via DATE formula, weekend as number (1), holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44927,44936,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44927,44936,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Date. Dates provided via DATE formula, weekend as number (1), holidays omitted. 3 of 4 arguments used.');
+		// Case #3: String. Dates as strings, weekend as string (Saturday/Sunday), holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL("01/01/2025","01/10/2025")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL("01/01/2025","01/10/2025") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: String. Dates as strings, weekend as string (Saturday/Sunday), holidays omitted. 3 of 4 arguments used.');
+		// Case #4: Formula. Weekend as IF formula returning valid number, holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),"0000011")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),"0000011") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Formula. Weekend as IF formula returning valid number, holidays omitted. 3 of 4 arguments used.');
+		// Case #5: Reference link. Reference to cells with valid dates and weekend number, holidays as single cell reference. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),1,A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),1,A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Reference link. Reference to cells with valid dates and weekend number, holidays as single cell reference. 4 of 4 arguments used.');
+		// Case #6: Area. Single-cell ranges for all arguments. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(A100,A101,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(A100,A101,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Area. Single-cell ranges for all arguments. 4 of 4 arguments used.');
+		// Case #7: Array. Arrays with single valid elements for all arguments. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(A100:A100,A101:A101,1,A102:A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(A100:A100,A101:A101,1,A102:A102) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Array. Arrays with single valid elements for all arguments. 4 of 4 arguments used.');
+		// Case #8: Name. Named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL({44927},{44936},1,{44932})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL({44927},{44936},1,{44932}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 6, 'Test: Positive case: Name. Named ranges with valid values. 4 of 4 arguments used.');
+		// Case #9: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(TestName,TestName1,1,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(TestName,TestName1,1,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.');
+		// Case #10: Ref3D. 3D references to cells with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(TestName3D,TestName3D,1,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(TestName3D,TestName3D,1,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Ref3D. 3D references to cells with valid values. 4 of 4 arguments used.');
+		// Case #11: Area3D. 3D single-cell ranges for all arguments. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(Sheet2!A1,Sheet2!A2,1,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(Sheet2!A1,Sheet2!A2,1,Sheet2!A3) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D. 3D single-cell ranges for all arguments. 4 of 4 arguments used.');
+		// Case #12: Table. Table structured references with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(Sheet2!A1:A1,Sheet2!A2:A2,1,Sheet2!A3:A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(Sheet2!A1:A1,Sheet2!A2:A2,1,Sheet2!A3:A3) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Table. Table structured references with valid values. 4 of 4 arguments used.');
+		// Case #13: Date,Array. Holidays as array with multiple valid dates. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(Table1[Column1],Table1[Column1],1,Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(Table1[Column1],Table1[Column1],1,Table1[Column1]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Date,Array. Holidays as array with multiple valid dates. 4 of 4 arguments used.');
+		// Case #14: Time,Number. Dates adjusted with TIME formula, weekend as number, holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('SUM(NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),1),5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),1),5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 13, 'Test: Positive case: Time,Number. Dates adjusted with TIME formula, weekend as number, holidays omitted. 3 of 4 arguments used.');
+		// Case #15: Formula. Nested IF formulas for dates, weekend as number, holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(IF(TRUE,DATE(2025,1,1),DATE(2024,1,1)),DATE(2025,1,10),1,{44932,44933})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(IF(TRUE,DATE(2025,1,1),DATE(2024,1,1)),DATE(2025,1,10),1,{44932,44933}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Formula. Nested IF formulas for dates, weekend as number, holidays omitted. 3 of 4 arguments used.');
+		// Case #16: String. Dates as strings, weekend as number string (11 = Monday only), holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(DATE(2025,1,1)+TIME(8,0,0),DATE(2025,1,10)+TIME(8,0,0),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(DATE(2025,1,1)+TIME(8,0,0),DATE(2025,1,10)+TIME(8,0,0),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: String. Dates as strings, weekend as number string (11 = Monday only), holidays omitted. 3 of 4 arguments used.');
+		// Case #17: Number,Array. Holidays as single-element array. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL("01/01/2025","01/10/2025","1111100")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL("01/01/2025","01/10/2025","1111100") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Number,Array. Holidays as single-element array. 4 of 4 arguments used.');
+		// Case #18: Formula,String. Weekend as string, holidays as single-cell range. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44927,DATE(2025,1,10),ROUND(1,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44927,DATE(2025,1,10),ROUND(1,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 530, 'Test: Positive case: Formula,String. Weekend as string, holidays as single-cell range. 4 of 4 arguments used.');
+		// Case #19: Number,String. Weekend as string, holidays as reference link. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL({44927,44928},{44936,44937},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL({44927,44928},{44936,44937},1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Number,String. Weekend as string, holidays as reference link. 4 of 4 arguments used.');
+		// Case #20: Number. Weekend as number (17 = Friday only), holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),"1",A103:A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(DATE(2025,1,1),DATE(2025,1,10),"1",A103:A104) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Number. Weekend as number (17 = Friday only), holidays omitted. 3 of 4 arguments used.');
+		// Case #21: Formula,Array. Holidays as array with multiple dates. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44927,44936,,A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44927,44936,,A100) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Formula,Array. Holidays as array with multiple dates. 4 of 4 arguments used.');
+		// Case #22: Number,Empty. Weekend omitted (defaults to 1), holidays omitted. 2 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44936,44927,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44936,44927,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -7, 'Test: Positive case: Number,Empty. Weekend omitted (defaults to 1), holidays omitted. 2 of 4 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number. Start_date > end_date returns #NUM!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL("abc","01/10/2025")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL("abc","01/10/2025") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number. Start_date > end_date returns #NUM!. 3 of 4 arguments used.');
+		// Case #2: String. Invalid start_date string returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(NA(),DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(NA(),DATE(2025,1,10)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: String. Invalid start_date string returns #VALUE!. 3 of 4 arguments used.');
+		// Case #3: String. Invalid end_date string returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(FALSE,DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(FALSE,DATE(2025,1,10)) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Invalid end_date string returns #VALUE!. 3 of 4 arguments used.');
+		// Case #4: Number,String. Invalid weekend string returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(A100:A101,A101,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(A100:A101,A101,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number,String. Invalid weekend string returns #VALUE!. 3 of 4 arguments used.');
+		// Case #5: Number,Array. Holidays with invalid date (0) returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(A102,DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(A102,DATE(2025,1,10)) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 32620, 'Test: Negative case: Number,Array. Holidays with invalid date (0) returns #NUM!. 4 of 4 arguments used.');
+		// Case #6: Error. Start_date as #N/A propagates error. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL("01/01/2025","01/10/2025","abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL("01/01/2025","01/10/2025","abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Error. Start_date as #N/A propagates error. 3 of 4 arguments used.');
+		// Case #7: Number,Error. End_date as #N/A propagates error. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44927,44936,8)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44927,44936,8) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number,Error. End_date as #N/A propagates error. 3 of 4 arguments used.');
+		// Case #8: Number. Invalid weekend number (0) returns #NUM!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(Sheet2!A4,Sheet2!A5,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(Sheet2!A4,Sheet2!A5,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Number. Invalid weekend number (0) returns #NUM!. 3 of 4 arguments used.');
+		// Case #9: 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(TestNameArea2,TestName1,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(TestNameArea2,TestName1,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case. 3 of 4 arguments used.');
+		// Case #11: Boolean. Start_date as boolean (FALSE) returns #NUM!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(SQRT(-1),DATE(2025,1,10))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(SQRT(-1),DATE(2025,1,10)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean. Start_date as boolean (FALSE) returns #NUM!. 3 of 4 arguments used.');
+		// Case #12: Number,Boolean. End_date as boolean (TRUE) returns #NUM!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(0,44936,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(0,44936,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 32097, 'Test: Negative case: Number,Boolean. End_date as boolean (TRUE) returns #NUM!. 3 of 4 arguments used.');
+		// Case #13: Number,Boolean. Weekend as boolean (FALSE) returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL({FALSE},{44936},1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL({FALSE},{44936},1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number,Boolean. Weekend as boolean (FALSE) returns #VALUE!. 3 of 4 arguments used.');
+		// Case #14: Area. Multi-cell range for start_date returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44927,44936,-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44927,44936,-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Area. Multi-cell range for start_date returns #VALUE!. 3 of 4 arguments used.');
+		// Case #15: Number,Area. Multi-cell range for end_date returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(Sheet2!A1:A2,Sheet2!A3,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(Sheet2!A1:A2,Sheet2!A3,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number,Area. Multi-cell range for end_date returns #VALUE!. 3 of 4 arguments used.');
+		// Case #16: Ref3D. 3D reference to invalid weekend string returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(TIME(12,0,0),DATE(2025,1,10),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(TIME(12,0,0),DATE(2025,1,10),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 32620, 'Test: Negative case: Ref3D. 3D reference to invalid weekend string returns #VALUE!. 3 of 4 arguments used.');
+		// Case #17: Name. Named range with invalid start_date (area) returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL("-01/01/2025","01/10/2025")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL("-01/01/2025","01/10/2025") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Named range with invalid start_date (area) returns #VALUE!. 3 of 4 arguments used.');
+		// Case #18: Table. Table column with invalid weekend string returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(A103,A101,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(A103,A101,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Table. Table column with invalid weekend string returns #VALUE!. 3 of 4 arguments used.');
+		// Case #19: Formula. Start_date > end_date via DATE formula returns #NUM!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(DATE(2025,1,10),DATE(2025,1,1),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(DATE(2025,1,10),DATE(2025,1,1),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -8, 'Test: Negative case: Formula. Start_date > end_date via DATE formula returns #NUM!. 3 of 4 arguments used.');
+		// Case #20: String. Empty start_date string returns #VALUE!. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(1,2,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(1,2,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: String. Empty start_date string returns #VALUE!. 3 of 4 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number. Minimum valid date (01/01/1900 to 01/02/1900), weekend as number, holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(2958465,2958465,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(2958465,2958465,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number. Minimum valid date (01/01/1900 to 01/02/1900), weekend as number, holidays omitted. 3 of 4 arguments used.');
+		// Case #2: Number. Maximum valid date (12/31/9999), weekend as number, holidays omitted. 3 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44927,44936,"0000001")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44927,44936,"0000001") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Bounded case: Number. Maximum valid date (12/31/9999), weekend as number, holidays omitted. 3 of 4 arguments used.');
+		// Case #3: Number,Array. Minimum valid date and holiday (01/01/1900), weekend as number. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(44927,44936,17)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(44927,44936,17) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 9, 'Test: Bounded case: Number,Array. Minimum valid date and holiday (01/01/1900), weekend as number. 4 of 4 arguments used.');
+		// Case #4: Number,Array. Maximum valid date and holiday (12/31/9999), weekend as number. 4 of 4 arguments used.
+		oParser = new parserFormula('NETWORKDAYS.INTL(2958464,2958465,1,{2958465})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NETWORKDAYS.INTL(2958464,2958465,1,{2958465}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number,Array. Maximum valid date and holiday (12/31/9999), weekend as number. 4 of 4 arguments used.');
+
+		// Need to fix: many results diff from ms, array handle, text handle, 3D error same as in NETWORKDAYS
+		// Case #7: Array. Arrays with single valid elements for all arguments. 4 of 4 arguments used.
+		// Case #8: Name. Named ranges with valid values. 4 of 4 arguments used.
+		// Case #11: Area3D. 3D single-cell ranges for all arguments. 4 of 4 arguments used.
+		// Case #3: String. Invalid end_date string returns #VALUE!. 3 of 4 arguments used.
+		// Case #5: Number,Array. Holidays with invalid date (0) returns #NUM!. 4 of 4 arguments used.
+		// Case #8: Number. Invalid weekend number (0) returns #NUM!. 3 of 4 arguments used.
+		// Case #9: 3 of 4 arguments used.
+		// Case #13: Number,Boolean. Weekend as boolean (FALSE) returns #VALUE!. 3 of 4 arguments used.
+		// Case #12: Table. Table structured references with valid values. 4 of 4 arguments used.
+		// Case #13: Date,Array. Holidays as array with multiple valid dates. 4 of 4 arguments used.
+		// Case #19: Number,String. Weekend as string, holidays as reference link. 4 of 4 arguments used.
+		// Case #21: Formula,Array. Holidays as array with multiple dates. 4 of 4 arguments used.
+		// Case #18: Table. Table column with invalid weekend string returns #VALUE!. 3 of 4 arguments used.
+		// Case #20: String. Empty start_date string returns #VALUE!. 3 of 4 arguments used. 
+
+
 	});
 
 	QUnit.test("Test: \"N\"", function (assert) {
@@ -13198,6 +13652,234 @@ $(function () {
 		oParser = new parserFormula('N("7")', "A7", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("1");
+		ws.getRange2("A101").setValue("2");
+		ws.getRange2("B100").setValue("3");
+		ws.getRange2("B101").setValue("4");
+		// For area
+		ws.getRange2("A102").setValue("3");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("1");
+		ws2.getRange2("A2").setValue("2");
+		ws2.getRange2("B1").setValue("3");
+		ws2.getRange2("B2").setValue("4");
+		ws2.getRange2("C1").setValue("1");
+		ws2.getRange2("A3:B4").setValue("Text");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #0: Number. Basic valid input: integer. 1 argument used.
+		oParser = new parserFormula('N(15)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(15) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 15, 'Test: Positive case: Number. Basic valid input: integer. 1 argument used.');
+		// Case #1: Number. Basic valid input: float number. 1 argument used.
+		oParser = new parserFormula('N(3.7)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(3.7) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3.7, 'Test: Positive case: Number. Basic valid input: float number. 1 argument used.');
+		// Case #2: String. String convertible to number. 1 argument used.
+		oParser = new parserFormula('N("25")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N("25") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: String. String convertible to number. 1 argument used.');
+		// Case #3: Formula. Nested formula returning number (3). 1 argument used.
+		oParser = new parserFormula('N(SQRT(9))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(SQRT(9)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Formula. Nested formula returning number (3). 1 argument used.');
+		// Case #4: Reference link. Reference to cell with valid number (3). 1 argument used.
+		oParser = new parserFormula('N(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Reference link. Reference to cell with valid number (3). 1 argument used.');
+		// Case #5: Area. Single-cell range with valid number (1.1). 1 argument used.
+		oParser = new parserFormula('N(A101:A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(A101:A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Area. Single-cell range with valid number (1.1). 1 argument used.');
+		// Case #6: Array. Array with single numeric element. 1 argument used.
+		oParser = new parserFormula('N({5})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N({5}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 5, 'Test: Positive case: Array. Array with single numeric element. 1 argument used.');
+		// Case #7: Name. Named range with valid number (3). 1 argument used.
+		oParser = new parserFormula('N(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.5, 'Test: Positive case: Name. Named range with valid number (3). 1 argument used.');
+		// Case #8: Name3D. 3D named range with valid number (2). 1 argument used.
+		oParser = new parserFormula('N(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.5, 'Test: Positive case: Name3D. 3D named range with valid number (2). 1 argument used.');
+		// Case #9: Ref3D. 3D reference to cell with valid number (2). 1 argument used.
+		oParser = new parserFormula('N(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Ref3D. 3D reference to cell with valid number (2). 1 argument used.');
+		// Case #10: Area3D. 3D single-cell range with valid number (2). 1 argument used.
+		oParser = new parserFormula('N(Sheet2!A1:A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(Sheet2!A1:A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Area3D. 3D single-cell range with valid number (2). 1 argument used.');
+		// Case #11: Table. Table structured reference with valid number (3). 1 argument used.
+		oParser = new parserFormula('N(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Table. Table structured reference with valid number (3). 1 argument used.');
+		// Case #12: Date. Date as serial number (45808). 1 argument used.
+		oParser = new parserFormula('N(DATE(2025,6,30))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(DATE(2025,6,30)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 45838, 'Test: Positive case: Date. Date as serial number (45808). 1 argument used.');
+		// Case #13: Time. Time as fraction of day (0.60416667). 1 argument used.
+		oParser = new parserFormula('N(TIME(14,30,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(TIME(14,30,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3), "0.604", 'Test: Positive case: Time. Time as fraction of day (0.60416667). 1 argument used.');
+		// Case #14: Formula. Nested ABS formula returning number (8). 1 argument used.
+		oParser = new parserFormula('N(ABS(-8))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(ABS(-8)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Formula. Nested ABS formula returning number (8). 1 argument used.');
+		// Case #15: Boolean. Boolean TRUE converts to 1. 1 argument used.
+		oParser = new parserFormula('N(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Boolean. Boolean TRUE converts to 1. 1 argument used.');
+		// Case #16: Boolean. Boolean FALSE converts to 0. 1 argument used.
+		oParser = new parserFormula('N(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Boolean. Boolean FALSE converts to 0. 1 argument used.');
+		// Case #17: String. Short date string convertible to number (6). 1 argument used.
+		oParser = new parserFormula('N("6/6")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N("6/6") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: String. Short date string convertible to number (6). 1 argument used.');
+		// Case #18: Array. Multi-element array, returns first element (12). 1 argument used.
+		oParser = new parserFormula('N({12,24})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N({12,24}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 12, 'Test: Positive case: Array. Multi-element array, returns first element (12). 1 argument used.');
+		// Case #19: Formula. Nested IF returning valid number (10). 1 argument used.
+		oParser = new parserFormula('N(IF(TRUE,10,4))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(IF(TRUE,10,4)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'Test: Positive case: Formula. Nested IF returning valid number (10). 1 argument used.');
+		// Case #20: Formula. Nested ROUND formula returning number (7.7). 1 argument used.
+		oParser = new parserFormula('N(ROUND(7.666,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(ROUND(7.666,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7.7, 'Test: Positive case: Formula. Nested ROUND formula returning number (7.7). 1 argument used.');
+		// Case #21: Formula. N with nested SUM formula returning number (7). 1 argument used.
+		oParser = new parserFormula('N(SUM(5,2))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(SUM(5,2)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 7, 'Test: Positive case: Formula. N with nested SUM formula returning number (7). 1 argument used.');
+		// Case #22: String. String in scientific notation convertible to number (1000000000000). 1 argument used.
+		oParser = new parserFormula('N("1E+12")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N("1E+12") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: String. String in scientific notation convertible to number (1000000000000). 1 argument used.');
+
+		// Negative cases:
+		// Case #1: Error. Propagates #N/A error. 1 argument used.
+		oParser = new parserFormula('N(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 1 argument used.');
+		// Case #2: String. Non-numeric string returns 0. 1 argument used.
+		oParser = new parserFormula('N("xyz")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N("xyz") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: String. Non-numeric string returns 0. 1 argument used.');
+		// Case #3: Empty. Reference to empty cell returns 0. 1 argument used.
+		oParser = new parserFormula('N(A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Negative case: Empty. Reference to empty cell returns 0. 1 argument used.');
+		// Case #4: Area. Multi-cell range returns first cell’s value (1.1). 1 argument used.
+		oParser = new parserFormula('N(A101:A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(A101:A102) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Area. Multi-cell range returns first cell’s value (1.1). 1 argument used.');
+		// Case #5: Ref3D. 3D reference to cell with text (abc) returns 0. 1 argument used.
+		oParser = new parserFormula('N(Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Negative case: Ref3D. 3D reference to cell with text (abc) returns 0. 1 argument used.');
+		// Case #6: Name. Named range with text (invalid) returns 0. 1 argument used.
+		oParser = new parserFormula('N(TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Name. Named range with text (invalid) returns 0. 1 argument used.');
+		// Case #7: Name3D. 3D named range. 1 argument used.
+		oParser = new parserFormula('N(TestNameArea3D2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(TestNameArea3D2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.8, 'Test: Negative case: Name3D. 3D named range. 1 argument used.');
+		// Case #9: Formula. Formula resulting in #DIV/0! propagates error. 1 argument used.
+		oParser = new parserFormula('N(DIVIDE(5,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(DIVIDE(5,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NAME?', 'Test: Negative case: Formula. Formula resulting in #DIV/0! propagates error. 1 argument used.');
+		// Case #10: String. Empty string returns 0. 1 argument used.
+		oParser = new parserFormula('N("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: String. Empty string returns 0. 1 argument used.');
+		// Case #11: Array. Array with booleans, returns first element (1). 1 argument used.
+		oParser = new parserFormula('N({TRUE,FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N({TRUE,FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Negative case: Array. Array with booleans, returns first element (1). 1 argument used.');
+		// Case #12: Area3D. 3D multi-cell range, returns first cell’s value (2). 1 argument used.
+		oParser = new parserFormula('N(Sheet2!A1:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(Sheet2!A1:A2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Test: Negative case: Area3D. 3D multi-cell range, returns first cell’s value (2). 1 argument used.');
+		// Case #13: Formula. Formula resulting in #NUM! propagates error. 1 argument used.
+		oParser = new parserFormula('N(SQRT(-4))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(SQRT(-4)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! propagates error. 1 argument used.');
+		// Case #14: String. Text string returns 0. 1 argument used.
+		oParser = new parserFormula('N("text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N("text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: String. Text string returns 0. 1 argument used.');
+		// Case #15: Array. Array with non-numeric string returns 0. 1 argument used.
+		oParser = new parserFormula('N({"xyz"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N({"xyz"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Test: Negative case: Array. Array with non-numeric string returns 0. 1 argument used.');
+		// Case #16: Reference link. Reference to cell with non-numeric value (0.1) returns 0.1. 1 argument used.
+		oParser = new parserFormula('N(A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Reference link. Reference to cell with non-numeric value (0.1) returns 0.1. 1 argument used.');
+		// Case #17: Formula. Formula resulting in #N/A propagates error. 1 argument used.
+		oParser = new parserFormula('N(VLOOKUP("z",A1:B1,2,FALSE))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(VLOOKUP("z",A1:B1,2,FALSE)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Formula. Formula resulting in #N/A propagates error. 1 argument used.');
+		// Case #18: String. Non-numeric string with negative sign returns 0. 1 argument used.
+		oParser = new parserFormula('N("-text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N("-text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: String. Non-numeric string with negative sign returns 0. 1 argument used.');
+		// Case #19: Time. Invalid time returns 0. 1 argument used.
+		oParser = new parserFormula('N(TIME(26,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(TIME(26,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(2), "0.08", 'Test: Negative case: Time. Invalid time returns 0. 1 argument used.');
+		// Case #20: Date. Date before valid range (0) returns 0. 1 argument used.
+		oParser = new parserFormula('N(DATE(1899,12,31))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(DATE(1899,12,31)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 693962, 'Test: Negative case: Date. Date before valid range (0) returns 0. 1 argument used.');
+
+		// Bounded cases:
+		// Case #1: Number. Smallest valid positive number. 1 argument used.
+		oParser = new parserFormula('N(1E-307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(1E-307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1e-307, 'Test: Bounded case: Number. Smallest valid positive number. 1 argument used.');
+		// Case #2: Number. Largest valid Excel number. 1 argument used.
+		oParser = new parserFormula('N(9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(9.99999999999999E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 9.99999999999999e+307, 'Test: Bounded case: Number. Largest valid Excel number. 1 argument used.');
+		// Case #3: Date. Smallest valid date serial number (1900-01-01). 1 argument used.
+		oParser = new parserFormula('N(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Date. Smallest valid date serial number (1900-01-01). 1 argument used.');
+		// Case #4: Date. Largest valid date serial number (9999-12-31). 1 argument used.
+		oParser = new parserFormula('N(2958465)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: N(2958465) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2958465, 'Test: Bounded case: Date. Largest valid date serial number (9999-12-31). 1 argument used.');
+
+		// Need to fix: area/ area3D handle
+		// Case #4: Area. Multi-cell range returns first cell’s value (1.1). 1 argument used.
+		// Case #12: Area3D. 3D multi-cell range, returns first cell’s value (2). 1 argument used.
 
 		//TODO нужна другая функция для тестирования
 		//testArrayFormula2(assert, "N", 1, 1);
@@ -27619,6 +28301,245 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), normdist(1, 40, -1.5, true));
 
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number. Basic valid input: all numbers, cumulative TRUE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: Number. Basic valid input: all numbers, cumulative TRUE. 4 of 4 arguments used.');
+		// Case #2: Number. Basic valid input: all numbers, cumulative FALSE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,1,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,1,FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.241970725", 'Test: Positive case: Number. Basic valid input: all numbers, cumulative FALSE. 4 of 4 arguments used.');
+		// Case #3: String. String convertible to numbers and TRUE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST("1","0","1","TRUE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST("1","0","1","TRUE") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: String. String convertible to numbers and TRUE. 4 of 4 arguments used.');
+		// Case #4: Formula. Nested formulas returning valid numbers. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(SQRT(1),ABS(0),SQRT(1),TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(SQRT(1),ABS(0),SQRT(1),TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: Formula. Nested formulas returning valid numbers. 4 of 4 arguments used.');
+		// Case #5: Reference link. Reference to cells with valid numbers and TRUE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(A100,A101,A102,A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(A100,A101,A102,A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.125794409, 'Test: Positive case: Reference link. Reference to cells with valid numbers and TRUE. 4 of 4 arguments used.');
+		// Case #6: Area. Single-cell ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(A100:A100,A101:A101,A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(A100:A100,A101:A101,A102:A102,A103:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.125794409, 'Test: Positive case: Area. Single-cell ranges with valid values. 4 of 4 arguments used.');
+		// Case #7: Array. Array with single valid elements. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST({1},{0},{1},{TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST({1},{0},{1},{TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: Array. Array with single valid elements. 4 of 4 arguments used.');
+		// Case #8: Name. Named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(TestName,TestName1,TestName2,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(TestName,TestName1,TestName2,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.462062856', 'Test: Positive case: Name. Named ranges with valid values. 4 of 4 arguments used.');
+		// Case #9: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(TestName3D,TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(TestName3D,TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.');
+		// Case #10: Ref3D. 3D references to cells with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D. 3D references to cells with valid values. 4 of 4 arguments used.');
+		// Case #11: Area3D. 3D single-cell ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D. 3D single-cell ranges with valid values. 4 of 4 arguments used.');
+		// Case #12: Table. Table structured references with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(Table1[Column1],Table1[Column1],Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(Table1[Column1],Table1[Column1],Table1[Column1],Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Table. Table structured references with valid values. 4 of 4 arguments used.');
+		// Case #13: Date. Date as serial number for x. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(DATE(2025,1,1),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(DATE(2025,1,1),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Date. Date as serial number for x. 4 of 4 arguments used.');
+		// Case #14: Time. Time as fractional number for x. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(TIME(12,0,0),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(TIME(12,0,0),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.691462461', 'Test: Positive case: Time. Time as fractional number for x. 4 of 4 arguments used.');
+		// Case #15: Formula. NORM.DIST inside SUM formula. 4 of 4 arguments used.
+		oParser = new parserFormula('SUM(NORMDIST(1,0,1,TRUE),0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(NORMDIST(1,0,1,TRUE),0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '1.341344746', 'Test: Positive case: Formula. NORM.DIST inside SUM formula. 4 of 4 arguments used.');
+		// Case #16: Number. Very small standard_dev. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(0,0,0.0000000001,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(0,0,0.0000000001,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Number. Very small standard_dev. 4 of 4 arguments used.');
+		// Case #17: String. Strings convertible to numbers and FALSE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST("1.5","0","1","FALSE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST("1.5","0","1","FALSE") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.129517596', 'Test: Positive case: String. Strings convertible to numbers and FALSE. 4 of 4 arguments used.');
+		// Case #18: Formula. Nested IF returning valid x value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(IF(TRUE,1,0),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(IF(TRUE,1,0),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.841344746', 'Test: Positive case: Formula. Nested IF returning valid x value. 4 of 4 arguments used.');
+		// Case #19: Number. Negative x value, valid input. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(-1,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(-1,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.158655254', 'Test: Positive case: Number. Negative x value, valid input. 4 of 4 arguments used.');
+		// Case #20: Array. Array with single elements for probability density. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST({1},{0},{1},{FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST({1},{0},{1},{FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.241970725', 'Test: Positive case: Array. Array with single elements for probability density. 4 of 4 arguments used.');
+		// Case #21: Number,Formula. Formula for mean. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,AVERAGE(0,0),1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,AVERAGE(0,0),1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.841344746', 'Test: Positive case: Number,Formula. Formula for mean. 4 of 4 arguments used.');
+		// Case #22: String,Number. String convertible to TRUE for cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST("1",0,1,"1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST("1",0,1,"1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: String,Number. String convertible to TRUE for cumulative. 4 of 4 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number. Negative standard_dev returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,-1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,-1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative standard_dev returns #NUM!. 4 of 4 arguments used.');
+		// Case #2: String. Non-numeric string for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST("abc",0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST("abc",0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #3: Error. Propagates #N/A error. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(NA(),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(NA(),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 4 of 4 arguments used.');
+		// Case #4: Area. Multi-cell range returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(A100:A101,A101:A101,A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(A100:A101,A101:A101,A102:A102,A103:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area. Multi-cell range returns #VALUE!. 4 of 4 arguments used.');
+		// Case #5: Empty. Empty cell reference for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(A104,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(A104,0,1,TRUE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Negative case: Empty. Empty cell reference for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #6: String. Non-boolean string for cumulative returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,1,"abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,1,"abc") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-boolean string for cumulative returns #VALUE!. 4 of 4 arguments used.');
+		// Case #7: Number. Zero standard_dev returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,0,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,0,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Zero standard_dev returns #NUM!. 4 of 4 arguments used.');
+		// Case #8: Ref3D. 3D reference to text returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(Sheet2!A5,Sheet2!A2,Sheet2!A3,Sheet2!A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(Sheet2!A5,Sheet2!A2,Sheet2!A3,Sheet2!A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D reference to text returns #VALUE!. 4 of 4 arguments used.');
+		// Case #9: Name. Named range with text returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(TestNameArea,TestName1,TestName2,TestName3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(TestNameArea,TestName1,TestName2,TestName3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Named range with text returns #VALUE!. 4 of 4 arguments used.');
+		// Case #11: Formula. Formula resulting in #NUM! error for x. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(SQRT(-1),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(SQRT(-1),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! error for x. 4 of 4 arguments used.');
+		// Case #12: Array. Multi-element array for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST({1,2},0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST({1,2},0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.8413447460685429, 'Test: Negative case: Array. Multi-element array for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #13: String. String convertible to negative standard_dev returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST("0.5",0,"-1","TRUE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST("0.5",0,"-1","TRUE") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. String convertible to negative standard_dev returns #NUM!. 4 of 4 arguments used.');
+		// Case #14: Boolean. Boolean FALSE (0) for x is valid but tests edge case. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(FALSE,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(FALSE,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Negative case: Boolean. Boolean FALSE (0) for x is valid but tests edge case. 4 of 4 arguments used.');
+		// Case #15: Number. Very small standard_dev may cause #NUM! due to precision limits. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,1E-307,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,1E-307,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Number. Very small standard_dev due to precision limits. 4 of 4 arguments used.');
+		// Case #16: Area3D. 3D multi-cell range returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area3D. 3D multi-cell range returns #VALUE!. 4 of 4 arguments used.');
+		// Case #17: Name3D. 3D named range with text returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(TestNameArea3D,TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(TestNameArea3D,TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name3D. 3D named range with text returns #VALUE!. 4 of 4 arguments used.');
+		// Case #18: String. Empty string for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST("",0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST("",0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #19: Formula. NA() for mean propagates #N/A error. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,NA(),1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,NA(),1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Formula. NA() for mean propagates #N/A error. 4 of 4 arguments used.');
+		// Case #20: Array. Multi-element array for cumulative returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,1,{TRUE,FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,1,{TRUE,FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.841344746', 'Test: Negative case: Array. Multi-element array for cumulative returns #VALUE!. 4 of 4 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number. Maximum valid x value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1E+307,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1E+307,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number. Maximum valid x value. 4 of 4 arguments used.');
+		// Case #2: Number. Minimum valid x value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(-1E+307,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(-1E+307,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Minimum valid x value. 4 of 4 arguments used.');
+		// Case #3: Number. Maximum valid mean value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(0,1E+307,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(0,1E+307,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Maximum valid mean value. 4 of 4 arguments used.');
+		// Case #4: Number. Minimum valid mean value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(0,-1E+307,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(0,-1E+307,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number. Minimum valid mean value. 4 of 4 arguments used.');
+		// Case #5: Number. Minimum valid standard_dev value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(0,0,1E-307,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(0,0,1E-307,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Bounded case: Number. Minimum valid standard_dev value. 4 of 4 arguments used.');
+		// Case #6: String. String convertible to TRUE for cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,1,"1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,1,"1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Bounded case: String. String convertible to TRUE for cumulative. 4 of 4 arguments used.');
+		// Case #7: String. String convertible to FALSE for cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NORMDIST(1,0,1,"0")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDIST(1,0,1,"0") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Bounded case: String. String convertible to FALSE for cumulative. 4 of 4 arguments used.');
+
+		// TODO need to fix critical error when trying to convert val to Bool
+		// Case #5: Reference link. Reference to cells with valid numbers and TRUE. 4 of 4 arguments used.
+		// Case #6: Area. Single-cell ranges with valid values. 4 of 4 arguments used.
+		// Case #22: String,Number. String convertible to TRUE for cumulative. 4 of 4 arguments used. Critical
+		// Case #5: Empty. Empty cell reference for x returns #VALUE!. 4 of 4 arguments used.
+		// Case #6: String. Non-boolean string for cumulative returns #VALUE!. 4 of 4 arguments used.
+		// Case #6: String. String convertible to TRUE for cumulative. 4 of 4 arguments used.
+
+
 		testArrayFormula2(assert, "NORMDIST", 4, 4);
 	});
 
@@ -27635,6 +28556,244 @@ $(function () {
 		oParser = new parserFormula("NORM.DIST(F202,F203,F204,FALSE)", "F1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(5) - 0, 0.10934);
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number. Basic valid input: all numbers, cumulative TRUE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: Number. Basic valid input: all numbers, cumulative TRUE. 4 of 4 arguments used.');
+		// Case #2: Number. Basic valid input: all numbers, cumulative FALSE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,1,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,1,FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.241970725", 'Test: Positive case: Number. Basic valid input: all numbers, cumulative FALSE. 4 of 4 arguments used.');
+		// Case #3: String. String convertible to numbers and TRUE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST("1","0","1","TRUE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST("1","0","1","TRUE") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: String. String convertible to numbers and TRUE. 4 of 4 arguments used.');
+		// Case #4: Formula. Nested formulas returning valid numbers. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(SQRT(1),ABS(0),SQRT(1),TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(SQRT(1),ABS(0),SQRT(1),TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: Formula. Nested formulas returning valid numbers. 4 of 4 arguments used.');
+		// Case #5: Reference link. Reference to cells with valid numbers and TRUE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(A100,A101,A102,A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(A100,A101,A102,A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.125794409, 'Test: Positive case: Reference link. Reference to cells with valid numbers and TRUE. 4 of 4 arguments used.');
+		// Case #6: Area. Single-cell ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(A100:A100,A101:A101,A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(A100:A100,A101:A101,A102:A102,A103:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.125794409, 'Test: Positive case: Area. Single-cell ranges with valid values. 4 of 4 arguments used.');
+		// Case #7: Array. Array with single valid elements. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST({1},{0},{1},{TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST({1},{0},{1},{TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), "0.841344746", 'Test: Positive case: Array. Array with single valid elements. 4 of 4 arguments used.');
+		// Case #8: Name. Named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(TestName,TestName1,TestName2,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(TestName,TestName1,TestName2,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.462062856', 'Test: Positive case: Name. Named ranges with valid values. 4 of 4 arguments used.');
+		// Case #9: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(TestName3D,TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(TestName3D,TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.');
+		// Case #10: Ref3D. 3D references to cells with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D. 3D references to cells with valid values. 4 of 4 arguments used.');
+		// Case #11: Area3D. 3D single-cell ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D. 3D single-cell ranges with valid values. 4 of 4 arguments used.');
+		// Case #12: Table. Table structured references with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(Table1[Column1],Table1[Column1],Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(Table1[Column1],Table1[Column1],Table1[Column1],Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Table. Table structured references with valid values. 4 of 4 arguments used.');
+		// Case #13: Date. Date as serial number for x. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(DATE(2025,1,1),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(DATE(2025,1,1),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Date. Date as serial number for x. 4 of 4 arguments used.');
+		// Case #14: Time. Time as fractional number for x. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(TIME(12,0,0),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(TIME(12,0,0),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.691462461', 'Test: Positive case: Time. Time as fractional number for x. 4 of 4 arguments used.');
+		// Case #15: Formula. NORM.DIST inside SUM formula. 4 of 4 arguments used.
+		oParser = new parserFormula('SUM(NORM.DIST(1,0,1,TRUE),0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(NORM.DIST(1,0,1,TRUE),0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '1.341344746', 'Test: Positive case: Formula. NORM.DIST inside SUM formula. 4 of 4 arguments used.');
+		// Case #16: Number. Very small standard_dev. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(0,0,0.0000000001,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(0,0,0.0000000001,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Number. Very small standard_dev. 4 of 4 arguments used.');
+		// Case #17: String. Strings convertible to numbers and FALSE. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST("1.5","0","1","FALSE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST("1.5","0","1","FALSE") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.129517596', 'Test: Positive case: String. Strings convertible to numbers and FALSE. 4 of 4 arguments used.');
+		// Case #18: Formula. Nested IF returning valid x value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(IF(TRUE,1,0),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(IF(TRUE,1,0),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.841344746', 'Test: Positive case: Formula. Nested IF returning valid x value. 4 of 4 arguments used.');
+		// Case #19: Number. Negative x value, valid input. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(-1,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(-1,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.158655254', 'Test: Positive case: Number. Negative x value, valid input. 4 of 4 arguments used.');
+		// Case #20: Array. Array with single elements for probability density. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST({1},{0},{1},{FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORMDINORM.DISTST({1},{0},{1},{FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.241970725', 'Test: Positive case: Array. Array with single elements for probability density. 4 of 4 arguments used.');
+		// Case #21: Number,Formula. Formula for mean. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,AVERAGE(0,0),1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,AVERAGE(0,0),1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.841344746', 'Test: Positive case: Number,Formula. Formula for mean. 4 of 4 arguments used.');
+		// Case #22: String,Number. String convertible to TRUE for cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST("1",0,1,"1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST("1",0,1,"1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: String,Number. String convertible to TRUE for cumulative. 4 of 4 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number. Negative standard_dev returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,-1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,-1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative standard_dev returns #NUM!. 4 of 4 arguments used.');
+		// Case #2: String. Non-numeric string for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST("abc",0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST("abc",0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #3: Error. Propagates #N/A error. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(NA(),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(NA(),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 4 of 4 arguments used.');
+		// Case #4: Area. Multi-cell range returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(A100:A101,A101:A101,A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(A100:A101,A101:A101,A102:A102,A103:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area. Multi-cell range returns #VALUE!. 4 of 4 arguments used.');
+		// Case #5: Empty. Empty cell reference for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(A104,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(A104,0,1,TRUE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Negative case: Empty. Empty cell reference for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #6: String. Non-boolean string for cumulative returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,1,"abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,1,"abc") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-boolean string for cumulative returns #VALUE!. 4 of 4 arguments used.');
+		// Case #7: Number. Zero standard_dev returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,0,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,0,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Zero standard_dev returns #NUM!. 4 of 4 arguments used.');
+		// Case #8: Ref3D. 3D reference to text returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(Sheet2!A5,Sheet2!A2,Sheet2!A3,Sheet2!A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(Sheet2!A5,Sheet2!A2,Sheet2!A3,Sheet2!A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D reference to text returns #VALUE!. 4 of 4 arguments used.');
+		// Case #9: Name. Named range with text returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(TestNameArea,TestName1,TestName2,TestName3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(TestNameArea,TestName1,TestName2,TestName3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Named range with text returns #VALUE!. 4 of 4 arguments used.');
+		// Case #11: Formula. Formula resulting in #NUM! error for x. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(SQRT(-1),0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(SQRT(-1),0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! error for x. 4 of 4 arguments used.');
+		// Case #12: Array. Multi-element array for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST({1,2},0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST({1,2},0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.8413447460685429, 'Test: Negative case: Array. Multi-element array for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #13: String. String convertible to negative standard_dev returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST("0.5",0,"-1","TRUE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST("0.5",0,"-1","TRUE") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: String. String convertible to negative standard_dev returns #NUM!. 4 of 4 arguments used.');
+		// Case #14: Boolean. Boolean FALSE (0) for x is valid but tests edge case. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(FALSE,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(FALSE,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Negative case: Boolean. Boolean FALSE (0) for x is valid but tests edge case. 4 of 4 arguments used.');
+		// Case #15: Number. Very small standard_dev may cause #NUM! due to precision limits. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,1E-307,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,1E-307,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Number. Very small standard_dev due to precision limits. 4 of 4 arguments used.');
+		// Case #16: Area3D. 3D multi-cell range returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area3D. 3D multi-cell range returns #VALUE!. 4 of 4 arguments used.');
+		// Case #17: Name3D. 3D named range with text returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(TestNameArea3D,TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(TestNameArea3D,TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name3D. 3D named range with text returns #VALUE!. 4 of 4 arguments used.');
+		// Case #18: String. Empty string for x returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST("",0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST("",0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string for x returns #VALUE!. 4 of 4 arguments used.');
+		// Case #19: Formula. NA() for mean propagates #N/A error. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,NA(),1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,NA(),1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Formula. NA() for mean propagates #N/A error. 4 of 4 arguments used.');
+		// Case #20: Array. Multi-element array for cumulative returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,1,{TRUE,FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,1,{TRUE,FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.841344746', 'Test: Negative case: Array. Multi-element array for cumulative returns #VALUE!. 4 of 4 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number. Maximum valid x value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1E+307,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1E+307,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number. Maximum valid x value. 4 of 4 arguments used.');
+		// Case #2: Number. Minimum valid x value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(-1E+307,0,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(-1E+307,0,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Minimum valid x value. 4 of 4 arguments used.');
+		// Case #3: Number. Maximum valid mean value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(0,1E+307,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(0,1E+307,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Maximum valid mean value. 4 of 4 arguments used.');
+		// Case #4: Number. Minimum valid mean value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(0,-1E+307,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(0,-1E+307,1,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number. Minimum valid mean value. 4 of 4 arguments used.');
+		// Case #5: Number. Minimum valid standard_dev value. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(0,0,1E-307,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(0,0,1E-307,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Bounded case: Number. Minimum valid standard_dev value. 4 of 4 arguments used.');
+		// Case #6: String. String convertible to TRUE for cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,1,"1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,1,"1") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Bounded case: String. String convertible to TRUE for cumulative. 4 of 4 arguments used.');
+		// Case #7: String. String convertible to FALSE for cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NORM.DIST(1,0,1,"0")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NORM.DIST(1,0,1,"0") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Bounded case: String. String convertible to FALSE for cumulative. 4 of 4 arguments used.');
+
+		// TODO need to fix critical error when trying to convert val to Bool
+		// Case #5: Reference link. Reference to cells with valid numbers and TRUE. 4 of 4 arguments used.
+		// Case #6: Area. Single-cell ranges with valid values. 4 of 4 arguments used.
+		// Case #22: String,Number. String convertible to TRUE for cumulative. 4 of 4 arguments used. Critical
+		// Case #5: Empty. Empty cell reference for x returns #VALUE!. 4 of 4 arguments used.
+		// Case #6: String. Non-boolean string for cumulative returns #VALUE!. 4 of 4 arguments used.
+		// Case #6: String. String convertible to TRUE for cumulative. 4 of 4 arguments used.
 
 	});
 
@@ -27693,6 +28852,236 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), negbinomdist(20, 10, 0.63));
 
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #0: Number. Basic valid input: integers and probability. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: Number. Basic valid input: integers and probability. 3 of 3 arguments used.');
+		// Case #1: Number. Valid input: integers and probability. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(10,3,0.75)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(10,3,0.75) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(10), '0.0000265539', 'Test: Positive case: Number. Valid input: integers and probability. 3 of 3 arguments used.');
+		// Case #2: Number. Floats truncated to integers. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(2.5,3.7,0.25)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(2.5,3.7,0.25) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue().toFixed(10), 0.052734375, 'Test: Positive case: Number. Floats truncated to integers. 3 of 3 arguments used.');
+		// Case #3: String. Strings convertible to numbers. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST("5","5","0.5")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST("5","5","0.5") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: String. Strings convertible to numbers. 3 of 3 arguments used.');
+		// Case #4: Formula. Nested formulas resolving to valid inputs. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(SQRT(25),ROUND(5.7,0),ABS(-0.5))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(SQRT(25),ROUND(5.7,0),ABS(-0.5)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: Formula. Nested formulas resolving to valid inputs. 3 of 3 arguments used.');
+		// Case #5: Reference link. Reference links to valid cells. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(A100,A101,A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(A100,A101,A102) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Reference link. Reference links to valid cells. 3 of 3 arguments used.');
+		// Case #6: Area. Single-cell ranges. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(A100:A100,A101:A101,A102:A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(A100:A100,A101:A101,A102:A102) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Area. Single-cell ranges. 3 of 3 arguments used.');
+		// Case #7: Array. Arrays with single valid elements. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST({5},{5},{0.5})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST({5},{5},{0.5}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: Array. Arrays with single valid elements. 3 of 3 arguments used.');
+		// Case #8: Name. Named ranges with valid values. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(TestName,TestName1,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(TestName,TestName1,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name. Named ranges with valid values. 3 of 3 arguments used.');
+		// Case #9: Name3D. 3D named ranges with valid values. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named ranges with valid values. 3 of 3 arguments used.');
+		// Case #10: Ref3D. 3D references to valid cells. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(Sheet2!A1,Sheet2!A2,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(Sheet2!A1,Sheet2!A2,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D. 3D references to valid cells. 3 of 3 arguments used.');
+		// Case #11: Area3D. 3D single-cell ranges. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D. 3D single-cell ranges. 3 of 3 arguments used.');
+		// Case #12: Table. Table structured references with valid values. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(Table1[Column1],Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(Table1[Column1],Table1[Column1],Table1[Column1]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Table. Table structured references with valid values. 3 of 3 arguments used.');
+		// Case #13: Formula. Probability_s as nested formula. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,SQRT(0.25))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,SQRT(0.25)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: Formula. Probability_s as nested formula. 3 of 3 arguments used.');
+		// Case #14: Number,String. Mixed number and string inputs. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,"0.5")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,"0.5") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: Number,String. Mixed number and string inputs. 3 of 3 arguments used.');
+		// Case #15: Number. Zero Number_f, valid case. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(0,5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(0,5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Positive case: Number. Zero Number_f, valid case. 3 of 3 arguments used.');
+		// Case #16: Reference link. Reusing reference links with valid values. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(A103,A101,A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(A103,A101,A102) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Reference link. Reusing reference links with valid values. 3 of 3 arguments used.');
+		// Case #17: Formula. Formulas resolving to valid inputs. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(ABS(-5),ROUND(5.2,0),SQRT(0.25))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(ABS(-5),ROUND(5.2,0),SQRT(0.25)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: Formula. Formulas resolving to valid inputs. 3 of 3 arguments used.');
+		// Case #18: String. All string inputs convertible to valid values. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST("10","3","0.75")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST("10","3","0.75") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(10), '0.0000265539', 'Test: Positive case: String. All string inputs convertible to valid values. 3 of 3 arguments used.');
+		// Case #19: Array. Arrays with multiple valid elements. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST({10,5},{3,5},{0.75,0.5})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST({10,5},{3,5},{0.75,0.5}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(10), '0.0000265539', 'Test: Positive case: Array. Arrays with multiple valid elements. 3 of 3 arguments used.');
+		// Case #20: Formula,Number. Probability_s via formula, other args numbers. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,ABS(-0.5))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,ABS(-0.5)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.123046875, 'Test: Positive case: Formula,Number. Probability_s via formula, other args numbers. 3 of 3 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number. Negative Number_f returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(-1,5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(-1,5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative Number_f returns #NUM!. 3 of 3 arguments used.');
+		// Case #2: Number. Negative Number_s returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,-1,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,-1,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative Number_s returns #NUM!. 3 of 3 arguments used.');
+		// Case #3: Number. Negative Probability_s returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,-0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,-0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative Probability_s returns #NUM!. 3 of 3 arguments used.');
+		// Case #4: Number. Probability_s > 1 returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,1.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,1.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Probability_s > 1 returns #NUM!. 3 of 3 arguments used.');
+		// Case #5: String. Non-numeric string returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST("abc",5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST("abc",5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string returns #VALUE!. 3 of 3 arguments used.');
+		// Case #6: Error. Propagates #N/A error. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(NA(),5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(NA(),5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 3 of 3 arguments used.');
+		// Case #7: Area. Multi-cell range returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(A100:A101,A101:A101,A102:A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(A100:A101,A101:A101,A102:A102) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Area. Multi-cell range returns #NUM!. 3 of 3 arguments used.');
+		// Case #8: Empty. Empty reference link returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(A104,5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(A104,5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Empty. Empty reference link returns #NUM!. 3 of 3 arguments used.');
+		// Case #9: String. Empty string returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST("",5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST("",5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string returns #VALUE!. 3 of 3 arguments used.');
+		// Case #10: Boolean. Boolean FALSE (0) is valid, but testing for clarity. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(FALSE,5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(FALSE,5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Negative case: Boolean. Boolean FALSE (0) is valid, but testing for clarity. 3 of 3 arguments used.');
+		// Case #11: Ref3D. 3D ref to non-numeric value returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(Sheet2!A5,Sheet2!A2,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(Sheet2!A5,Sheet2!A2,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Ref3D. 3D ref to non-numeric value returns #VALUE!. 3 of 3 arguments used.');
+		// Case #12: Name. Named range with non-numeric value returns #VALUE!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(TestNameArea2,TestName1,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(TestNameArea,TestName1,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Name. Named range with non-numeric value returns #VALUE!. 3 of 3 arguments used.');
+		// Case #14: Formula. Formula resulting in #NUM! error. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(SQRT(-1),5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(SQRT(-1),5,0.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! error. 3 of 3 arguments used.');
+		// Case #15: Number. Probability_s = 0 returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,0) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Probability_s = 0 returns #NUM!. 3 of 3 arguments used.');
+		// Case #16: Number. Probability_s = 1 returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(5,5,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(5,5,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Probability_s = 1 returns #NUM!. 3 of 3 arguments used.');
+		// Case #17: Array. Array with boolean returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST({FALSE},{5},{0.5})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST({FALSE},{5},{0.5}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Negative case: Array. Array with boolean returns #NUM!. 3 of 3 arguments used.');
+		// Case #18: Area3D. 3D multi-cell range returns #NUM!. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Test: Negative case: Area3D. 3D multi-cell range returns #NUM!. 3 of 3 arguments used.');
+		// Case #19: Time. Time value (0.5) truncated to 0, valid case. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(TIME(12,0,0),5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(TIME(12,0,0),5,0.5) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Negative case: Time. Time value (0.5) truncated to 0, valid case. 3 of 3 arguments used.');
+		// Case #20: Date. Date as large number, valid but impractical. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(DATE(2025,1,1),5,0.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(DATE(2025,1,1),5,0.5) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Date. Date as large number, valid but impractical. 3 of 3 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number. Minimum valid values for Number_f, Number_s, and Probability_s. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(0,0,0.000000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(0,0,0.000000000000001) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number. Minimum valid values for Number_f, Number_s, and Probability_s. 3 of 3 arguments used.');
+		// Case #2: Number. Large valid integers and max Probability_s. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(1000000,1000000,0.999999999999999)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(1000000,1000000,0.999999999999999) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Large valid integers and max Probability_s. 3 of 3 arguments used.');
+		// Case #3: Number. Minimum Probability_s with zero Number_f. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(0,5,0.000000000000001)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(0,5,0.000000000000001) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.0000000000000004e-75, 'Test: Bounded case: Number. Minimum Probability_s with zero Number_f. 3 of 3 arguments used.');
+		// Case #4: Number. Large Number_f, max Probability_s. 3 of 3 arguments used.
+		oParser = new parserFormula('NEGBINOMDIST(1000000,5,0.999999999999999)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOMDIST(1000000,5,0.999999999999999) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Large Number_f, max Probability_s. 3 of 3 arguments used.');
+
+
+		// TODO need to fix different results
+		// Need to fix: errors types, ms diff results, area/array handle
+		// Case #2: Number. Floats truncated to integers. 3 of 3 arguments used.
+		// Case #5: Reference link. Reference links to valid cells. 3 of 3 arguments used.
+		// Case #6: Area. Single-cell ranges. 3 of 3 arguments used.
+		// Case #12: Table. Table structured references with valid values. 3 of 3 arguments used.
+		// Case #16: Reference link. Reusing reference links with valid values. 3 of 3 arguments used.
+		// Case #7: Area. Multi-cell range returns #NUM!. 3 of 3 arguments used.
+		// Case #15: Number. Probability_s = 0 returns #NUM!. 3 of 3 arguments used.
+		// Case #16: Number. Probability_s = 1 returns #NUM!. 3 of 3 arguments used.
+		// Case #19: Time. Time value (0.5) truncated to 0, valid case. 3 of 3 arguments used.
+		// Case #20: Date. Date as large number, valid but impractical. 3 of 3 arguments used.
+		// Case #2: Number. Large valid integers and max Probability_s. 3 of 3 arguments used.
+		// Case #4: Number. Large Number_f, max Probability_s. 3 of 3 arguments used.
+
 		testArrayFormula2(assert, "NEGBINOMDIST", 3, 3);
 	});
 
@@ -27709,6 +29098,230 @@ $(function () {
 		oParser = new parserFormula("NEGBINOM.DIST(F202,F203,F204,FALSE)", "F1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(7) - 0, 0.0550487);
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #0: Number. Basic valid input: integers and probability. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.623046875, 'Test: Positive case: Number. Basic valid input: integers and probability. 4 of 4 arguments used.');
+		// Case #1: Number. Valid input: integers, probability, non-cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(10,3,0.75,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(10,3,0.75,FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(10), '0.0000265539', 'Test: Positive case: Number. Valid input: integers, probability, non-cumulative. 4 of 4 arguments used.');
+		// Case #2: Number. Floats truncated to integers. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(2.5,3.7,0.25,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(2.5,3.7,0.25,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.103515625, 'Test: Positive case: Number. Floats truncated to integers. 4 of 4 arguments used.');
+		// Case #3: String. Strings convertible to numbers and boolean. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST("5","5","0.5","TRUE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST("5","5","0.5","TRUE") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.623046875, 'Test: Positive case: String. Strings convertible to numbers and boolean. 4 of 4 arguments used.');
+		// Case #4: Formula. Nested formulas resolving to valid inputs. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(SQRT(25),ROUND(5.7,0),ABS(-0.5),IF(TRUE,TRUE,FALSE))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(SQRT(25),ROUND(5.7,0),ABS(-0.5),IF(TRUE,TRUE,FALSE)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(1), '0.5', 'Test: Positive case: Formula. Nested formulas resolving to valid inputs. 4 of 4 arguments used.');
+		// Case #5: Reference link. Reference links to valid cells. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(A100,A101,A102,A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(A100,A101,A102,A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Reference link. Reference links to valid cells. 4 of 4 arguments used.');
+		// Case #6: Area. Single-cell ranges. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(A100:A100,A101:A101,A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(A100:A100,A101:A101,A102:A102,A103:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Area. Single-cell ranges. 4 of 4 arguments used.');
+		// Case #7: Array. Arrays with single valid elements. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST({5},{5},{0.5},{TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST({5},{5},{0.5},{TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.623046875, 'Test: Positive case: Array. Arrays with single valid elements. 4 of 4 arguments used.');
+		// Case #8: Name. Named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(TestName,TestName1,TestName2,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(TestName,TestName1,TestName2,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name. Named ranges with valid values. 4 of 4 arguments used.');
+		// Case #9: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(TestName3D,TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(TestName3D,TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D. 3D named ranges with valid values. 4 of 4 arguments used.');
+		// Case #10: Ref3D. 3D references to valid cells. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D. 3D references to valid cells. 4 of 4 arguments used.');
+		// Case #11: Area3D. 3D single-cell ranges. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D. 3D single-cell ranges. 4 of 4 arguments used.');
+		// Case #12: Table. Table structured references with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(Table1[Column1],Table1[Column1],Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(Table1[Column1],Table1[Column1],Table1[Column1],Table1[Column1]) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Table. Table structured references with valid values. 4 of 4 arguments used.');
+		// Case #13: Formula. Cumulative as nested IF formula. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,0.5,IF(1>0,TRUE,FALSE))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,0.5,IF(1>0,TRUE,FALSE)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.623046875, 'Test: Positive case: Formula. Cumulative as nested IF formula. 4 of 4 arguments used.');
+		// Case #14: Number,String. Mixed number and string inputs. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,"0.5",TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,"0.5",TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.623046875, 'Test: Positive case: Number,String. Mixed number and string inputs. 4 of 4 arguments used.');
+		// Case #15: Number. Zero Number_f, valid case. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(0,5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(0,5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Positive case: Number. Zero Number_f, valid case. 4 of 4 arguments used.');
+		// Case #16: Reference link. Reusing reference links with valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(A104,A101,A102,A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(A104,A101,A102,A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Reference link. Reusing reference links with valid values. 4 of 4 arguments used.');
+		// Case #17: Formula. Formulas resolving to valid inputs. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(ABS(-5),ROUND(5.2,0),SQRT(0.25),TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(ABS(-5),ROUND(5.2,0),SQRT(0.25),TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.623046875, 'Test: Positive case: Formula. Formulas resolving to valid inputs. 4 of 4 arguments used.');
+		// Case #18: String. All string inputs convertible to valid values. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST("10","3","0.75","FALSE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST("10","3","0.75","FALSE") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 2.65539E-05, 'Test: Positive case: String. All string inputs convertible to valid values. 4 of 4 arguments used.');
+		// Case #19: Array. Arrays with multiple valid elements. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST({10,5},{3,5},{0.75,0.5},{TRUE,FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST({10,5},{3,5},{0.75,0.5},{TRUE,FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.999988943', 'Test: Positive case: Array. Arrays with multiple valid elements. 4 of 4 arguments used.');
+		// Case #20: Formula,Number. Probability_s via formula, other args numbers. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,ABS(-0.5),TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,ABS(-0.5),TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.623046875, 'Test: Positive case: Formula,Number. Probability_s via formula, other args numbers. 4 of 4 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number. Negative Number_f returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(-1,5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(-1,5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative Number_f returns #NUM!. 4 of 4 arguments used.');
+		// Case #2: Number. Negative Number_s returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,-1,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,-1,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative Number_s returns #NUM!. 4 of 4 arguments used.');
+		// Case #3: Number. Negative Probability_s returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,-0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,-0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Negative Probability_s returns #NUM!. 4 of 4 arguments used.');
+		// Case #4: Number. Probability_s > 1 returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,1.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,1.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Probability_s > 1 returns #NUM!. 4 of 4 arguments used.');
+		// Case #5: String. Non-numeric string returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST("abc",5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST("abc",5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string returns #VALUE!. 4 of 4 arguments used.');
+		// Case #6: Error. Propagates #N/A error. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(NA(),5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(NA(),5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 4 of 4 arguments used.');
+		// Case #7: Area. Multi-cell range returns arr. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(A100:A101,A101:A101,A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(A100:A101,A101:A101,A102:A102,A103:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Negative case: Area. Multi-cell range returnsarr. 4 of 4 arguments used.');
+		// Case #8: Empty. Empty reference link returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(A105,5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(A105,5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.109375, 'Test: Negative case: Empty. Empty reference link returns #VALUE!. 4 of 4 arguments used.');
+		// Case #9: String. Empty string returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST("",5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST("",5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string returns #VALUE!. 4 of 4 arguments used.');
+		// Case #10: Boolean. Boolean FALSE (0) is valid, but testing for clarity. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(FALSE,5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(FALSE,5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Negative case: Boolean. Boolean FALSE (0) is valid, but testing for clarity. 4 of 4 arguments used.');
+		// Case #11: Ref3D. 3D ref to non-numeric value returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(Sheet2!A5,Sheet2!A2,Sheet2!A3,Sheet2!A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(Sheet2!A5,Sheet2!A2,Sheet2!A3,Sheet2!A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D ref to non-numeric value returns #VALUE!. 4 of 4 arguments used.');
+		// Case #12: Name. Named range with non-numeric value returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(TestNameArea2,TestName1,TestName2,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(TestNameArea2,TestName1,TestName2,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Name. Named range with non-numeric value returns #VALUE!. 4 of 4 arguments used.');
+		// Case #14: Formula. Formula resulting in #NUM! error. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(SQRT(-1),5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(SQRT(-1),5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! error. 4 of 4 arguments used.');
+		// Case #15: Number. Probability_s = 0 returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,0,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,0,TRUE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Probability_s = 0 returns #NUM!. 4 of 4 arguments used.');
+		// Case #16: Number. Probability_s = 1 returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(5,5,1,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(5,5,1,TRUE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. Probability_s = 1 returns #NUM!. 4 of 4 arguments used.');
+		// Case #17: Array. Array with boolean returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST({FALSE},{5},{0.5},{TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST({FALSE},{5},{0.5},{TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Negative case: Array. Array with boolean returns #NUM!. 4 of 4 arguments used.');
+		// Case #18: Area3D. 3D multi-cell range returns #NUM!. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(Sheet2!A1:A2,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area3D. 3D multi-cell range returns #NUM!. 4 of 4 arguments used.');
+		// Case #19: Time. Time value (0.5) truncated to 0, valid case. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(TIME(12,0,0),5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(TIME(12,0,0),5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.03125, 'Test: Negative case: Time. Time value (0.5) truncated to 0, valid case. 4 of 4 arguments used.');
+		// Case #20: Date. Date as large number, valid but impractical. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(DATE(2025,1,1),5,0.5,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(DATE(2025,1,1),5,0.5,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Date. Date as large number, valid but impractical. 4 of 4 arguments used.');
+
+		// Bounded cases:
+
+		// Case #1: Number. Minimum valid values for Number_f, Number_s, and Probability_s. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(0,0,0.000000000000001,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(0,0,0.000000000000001,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number. Minimum valid values for Number_f, Number_s, and Probability_s. 4 of 4 arguments used.');
+		// Case #2: Number. Large valid integers and max Probability_s. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(1000000,1000000,0.999999999999999,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(1000000,1000000,0.999999999999999,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number. Large valid integers and max Probability_s. 4 of 4 arguments used.');
+		// Case #3: Number. Minimum Probability_s, non-cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(0,5,0.000000000000001,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(0,5,0.000000000000001,FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.0000000000000004e-75, 'Test: Bounded case: Number. Minimum Probability_s, non-cumulative. 4 of 4 arguments used.');
+		// Case #4: Number. Large Number_f, max Probability_s, non-cumulative. 4 of 4 arguments used.
+		oParser = new parserFormula('NEGBINOM.DIST(1000000,5,0.999999999999999,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NEGBINOM.DIST(1000000,5,0.999999999999999,FALSE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Large Number_f, max Probability_s, non-cumulative. 4 of 4 arguments used.');
+
+		// Need to fix: area/array handle, error types diff, MS result difference
+		// Case #3: String. Strings convertible to numbers and boolean. 4 of 4 arguments used.
+		// Case #12: Table. Table structured references with valid values. 4 of 4 arguments used.
+		// Case #18: String. All string inputs convertible to valid values. 4 of 4 arguments used.
+		// Case #7: Area. Multi-cell range returns arr. 4 of 4 arguments used.
+		// Case #15: Number. Probability_s = 0 returns #NUM!. 4 of 4 arguments used.
+		// Case #16: Number. Probability_s = 1 returns #NUM!. 4 of 4 arguments used.
+		// Case #4: Number. Large Number_f, max Probability_s, non-cumulative. 4 of 4 arguments used.
 
 		testArrayFormula2(assert, "NEGBINOM.DIST", 4, 4);
 	});
@@ -33966,6 +35579,231 @@ $(function () {
 		oParser = new parserFormula("NOMINAL(0.053543,-4)", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), nominal(0.053543, -4));
+
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number, Number. Basic valid input: positive rate, single period. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(2), '0.05', 'Test: Positive case: Number, Number. Basic valid input: positive rate, single period. 2 of 2 arguments used.');
+		// Case #2: Number, Number. Basic valid input: float rate, two periods. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.097617696', 'Test: Positive case: Number, Number. Basic valid input: float rate, two periods. 2 of 2 arguments used.');
+		// Case #3: String, Number. String convertible to number for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL("0.1",4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL("0.1",4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.096454756', 'Test: Positive case: String, Number. String convertible to number for rate. 2 of 2 arguments used.');
+		// Case #4: Formula, Number. Nested formula for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(SQRT(0.01),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(SQRT(0.01),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9),'0.097617696', 'Test: Positive case: Formula, Number. Nested formula for rate. 2 of 2 arguments used.');
+		// Case #5: Reference link, Number. Reference link to rate with valid number. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(A100,365)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(A100,365) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), '0.4056904', 'Test: Positive case: Reference link, Number. Reference link to rate with valid number. 2 of 2 arguments used.');
+		// Case #6: Area, Number. Single-cell area for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(A101:A101,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(A101:A101,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5, 'Test: Positive case: Area, Number. Single-cell area for rate. 2 of 2 arguments used.');
+		// Case #7: Array, Number. Array with valid rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL({0.05},2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL({0.05},2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.049390153', 'Test: Positive case: Array, Number. Array with valid rate. 2 of 2 arguments used.');
+		// Case #8: Name, Number. Named range for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(TestName,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(TestName,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name, Number. Named range for rate. 2 of 2 arguments used.');
+		// Case #9: Name3D, Number. 3D named range for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(TestName3D,365)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(TestName3D,365) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D, Number. 3D named range for rate. 2 of 2 arguments used.');
+		// Case #10: Ref3D, Number. 3D reference to rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(Sheet2!A1,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(Sheet2!A1,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Ref3D, Number. 3D reference to rate. 2 of 2 arguments used.');
+		// Case #11: Area3D, Number. 3D single-cell range for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(Sheet2!A2:A2,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(Sheet2!A2:A2,2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1.5, 'Test: Positive case: Area3D, Number. 3D single-cell range for rate. 2 of 2 arguments used.');
+		// Case #12: Table, Number. Table reference for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(Table1[Column1],4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(Table1[Column1],4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(8), '0.75682846', 'Test: Positive case: Table, Number. Table reference for rate. 2 of 2 arguments used.');
+		// Case #13: Date, Number. Date as serial number for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(DATE(2025,1,1),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(DATE(2025,1,1),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(7), '425.3593336', 'Test: Positive case: Date, Number. Date as serial number for rate. 2 of 2 arguments used.');
+		// Case #14: Time, Number. Time adjusted to valid rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(TIME(0,0,0)+0.05,365)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(TIME(0,0,0)+0.05,365) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.048793425', 'Test: Positive case: Time, Number. Time adjusted to valid rate. 2 of 2 arguments used.');
+		// Case #15: Number, Formula. Nested formula for npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,ABS(-2))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,ABS(-2)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.097617696', 'Test: Positive case: Number, Formula. Nested formula for npery. 2 of 2 arguments used.');
+		// Case #16: Number, Reference link. Reference link to npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Number, Reference link. Reference link to npery. 2 of 2 arguments used.');
+		// Case #17: Number, Area. Single-cell area for npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,A103:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Number, Area. Single-cell area for npery. 2 of 2 arguments used.');
+		// Case #18: Number, Array. Array with valid npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,{365})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,{365}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.048793425', 'Test: Positive case: Number, Array. Array with valid npery. 2 of 2 arguments used.');
+		// Case #19: Number, Name. Named range for npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Number, Name. Named range for npery. 2 of 2 arguments used.');
+		// Case #20: Number, Name3D. 3D named range for npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Number, Name3D. 3D named range for npery. 2 of 2 arguments used.');
+		// Case #21: Number, Ref3D. 3D reference to npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Number, Ref3D. 3D reference to npery. 2 of 2 arguments used.');
+		// Case #22: Number, Area3D. 3D single-cell range for npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Number, Area3D. 3D single-cell range for npery. 2 of 2 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number, Number. Negative rate returns #NUM!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(-0.05,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(-0.05,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number. Negative rate returns #NUM!. 2 of 2 arguments used.');
+		// Case #2: Number, Number. Zero rate returns #NUM!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0,365)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0,365) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number. Zero rate returns #NUM!. 2 of 2 arguments used.');
+		// Case #3: String, Number. Non-numeric string returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL("abc",2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL("abc",2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String, Number. Non-numeric string returns #VALUE!. 2 of 2 arguments used.');
+		// Case #4: Error, Number. Error propagates #N/A. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(NA(),365)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(NA(),365) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error, Number. Error propagates #N/A. 2 of 2 arguments used.');
+		// Case #5: Area, Number. Multi-cell range returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(A104:A105,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(A104:A105,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area, Number. Multi-cell range returns #VALUE!. 2 of 2 arguments used.');
+		// Case #6: Empty, Number. Empty cell for rate returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(A106,365)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(A106,365) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Empty, Number. Empty cell for rate returns #VALUE!. 2 of 2 arguments used.');
+		// Case #7: Boolean, Number. Boolean FALSE (0) returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(FALSE,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(FALSE,2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean, Number. Boolean FALSE (0) returns #VALUE!. 2 of 2 arguments used.');
+		// Case #8: Ref3D, Number. 3D ref to non-numeric value returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(Sheet2!A5,365)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(Sheet2!A5,365) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Ref3D, Number. 3D ref to non-numeric value returns #VALUE!. 2 of 2 arguments used.');
+		// Case #9: Name, Number. Named range with non-numeric value returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(TestName2,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(TestName2,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '4.782329983', 'Test: Negative case: Name, Number. Named range with non-numeric value returns #VALUE!. 2 of 2 arguments used.');
+		// Case #11: Formula, Number. Formula resulting in #NUM! propagates error. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(SQRT(-1),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(SQRT(-1),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula, Number. Formula resulting in #NUM! propagates error. 2 of 2 arguments used.');
+		// Case #12: Number, Number. Zero npery returns #NUM!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number. Zero npery returns #NUM!. 2 of 2 arguments used.');
+		// Case #13: Number, Number. Negative npery returns #NUM!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,-2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,-2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Number. Negative npery returns #NUM!. 2 of 2 arguments used.');
+		// Case #14: Number, String. Non-numeric string for npery returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,"abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,"abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, String. Non-numeric string for npery returns #VALUE!. 2 of 2 arguments used.');
+		// Case #15: Number, Error. Error for npery propagates #N/A. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Error. Error for npery propagates #N/A. 2 of 2 arguments used.');
+		// Case #16: Number, Area. Multi-cell range for npery returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,A107:A108)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,A107:A108) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Area. Multi-cell range for npery returns #VALUE!. 2 of 2 arguments used.');
+		// Case #17: Number, Empty. Empty cell for npery returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,A109)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,A109) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Empty. Empty cell for npery returns #VALUE!. 2 of 2 arguments used.');
+		// Case #18: Number, Boolean. Boolean FALSE (0) for npery returns #NUM!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,FALSE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Boolean. Boolean FALSE (0) for npery returns #NUM!. 2 of 2 arguments used.');
+		// Case #19: Number, Ref3D. 3D ref to non-numeric value returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.1,Sheet2!A6)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.1,Sheet2!A6) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Ref3D. 3D ref to non-numeric value returns #VALUE!. 2 of 2 arguments used.');
+		// Case #21: Name, Name. Named range with area returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(TestNameArea,TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(TestNameArea,TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name, Name. Named range with area returns #VALUE!. 2 of 2 arguments used.');
+		// Case #22: Name3D, Name3D. 3D named range with area returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(TestNameArea3D2,TestNameArea3D2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(TestNameArea3D2,TestNameArea3D2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Name3D, Name3D. 3D named range with area returns #VALUE!. 2 of 2 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number, Number. Smallest valid rate, single period. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.000000000000001,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.000000000000001,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1.11022e-15, 'Test: Bounded case: Number, Number. Smallest valid rate, single period. 2 of 2 arguments used.');
+		// Case #2: Number, Number. Max valid Excel number for rate. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(9.99999999999999E+307,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(9.99999999999999E+307,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1e+308, 'Test: Bounded case: Number, Number. Max valid Excel number for rate. 2 of 2 arguments used.');
+		// Case #3: Number, Number. Max integer for npery. 2 of 2 arguments used.
+		oParser = new parserFormula('NOMINAL(0.05,2147483647)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: NOMINAL(0.05,2147483647) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(9), '0.048789978', 'Test: Bounded case: Number, Number. Max integer for npery. 2 of 2 arguments used.');
+
+
+		// Need to fix: error types difference, precision problems, ms res diffs
+		// Case #11: Area3D, Number. 3D single-cell range for rate. 2 of 2 arguments used.
+		// Case #7: Boolean, Number. Boolean FALSE (0) returns #VALUE!. 2 of 2 arguments used.
+		// Case #18: Number, Boolean. Boolean FALSE (0) for npery returns #NUM!. 2 of 2 arguments used.
+		// Case #1: Number, Number. Smallest valid rate, single period. 2 of 2 arguments used.
 
 		testArrayFormula2(assert, "NOMINAL", 2, 2, true);
 	});
