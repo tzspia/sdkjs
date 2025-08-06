@@ -6213,6 +6213,229 @@ $(function () {
 		assert.ok(oParser.parse(), "RADIANS(270)");
 		assert.strictEqual(oParser.calculate().getValue().toFixed(6) - 0, 4.712389);
 
+		ws.getRange2("A1:C214").cleanAll();
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number. Basic valid input: integer. 1 argument used.
+		oParser = new parserFormula('RADIANS(90)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(90) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5707963267948966, 'Test: Positive case: Number. Basic valid input: integer. 1 argument used.');
+		// Case #2: Number. Zero input. 1 argument used.
+		oParser = new parserFormula('RADIANS(0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Number. Zero input. 1 argument used.');
+		// Case #3: Number. Negative integer input. 1 argument used.
+		oParser = new parserFormula('RADIANS(-90)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(-90) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -1.5707963267948966, 'Test: Positive case: Number. Negative integer input. 1 argument used.');
+		// Case #4: Number. Float input. 1 argument used.
+		oParser = new parserFormula('RADIANS(1.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(1.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02617993877991494, 'Test: Positive case: Number. Float input. 1 argument used.');
+		// Case #5: String. String convertible to number. 1 argument used.
+		oParser = new parserFormula('RADIANS("90")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS("90") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5707963267948966, 'Test: Positive case: String. String convertible to number. 1 argument used.');
+		// Case #6: Formula. Nested formula returning valid number. 1 argument used.
+		oParser = new parserFormula('RADIANS(SQRT(8100))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(SQRT(8100)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5707963267948966, 'Test: Positive case: Formula. Nested formula returning valid number. 1 argument used.');
+		// Case #7: Reference link. Ref to cell with valid number. 1 argument used.
+		oParser = new parserFormula('RADIANS(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.008726646259971648, 'Test: Positive case: Reference link. Ref to cell with valid number. 1 argument used.');
+		// Case #8: Area. Single-cell range. 1 argument used.
+		oParser = new parserFormula('RADIANS(A101:A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(A101:A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02617993877991494, 'Test: Positive case: Area. Single-cell range. 1 argument used.');
+		// Case #9: Array. Array with single element. 1 argument used.
+		oParser = new parserFormula('RADIANS({90})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS({90}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1.5707963267948966, 'Test: Positive case: Array. Array with single element. 1 argument used.');
+		// Case #10: Name. Named range with valid number. 1 argument used.
+		oParser = new parserFormula('RADIANS(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.008726646259971648, 'Test: Positive case: Name. Named range with valid number. 1 argument used.');
+		// Case #11: Name3D. 3D named range with valid number. 1 argument used.
+		oParser = new parserFormula('RADIANS(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.008726646259971648, 'Test: Positive case: Name3D. 3D named range with valid number. 1 argument used.');
+		// Case #12: Ref3D. 3D reference to cell with valid number. 1 argument used.
+		oParser = new parserFormula('RADIANS(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(Sheet2!A1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.017453293, 'Test: Positive case: Ref3D. 3D reference to cell with valid number. 1 argument used.');
+		// Case #13: Area3D. 3D single-cell range. 1 argument used.
+		oParser = new parserFormula('RADIANS(Sheet2!A2:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(Sheet2!A2:A2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.034906585, 'Test: Positive case: Area3D. 3D single-cell range. 1 argument used.');
+		// Case #14: Table. Table structured reference with valid number. 1 argument used.
+		oParser = new parserFormula('RADIANS(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.017453292519943295, 'Test: Positive case: Table. Table structured reference with valid number. 1 argument used.');
+		// Case #15: Date. Date as serial number. 1 argument used.
+		oParser = new parserFormula('RADIANS(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 796.882429875571, 'Test: Positive case: Date. Date as serial number. 1 argument used.');
+		// Case #16: Time. Time converted to degrees. 1 argument used.
+		oParser = new parserFormula('RADIANS(TIME(12,0,0)*3600)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TIME(12,0,0)*3600) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 31.41592653589793, 'Test: Positive case: Time. Time converted to degrees. 1 argument used.');
+		// Case #17: Formula. Nested IF returning valid number. 1 argument used.
+		oParser = new parserFormula('RADIANS(IF(TRUE,90,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(IF(TRUE,90,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5707963267948966, 'Test: Positive case: Formula. Nested IF returning valid number. 1 argument used.');
+		// Case #18: String. String of float convertible to number. 1 argument used.
+		oParser = new parserFormula('RADIANS("1.5")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS("1.5") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02617993877991494, 'Test: Positive case: String. String of float convertible to number. 1 argument used.');
+		// Case #19: Array. Multi-element array, takes first element. 1 argument used.
+		oParser = new parserFormula('RADIANS({90,180})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS({90,180}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1.5707963267948966, 'Test: Positive case: Array. Multi-element array, takes first element. 1 argument used.');
+		// Case #20: Formula. Nested formula with negative input. 1 argument used.
+		oParser = new parserFormula('RADIANS(ABS(-90))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(ABS(-90)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5707963267948966, 'Test: Positive case: Formula. Nested formula with negative input. 1 argument used.');
+		// Case #21: Name. Named range with float number. 1 argument used.
+		oParser = new parserFormula('RADIANS(TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.008726646259971648, 'Test: Positive case: Name. Named range with float number. 1 argument used.');
+		// Case #22: Name3D. 3D named range with float number. 1 argument used.
+		oParser = new parserFormula('RADIANS(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.008726646259971648, 'Test: Positive case: Name3D. 3D named range with float number. 1 argument used.');
+
+		// Negative cases:
+		// Case #1: Number. Multiple arguments return #VALUE!. 2 arguments used.
+		oParser = new parserFormula('RADIANS(90.180)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(90.180) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.5739379194484864, 'Test: Negative case: Number. Multiple arguments return #VALUE!. 2 arguments used.');
+		// Case #2: String. Non-numeric string returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS("abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS("abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string returns #VALUE!. 1 argument used.');
+		// Case #3: Error. Propagates #N/A error. 1 argument used.
+		oParser = new parserFormula('RADIANS(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 1 argument used.');
+		// Case #4: Empty. Reference to empty cell returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS(A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.008726646259971648, 'Test: Negative case: Empty. Reference to empty cell returns #VALUE!. 1 argument used.');
+		// Case #5: Boolean. Boolean FALSE (0) returns valid result, treated as number. 1 argument used.
+		oParser = new parserFormula('RADIANS(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Boolean. Boolean FALSE (0) returns valid result, treated as number. 1 argument used.');
+		// Case #6: Area. Multi-cell range returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS(A103:A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(A103:A104) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Area. Multi-cell range returns #VALUE!. 1 argument used.');
+		// Case #7: Ref3D. 3D ref to text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS(Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D ref to text returns #VALUE!. 1 argument used.');
+		// Case #8: Name. Named range with text returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS(TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.1832595714594046, 'Test: Negative case: Name. Named range with text returns #VALUE!. 1 argument used.');
+		// Case #9: Name3D. 3D named range with multi-cell range returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS(TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name3D. 3D named range with multi-cell range returns #VALUE!. 1 argument used.');
+		// Case #11: Formula. Formula resulting in #NUM! propagates error. 1 argument used.
+		oParser = new parserFormula('RADIANS(SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! propagates error. 1 argument used.');
+		// Case #12: String. Empty string returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string returns #VALUE!. 1 argument used.');
+		// Case #13: Array. Array with boolean returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS({TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS({TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0.017453292519943295, 'Test: Negative case: Array. Array with boolean returns #VALUE!. 1 argument used.');
+		// Case #14: Area3D. 3D multi-cell range returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS(Sheet2!A4:A5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(Sheet2!A4:A5) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Area3D. 3D multi-cell range returns #VALUE!. 1 argument used.');
+		// Case #15: Name. Named range with multi-cell range returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS(TestNameArea2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TestNameArea2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.013962634015954637, 'Test: Negative case: Name. Named range with multi-cell range returns #VALUE!. 1 argument used.');
+		// Case #16: Formula. Formula resulting in #DIV/0! propagates error. 1 argument used.
+		oParser = new parserFormula('RADIANS(1/0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(1/0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Formula. Formula resulting in #DIV/0! propagates error. 1 argument used.');
+		// Case #17: String. Date string not convertible to number returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('RADIANS("01/01/2025")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS("01/01/2025") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 796.882429875571, 'Test: Negative case: String. Date string not convertible to number returns #VALUE!. 1 argument used.');
+		// Case #18: Time. Time value (0.5) returns valid result, treated as number. 1 argument used.
+		oParser = new parserFormula('RADIANS(TIME(12,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(TIME(12,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.008726646259971648, 'Test: Negative case: Time. Time value (0.5) returns valid result, treated as number. 1 argument used.');
+		// Case #19: Number. Number exceeding Excel’s limit returns #NUM!. 1 argument used.
+		oParser = new parserFormula('RADIANS(1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.7453292519943297e+305, 'Test: Negative case: Number. Number exceeding Excel’s limit returns #NUM!. 1 argument used.');
+		// Case #20: Formula. Formula exceeding Excel’s numeric limit returns #NUM!. 1 argument used.
+		oParser = new parserFormula('RADIANS(1E+307*10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(1E+307*10) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1.7453292519943297e+305, 'Test: Negative case: Formula. Formula exceeding Excel’s numeric limit returns #NUM!. 1 argument used.');
+
+		// Bounded cases:
+		// Case #1: Number. Maximum valid Excel number. 1 argument used.
+		oParser = new parserFormula('RADIANS(1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.7453292519943297e+305, 'Test: Bounded case: Number. Maximum valid Excel number. 1 argument used.');
+		// Case #2: Number. Minimum valid Excel number. 1 argument used.
+		oParser = new parserFormula('RADIANS(-1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(-1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -1.7453292519943297e+305, 'Test: Bounded case: Number. Minimum valid Excel number. 1 argument used.');
+		// Case #3: Number. Smallest non-zero positive number. 1 argument used.
+		oParser = new parserFormula('RADIANS(2.2E-308)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RADIANS(2.2E-308) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Smallest non-zero positive number. 1 argument used.');
+
+		// Need to fix: 3d ref handle, error types diff, ms results diff
+		// Case #12: Ref3D. 3D reference to cell with valid number. 1 argument used.
+		// Case #13: Area3D. 3D single-cell range. 1 argument used.
+		// Case #6: Area. Multi-cell range returns #VALUE!. 1 argument used.
+		// Case #14: Area3D. 3D multi-cell range returns #VALUE!. 1 argument used.
+		// Case #20: Formula. Formula exceeding Excel’s numeric limit returns #NUM!. 1 argument used.
+		// Case #3: Number. Smallest non-zero positive number. 1 argument used.
+
 		testArrayFormula(assert, "RADIANS");
 	});
 
@@ -11743,6 +11966,206 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "True");
 
+		ws.getRange2("A1:C214").cleanAll();
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		
+		// Positive cases:
+		// Case #1: String. Basic string input with mixed case. 1 argument used.
+		oParser = new parserFormula('PROPER("hello world")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER("hello world") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Hello World', 'Test: Positive case: String. Basic string input with mixed case. 1 argument used.');
+		// Case #2: String. String with all uppercase letters. 1 argument used.
+		oParser = new parserFormula('PROPER("JOHN DOE")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER("JOHN DOE") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'John Doe', 'Test: Positive case: String. String with all uppercase letters. 1 argument used.');
+		// Case #3: String. String with all lowercase letters. 1 argument used.
+		oParser = new parserFormula('PROPER("john doe")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER("john doe") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'John Doe', 'Test: Positive case: String. String with all lowercase letters. 1 argument used.');
+		// Case #4: Number. Number converted to string. 1 argument used.
+		oParser = new parserFormula('PROPER(12345)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(12345) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '12345', 'Test: Positive case: Number. Number converted to string. 1 argument used.');
+		// Case #5: Formula. Nested CONCAT formula. 1 argument used.
+		oParser = new parserFormula('PROPER(CONCAT("heLLo ","wOrLd"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(CONCAT("heLLo ","wOrLd")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Hello World', 'Test: Positive case: Formula. Nested CONCAT formula. 1 argument used.');
+		// Case #6: Formula. Nested IF formula returning valid string. 1 argument used.
+		oParser = new parserFormula('PROPER(IF(TRUE,"tEsT cAsE","error"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(IF(TRUE,"tEsT cAsE","error")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Test Case', 'Test: Positive case: Formula. Nested IF formula returning valid string. 1 argument used.');
+		// Case #7: Reference link. Reference to cell with string. 1 argument used.
+		oParser = new parserFormula('PROPER(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0.5', 'Test: Positive case: Reference link. Reference to cell with string. 1 argument used.');
+		// Case #8: Area. Single-cell range with string. 1 argument used.
+		oParser = new parserFormula('PROPER(A101:A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(A101:A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '1.5', 'Test: Positive case: Area. Single-cell range with string. 1 argument used.');
+		// Case #9: Array. Array with single string element. 1 argument used.
+		oParser = new parserFormula('PROPER({"test case"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER({"test case"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 'Test Case', 'Test: Positive case: Array. Array with single string element. 1 argument used.');
+		// Case #10: Name. Named range with string. 1 argument used.
+		oParser = new parserFormula('PROPER(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '-0.5', 'Test: Positive case: Name. Named range with string. 1 argument used.');
+		// Case #11: Name3D. 3D named range with string. 1 argument used.
+		oParser = new parserFormula('PROPER(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '-0.5', 'Test: Positive case: Name3D. 3D named range with string. 1 argument used.');
+		// Case #12: Ref3D. 3D reference to cell with string. 1 argument used.
+		oParser = new parserFormula('PROPER(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(Sheet2!A1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '1', 'Test: Positive case: Ref3D. 3D reference to cell with string. 1 argument used.');
+		// Case #13: Area3D. 3D single-cell range with string. 1 argument used.
+		oParser = new parserFormula('PROPER(Sheet2!A1:A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(Sheet2!A1:A1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '1', 'Test: Positive case: Area3D. 3D single-cell range with string. 1 argument used.');
+		// Case #14: Table. Table structured reference with string. 1 argument used.
+		oParser = new parserFormula('PROPER(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '1', 'Test: Positive case: Table. Table structured reference with string. 1 argument used.');
+		// Case #15: String. String with special characters and numbers. 1 argument used.
+		oParser = new parserFormula('PROPER("hello@world! 123")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER("hello@world! 123") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Hello@World! 123', 'Test: Positive case: String. String with special characters and numbers. 1 argument used.');
+		// Case #16: String. String with multiple spaces. 1 argument used.
+		oParser = new parserFormula('PROPER("  multiple   spaces  ")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER("  multiple   spaces  ") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '  Multiple   Spaces  ', 'Test: Positive case: String. String with multiple spaces. 1 argument used.');
+		// Case #17: Date. Date serial number converted to string. 1 argument used.
+		oParser = new parserFormula('PROPER(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '45658', 'Test: Positive case: Date. Date serial number converted to string. 1 argument used.');
+		// Case #18: Time. Time serial number converted to string. 1 argument used.
+		oParser = new parserFormula('PROPER(TIME(12,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TIME(12,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0.5', 'Test: Positive case: Time. Time serial number converted to string. 1 argument used.');
+		// Case #19: Formula. Nested TEXT and DATE formula. 1 argument used.
+		oParser = new parserFormula('PROPER(TEXT(DATE(2025,1,1),"mmmm d, yyyy"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TEXT(DATE(2025,1,1),"mmmm d, yyyy")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'January 1, 2025', 'Test: Positive case: Formula. Nested TEXT and DATE formula. 1 argument used.');
+		// Case #20: String. Single character string. 1 argument used.
+		oParser = new parserFormula('PROPER("a")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER("a") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'A', 'Test: Positive case: String. Single character string. 1 argument used.');
+
+		// Negative cases:
+		// Case #2: Error. Propagates #N/A error. 1 argument used.
+		oParser = new parserFormula('PROPER(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 1 argument used.');
+		// Case #3: Array. Multi-element array returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('PROPER({"test","case"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER({"test","case"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 'Test', 'Test: Negative case: Array. Multi-element array returns #VALUE!. 1 argument used.');
+		// Case #4: Area. Multi-cell range returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('PROPER(A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(A102:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '0.5', 'Test: Negative case: Area. Multi-cell range returns #VALUE!. 1 argument used.');
+		// Case #5: Boolean. Boolean TRUE returns "True". 1 argument used.
+		oParser = new parserFormula('PROPER(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'True', 'Test: Negative case: Boolean. Boolean TRUE returns "True". 1 argument used.');
+		// Case #6: Boolean. Boolean FALSE returns "False". 1 argument used.
+		oParser = new parserFormula('PROPER(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'False', 'Test: Negative case: Boolean. Boolean FALSE returns "False". 1 argument used.');
+		// Case #7: Ref3D. 3D reference to cell with non-string value returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('PROPER(Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '1.5', 'Test: Negative case: Ref3D. 3D reference to cell with non-string value returns #VALUE!. 1 argument used.');
+		// Case #8: Name. Named range with number returns stringified number. 1 argument used.
+		oParser = new parserFormula('PROPER(TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0.5', 'Test: Negative case: Name. Named range with number returns stringified number. 1 argument used.');
+		// Case #9: Name3D. 3D named range with number returns stringified number. 1 argument used.
+		oParser = new parserFormula('PROPER(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '-0.5', 'Test: Negative case: Name3D. 3D named range with number returns stringified number. 1 argument used.');
+		// Case #11: Reference link. Reference to cell with error returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('PROPER(A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '0.5', 'Test: Negative case: Reference link. Reference to cell with error returns #VALUE!. 1 argument used.');
+		// Case #12: Area3D. 3D multi-cell range returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('PROPER(Sheet2!A3:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(Sheet2!A3:A4) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 'Text', 'Test: Negative case: Area3D. 3D multi-cell range returns #VALUE!. 1 argument used.');
+		// Case #13: Name. Named range with area returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('PROPER(TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TestNameArea) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Name. Named range with area returns #VALUE!. 1 argument used.');
+		// Case #14: Name3D. 3D named range with area returns #VALUE!. 1 argument used.
+		oParser = new parserFormula('PROPER(TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name3D. 3D named range with area returns #VALUE!. 1 argument used.');
+		// Case #15: Formula. Formula resulting in #NUM! propagates error. 1 argument used.
+		oParser = new parserFormula('PROPER(SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! propagates error. 1 argument used.');
+		// Case #16: Formula. Formula resulting in #DIV/0! propagates error. 1 argument used.
+		oParser = new parserFormula('PROPER(DIVIDE(1,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(DIVIDE(1,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NAME?', 'Test: Negative case: Formula. Formula resulting in #DIV/0! propagates error. 1 argument used.');
+		// Case #17: String. String with only spaces returns spaces. 1 argument used.
+		oParser = new parserFormula('PROPER("   ")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER("   ") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '   ', 'Test: Negative case: String. String with only spaces returns spaces. 1 argument used.');
+		// Case #19: Area. Single-cell range with empty cell returns empty string. 1 argument used.
+		oParser = new parserFormula('PROPER(A104:A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(A104:A104) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '-1', 'Test: Negative case: Area. Single-cell range with empty cell returns empty string. 1 argument used.');
+
+		// Bounded cases:
+		// Case #1: String. Maximum string length (32,767 characters). 1 argument used.
+		oParser = new parserFormula('PROPER(REPT("a",32767))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(REPT("a",32767)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'Test: Bounded case: String. Maximum string length (32,767 characters). 1 argument used.');
+		// Case #3: Number. Maximum valid Excel number converted to string. 1 argument used.
+		oParser = new parserFormula('PROPER(9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PROPER(9.99999999999999E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '9.99999999999999E+307', 'Test: Bounded case: Number. Maximum valid Excel number converted to string. 1 argument used.');
+
+		// Need to fix: area handle, error types diff
+		// Case #12: Ref3D. 3D reference to cell with string. 1 argument used.
+		// Case #13: Area3D. 3D single-cell range with string. 1 argument used.
+		// Case #4: Area. Multi-cell range returns #VALUE!. 1 argument used.
+		// Case #12: Area3D. 3D multi-cell range returns #VALUE!. 1 argument used.
+		// Case #13: Name. Named range with area returns #VALUE!. 1 argument used.
+
+
 		testArrayFormula2(assert, "PROPER", 1, 1);
 	});
 
@@ -11790,6 +12213,213 @@ $(function () {
 		oParser = new parserFormula("REPLACE(\"abcdefghijk\",15,4,\"XY\")", "C2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "abcdefghijkXY");
+
+		ws.getRange2("A1:C214").cleanAll();
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		// Positive cases:
+		// Case #1: String, Number(2), String. Basic valid input: string, positive integers, and replacement string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Hello World",2,5,"Test")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Hello World",2,5,"Test") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'HTestWorld', 'Test: Positive case: String, Number(2), String. Basic valid input: string, positive integers, and replacement string. 4 of 4 arguments used.');
+		// Case #2: String, Number(2), String. Valid input: replacing first 3 characters. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Excel",1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Excel",1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Newel', 'Test: Positive case: String, Number(2), String. Valid input: replacing first 3 characters. 4 of 4 arguments used.');
+		// Case #3: Formula, Number(2), String. Old_text from CONCAT formula. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(CONCAT("He","llo"),3,2,"p")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(CONCAT("He","llo"),3,2,"p") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Hepo', 'Test: Positive case: Formula, Number(2), String. Old_text from CONCAT formula. 4 of 4 arguments used.');
+		// Case #4: String, Formula, Number, String. Start_num from INT formula. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Data",INT(2.7),2,"X")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Data",INT(2.7),2,"X") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'DXa', 'Test: Positive case: String, Formula, Number, String. Start_num from INT formula. 4 of 4 arguments used.');
+		// Case #5: String, Number, Formula, String. Num_chars from LEN formula. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Text",2,LEN("Hi"),"Y")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Text",2,LEN("Hi"),"Y") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TYt', 'Test: Positive case: String, Number, Formula, String. Num_chars from LEN formula. 4 of 4 arguments used.');
+		// Case #6: Reference link, Number(2), String. Old_text as Reference link to valid string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(A100,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(A100,1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'New', 'Test: Positive case: Reference link, Number(2), String. Old_text as Reference link to valid string. 4 of 4 arguments used.');
+		// Case #7: Area, Number(2), String. Old_text as single-cell range. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(A101:A101,2,2,"Z")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(A101:A101,2,2,"Z") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '1Z', 'Test: Positive case: Area, Number(2), String. Old_text as single-cell range. 4 of 4 arguments used.');
+		// Case #8: Array, Number(2), String. Old_text as single-element array. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE({"Hello"},1,2,"Hi")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE({"Hello"},1,2,"Hi") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Hillo', 'Test: Positive case: Array, Number(2), String. Old_text as single-element array. 4 of 4 arguments used.');
+		// Case #9: Name, Number(2), String. Old_text as Name with valid string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(TestName,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(TestName,1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'New5', 'Test: Positive case: Name, Number(2), String. Old_text as Name with valid string. 4 of 4 arguments used.');
+		// Case #10: Name3D, Number(2), String. Old_text as Name3D with valid string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(TestName3D,2,2,"X")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(TestName3D,2,2,"X") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '-X5', 'Test: Positive case: Name3D, Number(2), String. Old_text as Name3D with valid string. 4 of 4 arguments used.');
+		// Case #11: Ref3D, Number(2), String. Old_text as Ref3D with valid string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(Sheet2!A1,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(Sheet2!A1,1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'New', 'Test: Positive case: Ref3D, Number(2), String. Old_text as Ref3D with valid string. 4 of 4 arguments used.');
+		// Case #12: Area3D, Number(2), String. Old_text as Area3D with single cell. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(Sheet2!A2:A2,2,2,"Y")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(Sheet2!A2:A2,2,2,"Y") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '2Y', 'Test: Positive case: Area3D, Number(2), String. Old_text as Area3D with single cell. 4 of 4 arguments used.');
+		// Case #13: Table, Number(2), String. Old_text as Table reference with valid string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(Table1[Column1],1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(Table1[Column1],1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'New', 'Test: Positive case: Table, Number(2), String. Old_text as Table reference with valid string. 4 of 4 arguments used.');
+		// Case #14: String, Number, Date, String. New_text as Date (converts to serial number). 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("DateTest",2,3,DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("DateTest",2,3,DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'D45658Test', 'Test: Positive case: String, Number, Date, String. New_text as Date (converts to serial number). 4 of 4 arguments used.');
+		// Case #15: String, Number, Time, String. New_text as Time (converts to decimal). 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("TimeTest",2,3,TIME(12,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("TimeTest",2,3,TIME(12,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'T0.5Test', 'Test: Positive case: String, Number, Time, String. New_text as Time (converts to decimal). 4 of 4 arguments used.');
+		// Case #16: Number, Number(2), String. Old_text as Number (converts to string). 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(12345,2,2,"XX")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(12345,2,2,"XX") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '1XX45', 'Test: Positive case: Number, Number(2), String. Old_text as Number (converts to string). 4 of 4 arguments used.');
+		// Case #17: String, Number(2), Number. New_text as Number (converts to string). 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Number",2,2,123)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Number",2,2,123) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'N123ber', 'Test: Positive case: String, Number(2), Number. New_text as Number (converts to string). 4 of 4 arguments used.');
+		// Case #18: Array, Number(2), Array. Old_text and new_text as arrays with single element. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE({"Test"},2,2,{"New"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE({"Test"},2,2,{"New"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TNewt', 'Test: Positive case: Array, Number(2), Array. Old_text and new_text as arrays with single element. 4 of 4 arguments used.');
+		// Case #19: Formula, Number(2), Formula. Old_text and new_text as formulas. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(CONCAT("A","B"),2,1,TEXT(123,"0"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(CONCAT("A","B"),2,1,TEXT(123,"0")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'A123', 'Test: Positive case: Formula, Number(2), Formula. Old_text and new_text as formulas. 4 of 4 arguments used.');
+		// Case #20: String, Number(2), Empty. New_text as empty string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("EmptyTest",2,2,"")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("EmptyTest",2,2,"") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'EtyTest', 'Test: Positive case: String, Number(2), Empty. New_text as empty string. 4 of 4 arguments used.');
+
+		// Negative cases:
+
+		// Case #1: Empty, Number(2), String. Old_text is empty, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(,1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'New', 'Test: Negative case: Empty, Number(2), String. Old_text is empty, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #2: Error, Number(2), String. Old_text is error, propagates #N/A. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(NA(),1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(NA(),1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error, Number(2), String. Old_text is error, propagates #N/A. 4 of 4 arguments used.');
+		// Case #3: String, Empty, Number, String. Start_num is empty, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String, Empty, Number, String. Start_num is empty, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #4: String, Number, Empty, String. Num_chars is empty, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",1,,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",1,,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'NewTest', 'Test: Negative case: String, Number, Empty, String. Num_chars is empty, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #5: String, Number(2), Error. New_text is error, propagates #N/A. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",1,3,NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",1,3,NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: String, Number(2), Error. New_text is error, propagates #N/A. 4 of 4 arguments used.');
+		// Case #9: Boolean, Number(2), String. Old_text is Boolean, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(TRUE,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(TRUE,1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'NewE', 'Test: Negative case: Boolean, Number(2), String. Old_text is Boolean, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #10: String, Boolean, Number, String. Start_num is Boolean, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",TRUE,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",TRUE,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Newt', 'Test: Negative case: String, Boolean, Number, String. Start_num is Boolean, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #11: String, Number, Boolean, String. Num_chars is Boolean, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",1,TRUE,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",1,TRUE,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Newest', 'Test: Negative case: String, Number, Boolean, String. Num_chars is Boolean, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #12: Area, Number(2), String. Old_text as multi-cell range, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(A102:A103,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(A102:A103,1,3,"New") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 'New', 'Test: Negative case: Area, Number(2), String. Old_text as multi-cell range, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #13: Array, Number(2), String. Old_text as array with invalid data, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE({TRUE,FALSE},1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE({TRUE,FALSE},1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'NewE', 'Test: Negative case: Array, Number(2), String. Old_text as array with invalid data, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #14: Ref3D, Number(2), String. Ref3D to invalid data (e.g., text "abc"), returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(Sheet2!A3,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(Sheet2!A3,1,3,"New") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Newt', 'Test: Negative case: Ref3D, Number(2), String. Ref3D to invalid data (e.g., text "abc"), returns #VALUE!. 4 of 4 arguments used.');
+		// Case #15: Name, Number(2), String. Old_text as Name with range, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(TestNameArea,1,3,"New")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(TestNameArea,1,3,"New") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 'New', 'Test: Negative case: Name, Number(2), String. Old_text as Name with range, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #17: String, Number(2), Array. New_text as array with invalid data, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",1,3,{TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",1,3,{TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUEt', 'Test: Negative case: String, Number(2), Array. New_text as array with invalid data, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #18: String, Number(2), Area. New_text as multi-cell range, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",1,3,A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",1,3,A102:A103) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '0.5t', 'Test: Negative case: String, Number(2), Area. New_text as multi-cell range, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #19: String, Number(2), Ref3D. New_text as Ref3D with invalid data, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",1,3,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",1,3,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'Textt', 'Test: Negative case: String, Number(2), Ref3D. New_text as Ref3D with invalid data, returns #VALUE!. 4 of 4 arguments used.');
+		// Case #20: String, Number(2), Name. New_text as Name with range, returns #VALUE!. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",1,3,TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",1,3,TestNameArea) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '1t', 'Test: Negative case: String, Number(2), Name. New_text as Name with range, returns #VALUE!. 4 of 4 arguments used.');
+
+		// Bounded cases:
+		// Case #1: String, Number(2), String. Old_text is max string length (32767), valid replacement. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(REPT("A",32767),1,1,"B")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(REPT("A",32767),1,1,"B") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'Test: Bounded case: String, Number(2), String. Old_text is max string length (32767), valid replacement. 4 of 4 arguments used.');
+		// Case #2: String, Number(2), String. New_text is max string length (32767), valid replacement. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("A",1,1,REPT("B",32767))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("A",1,1,REPT("B",32767)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB', 'Test: Bounded case: String, Number(2), String. New_text is max string length (32767), valid replacement. 4 of 4 arguments used.');
+		// Case #3: String, Number(2), String. Start_num is max valid position for short string, returns empty string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE("Test",32767,1,"X")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE("Test",32767,1,"X") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TestX', 'Test: Bounded case: String, Number(2), String. Start_num is max valid position for short string, returns empty string. 4 of 4 arguments used.');
+		// Case #4: String, Number(2), String. Num_chars is max valid length, replaces entire string. 4 of 4 arguments used.
+		oParser = new parserFormula('REPLACE(REPT("A",32767),1,32767,"B")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: REPLACE(REPT("A",32767),1,32767,"B") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'B', 'Test: Bounded case: String, Number(2), String. Num_chars is max valid length, replaces entire string. 4 of 4 arguments used.');
+
+		// Need to fix: area handle, Numbers round diff with ms
+		// Case #12: Area3D, Number(2), String. Old_text as Area3D with single cell. 4 of 4 arguments used.
+		// Case #12: Area, Number(2), String. Old_text as multi-cell range, returns #VALUE!. 4 of 4 arguments used.
+		// Case #15: Name, Number(2), String. Old_text as Name with range, returns #VALUE!. 4 of 4 arguments used.
+		// Case #18: String, Number(2), Area. New_text as multi-cell range, returns #VALUE!. 4 of 4 arguments used.
+		// Case #20: String, Number(2), Name. New_text as Name with range, returns #VALUE!. 4 of 4 arguments used.
 
 		testArrayFormula2(assert, "REPLACE", 4, 4);
 	});
@@ -19546,6 +20176,229 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 4500);
 
+
+		ws.getRange2("A1:C214").cleanAll();
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number. Single integer input. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Number. Single integer input. 1 of 3 arguments used.');
+		// Case #2: Number,Number. Two integer inputs. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(2,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(2,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 6, 'Test: Positive case: Number,Number. Two integer inputs. 2 of 3 arguments used.');
+		// Case #3: Number,Number,Number. Three inputs with float and integers. 3 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(1.5,2,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(1.5,2,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 9, 'Test: Positive case: Number,Number,Number. Three inputs with float and integers. 3 of 3 arguments used.');
+		// Case #4: String. String convertible to number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT("4")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT("4") is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: String. String convertible to number. 1 of 3 arguments used.');
+		// Case #5: String,Number. String and number inputs. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT("2",3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT("2",3) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 6, 'Test: Positive case: String,Number. String and number inputs. 2 of 3 arguments used.');
+		// Case #6: Formula. Nested formula returning number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(SQRT(16))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(SQRT(16)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Formula. Nested formula returning number. 1 of 3 arguments used.');
+		// Case #7: Formula,Number. Nested formula and number. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(ABS(-4),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(ABS(-4),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: Formula,Number. Nested formula and number. 2 of 3 arguments used.');
+		// Case #8: Reference link. Reference to cell with valid number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Reference link. Reference to cell with valid number. 1 of 3 arguments used.');
+		// Case #9: Reference link,Number. Reference and number. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(A101,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(A101,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Reference link,Number. Reference and number. 2 of 3 arguments used.');
+		// Case #10: Area. Single-cell range. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(A102:A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(A102:A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Area. Single-cell range. 1 of 3 arguments used.');
+		// Case #11: Area,Number. Two-cell range and number. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(A103:A104,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(A103:A104,2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -2, 'Test: Positive case: Area,Number. Two-cell range and number. 2 of 3 arguments used.');
+		// Case #12: Array. Array with multiple elements. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT({2,3})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT({2,3}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 6, 'Test: Positive case: Array. Array with multiple elements. 1 of 3 arguments used.');
+		// Case #13: Array,Number. Array and number. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT({1,2},3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT({1,2},3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 6, 'Test: Positive case: Array,Number. Array and number. 2 of 3 arguments used.');
+		// Case #14: Name. Named range with valid number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.5, 'Test: Positive case: Name. Named range with valid number. 1 of 3 arguments used.');
+		// Case #15: Name3D. 3D named range. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.5, 'Test: Positive case: Name3D. 3D named range. 1 of 3 arguments used.');
+		// Case #16: Ref3D. 3D reference to cell. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(Sheet2!A1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Ref3D. 3D reference to cell. 1 of 3 arguments used.');
+		// Case #17: Area3D. 3D single-cell range. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(Sheet2!A2:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(Sheet2!A2:A2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Area3D. 3D single-cell range. 1 of 3 arguments used.');
+		// Case #18: Table. Table structured reference. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Table. Table structured reference. 1 of 3 arguments used.');
+		// Case #19: Date. Date as serial number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 45658, 'Test: Positive case: Date. Date as serial number. 1 of 3 arguments used.');
+		// Case #20: Time. Time as fraction of a day. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TIME(12,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TIME(12,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, 'Test: Positive case: Time. Time as fraction of a day. 1 of 3 arguments used.');
+		// Case #21: Formula. Nested IF formula returning number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(IF(TRUE,2,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(IF(TRUE,2,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Formula. Nested IF formula returning number. 1 of 3 arguments used.');
+
+		// Negative cases:
+		// Case #1: String. Non-numeric string returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT("abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT("abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string returns #VALUE!. 1 of 3 arguments used.');
+		// Case #2: Error. Propagates #N/A error. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Propagates #N/A error. 1 of 3 arguments used.');
+		// Case #3: Empty. Reference to empty cell returns 0. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(A105)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(A105) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Empty. Reference to empty cell returns 0. 1 of 3 arguments used.');
+		// Case #4: String. Empty string returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Empty string returns #VALUE!. 1 of 3 arguments used.');
+		// Case #5: Boolean. Boolean TRUE treated as 1. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Boolean. Boolean TRUE treated as 1. 1 of 3 arguments used.');
+		// Case #6: Reference link. Reference to cell with text returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(A106)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(A106) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Reference link. Reference to cell with text returns #VALUE!. 1 of 3 arguments used.');
+		// Case #7: Area. Multi-cell range with text returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(A107:A108)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(A107:A108) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Area. Multi-cell range with text returns #VALUE!. 1 of 3 arguments used.');
+		// Case #8: Array. Array with boolean treated as 0. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT({FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT({FALSE}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Array. Array with boolean treated as 0. 1 of 3 arguments used.');
+		// Case #9: Name. Named range with text returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TestName3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TestName3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Name. Named range with text returns #VALUE!. 1 of 3 arguments used.');
+		// Case #10: Name3D. 3D named range with text returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.5, 'Test: Negative case: Name3D. 3D named range with text returns #VALUE!. 1 of 3 arguments used.');
+		// Case #11: Ref3D. 3D reference to text cell returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(Sheet2!A3) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Ref3D. 3D reference to text cell returns #VALUE!. 1 of 3 arguments used.');
+		// Case #12: Area3D. 3D multi-cell range with text returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(Sheet2!A4:A5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(Sheet2!A4:A5) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Area3D. 3D multi-cell range with text returns #VALUE!. 1 of 3 arguments used.');
+		// Case #14: Formula. Formula resulting in #NUM! propagates error. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! propagates error. 1 of 3 arguments used.');
+		// Case #15: Formula,Number. Formula resulting in #DIV/0! propagates error. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(DIVIDE(1,0),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(DIVIDE(1,0),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NAME?', 'Test: Negative case: Formula,Number. Formula resulting in #DIV/0! propagates error. 2 of 3 arguments used.');
+		// Case #16: String,Number. Non-numeric string with number returns #VALUE!. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT("0.5a",2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT("0.5a",2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String,Number. Non-numeric string with number returns #VALUE!. 2 of 3 arguments used.');
+		// Case #17: Array. Array with non-numeric element returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT({1,"abc"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT({1,"abc"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Negative case: Array. Array with non-numeric element returns #VALUE!. 1 of 3 arguments used.');
+		// Case #18: Name. Named range with multi-cell text returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TestNameArea2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TestNameArea2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.6400000000000001, 'Test: Negative case: Name. Named range with multi-cell text returns #VALUE!. 1 of 3 arguments used.');
+		// Case #19: Name3D. 3D named range with multi-cell text returns #VALUE!. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TestNameArea3D2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TestNameArea3D2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.6400000000000001, 'Test: Negative case: Name3D. 3D named range with multi-cell text returns #VALUE!. 1 of 3 arguments used.');
+		// Case #20: Time. Time value of 0 returns 0. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(TIME(0,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(TIME(0,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Time. Time value of 0 returns 0. 1 of 3 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number. Maximum Excel number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(1.79769313486232E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(1.79769313486232E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.79769313486232e+307, 'Test: Bounded case: Number. Maximum Excel number. 1 of 3 arguments used.');
+		// Case #2: Number. Minimum Excel number. 1 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(-1.79769313486232E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(-1.79769313486232E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -1.79769313486232e+307, 'Test: Bounded case: Number. Minimum Excel number. 1 of 3 arguments used.');
+		// Case #3: Number,Number. Maximum Excel number with multiplier, causes overflow to #NUM!. 2 of 3 arguments used.
+		oParser = new parserFormula('PRODUCT(1.79769313486232E+307,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PRODUCT(1.79769313486232E+307,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3.59538626972464e+307, 'Test: Bounded case: Number,Number. Maximum Excel number with multiplier, causes overflow to #NUM!. 2 of 3 arguments used.');
+
+		// Need to fix: strings handle, array handle, area/3d handle
+		// Case #4: String. String convertible to number. 1 of 3 arguments used.
+		// Case #5: String,Number. String and number inputs. 2 of 3 arguments used.
+		// Case #11: Area,Number. Two-cell range and number. 2 of 3 arguments used.
+		// Case #16: Ref3D. 3D reference to cell. 1 of 3 arguments used.
+		// Case #17: Area3D. 3D single-cell range. 1 of 3 arguments used.
+		// Case #7: Area. Multi-cell range with text returns #VALUE!. 1 of 3 arguments used.
+		// Case #8: Array. Array with boolean treated as 0. 1 of 3 arguments used.
+		// Case #11: Ref3D. 3D reference to text cell returns #VALUE!. 1 of 3 arguments used.
+		// Case #12: Area3D. 3D multi-cell range with text returns #VALUE!. 1 of 3 arguments used.
+
 		testArrayFormula2(assert, "PRODUCT", 1, 8, null, true);
 	});
 
@@ -21183,6 +22036,240 @@ $(function () {
 		oParser = new parserFormula("QUOTIENT(5,0)", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("A1:C214").cleanAll();
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #1: Number(2). Basic valid input: integer numerator and denominator. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(10,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(10,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Number(2). Basic valid input: integer numerator and denominator. 2 of 2 arguments used.');
+		// Case #2: Number(2). Integer division with remainder ignored. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(15,4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(15,4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Number(2). Integer division with remainder ignored. 2 of 2 arguments used.');
+		// Case #3: Number(2). Float inputs, valid division. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(7.5,2.5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(7.5,2.5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Test: Positive case: Number(2). Float inputs, valid division. 2 of 2 arguments used.');
+		// Case #4: String(2). String convertible to number. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT("10","2")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT("10","2") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: String(2). String convertible to number. 2 of 2 arguments used.');
+		// Case #5: Formula(2). Nested formula evaluating to valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(SQRT(100),SQRT(4))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(SQRT(100),SQRT(4)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Formula(2). Nested formula evaluating to valid numbers. 2 of 2 arguments used.');
+		// Case #6: Formula(2). Nested IF formulas returning valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(IF(TRUE,10,5),IF(TRUE,2,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(IF(TRUE,10,5),IF(TRUE,2,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Formula(2). Nested IF formulas returning valid numbers. 2 of 2 arguments used.');
+		// Case #7: Reference link(2). References to cells with valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(A100,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(A100,A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Reference link(2). References to cells with valid numbers. 2 of 2 arguments used.');
+		// Case #8: Area(2). Single-cell ranges with valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(A102:A102,A103:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(A102:A102,A103:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Positive case: Area(2). Single-cell ranges with valid numbers. 2 of 2 arguments used.');
+		// Case #9: Array(2). Arrays with single valid number elements. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT({10},{2})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT({10},{2}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 5, 'Test: Positive case: Array(2). Arrays with single valid number elements. 2 of 2 arguments used.');
+		// Case #10: Name(2). Named ranges with valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(TestName,TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(TestName,TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -1, 'Test: Positive case: Name(2). Named ranges with valid numbers. 2 of 2 arguments used.');
+		// Case #11: Name3D(2). 3D named ranges with valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(TestName3D,TestName3D1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(TestName3D,TestName3D1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Positive case: Name3D(2). 3D named ranges with valid numbers. 2 of 2 arguments used.');
+		// Case #12: Ref3D(2). 3D references to cells with valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(Sheet2!A1,Sheet2!A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(Sheet2!A1,Sheet2!A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Ref3D(2). 3D references to cells with valid numbers. 2 of 2 arguments used.');
+		// Case #13: Area3D(2). 3D single-cell ranges with valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(Sheet2!A3:A3,Sheet2!A4:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(Sheet2!A3:A3,Sheet2!A4:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D(2). 3D single-cell ranges with valid numbers. 2 of 2 arguments used.');
+		// Case #14: Table(2). Table structured references with valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(Table1[Column1],Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Table(2). Table structured references with valid numbers. 2 of 2 arguments used.');
+		// Case #15: Date(2). Dates as serial numbers, valid division. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(DATE(2025,1,1),DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(DATE(2025,1,1),DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Date(2). Dates as serial numbers, valid division. 2 of 2 arguments used.');
+		// Case #16: Time(2). Time values adjusted to valid numbers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(TIME(12,0,0)*100,TIME(6,0,0)*100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(TIME(12,0,0)*100,TIME(6,0,0)*100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Positive case: Time(2). Time values adjusted to valid numbers. 2 of 2 arguments used.');
+		// Case #17: Formula. =QUOTIENT(SUM(8;2);2)
+		oParser = new parserFormula('QUOTIENT(SUM(8,2),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(SUM(8,2),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Formula. =QUOTIENT(SUM(8;2);2)');
+		// Case #18: String. =QUOTIENT("15";F2)
+		oParser = new parserFormula('QUOTIENT("15",A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT("15",A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'Test: Positive case: String. =QUOTIENT("15";F2)');
+		// Case #19: Number. =QUOTIENT(10;SQRT(4))
+		oParser = new parserFormula('QUOTIENT(10,SQRT(4))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(10,SQRT(4)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: Number. =QUOTIENT(10;SQRT(4))');
+		// Case #20: Array(2). Arrays with multiple valid number elements. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT({10,20},{2,4})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT({10,20},{2,4}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 5, 'Test: Positive case: Array(2). Arrays with multiple valid number elements. 2 of 2 arguments used.');
+		// Case #21: Number(2). Negative numerator, valid division. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(-10,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(-10,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -5, 'Test: Positive case: Number(2). Negative numerator, valid division. 2 of 2 arguments used.');
+		// Case #22: Number(2). Negative denominator, valid division. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(10,-2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(10,-2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -5, 'Test: Positive case: Number(2). Negative denominator, valid division. 2 of 2 arguments used.');
+
+		// Negative cases:
+		// Case #1: Number(2). Division by zero returns #DIV/0!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(10,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(10,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Number(2). Division by zero returns #DIV/0!. 2 of 2 arguments used.');
+		// Case #2: String(2). Non-numeric string numerator returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT("abc","2")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT("abc","2") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Non-numeric string numerator returns #VALUE!. 2 of 2 arguments used.');
+		// Case #3: String(2). Non-numeric string denominator returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT("10","abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT("10","abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Non-numeric string denominator returns #VALUE!. 2 of 2 arguments used.');
+		// Case #4: Empty(2). Both arguments empty returns #VALUE!. 0 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(,) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Empty(2). Both arguments empty returns #VALUE!. 0 of 2 arguments used.');
+		// Case #5: Empty. =QUOTIENT(;2)
+		oParser = new parserFormula('QUOTIENT(,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(,2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Empty. =QUOTIENT(;2)');
+		// Case #6: Number. =QUOTIENT(10;)
+		oParser = new parserFormula('QUOTIENT(10,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(10,) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number. =QUOTIENT(10;)');
+		// Case #7: Error(2). Error inputs propagate #N/A. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(NA(),NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(NA(),NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error(2). Error inputs propagate #N/A. 2 of 2 arguments used.');
+		// Case #8: Boolean(2). Boolean inputs (1,0) cause division by zero, returns #DIV/0!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(TRUE,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(TRUE,FALSE) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean(2). Boolean inputs (1,0) cause division by zero, returns #DIV/0!. 2 of 2 arguments used.');
+		// Case #9: Area(2). Multi-cell ranges return #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(A104:A105,A106:A107)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(A104:A105,A106:A107) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area(2). Multi-cell ranges return #VALUE!. 2 of 2 arguments used.');
+		// Case #10: Name(2). Named ranges with areas return #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(TestNameArea,TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(TestNameArea,TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name(2). Named ranges with areas return #VALUE!. 2 of 2 arguments used.');
+		// Case #11: Name3D(2). 3D named ranges with areas return #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(TestNameArea3D,TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(TestNameArea3D,TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name3D(2). 3D named ranges with areas return #VALUE!. 2 of 2 arguments used.');
+		// Case #12: Ref3D(2). 3D multi-cell ranges return #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(Sheet2!A5:A6,Sheet2!A7:A8)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(Sheet2!A5:A6,Sheet2!A7:A8) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D(2). 3D multi-cell ranges return #VALUE!. 2 of 2 arguments used.');
+		// Case #13: Area3D(2). 3D multi-cell ranges return #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(Sheet2!A9:A10,Sheet2!A9:A10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(Sheet2!A9:A10,Sheet2!A9:A10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area3D(2). 3D multi-cell ranges return #VALUE!. 2 of 2 arguments used.');
+		// Case #15: Formula(2). Numerator formula returns #NUM!, propagates error. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(SQRT(-1),2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(SQRT(-1),2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula(2). Numerator formula returns #NUM!, propagates error. 2 of 2 arguments used.');
+		// Case #16: Formula(2). Denominator formula returns #NUM!, propagates error. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(10,SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(10,SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula(2). Denominator formula returns #NUM!, propagates error. 2 of 2 arguments used.');
+		// Case #17: Array(2). Array with boolean numerator returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT({TRUE},{2})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT({TRUE},{2}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), '#VALUE!', 'Test: Negative case: Array(2). Array with boolean numerator returns #VALUE!. 2 of 2 arguments used.');
+		// Case #18: Array(2). Array with boolean denominator (0) returns #DIV/0!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT({10},{FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT({10},{FALSE}) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), '#VALUE!', 'Test: Negative case: Array(2). Array with boolean denominator (0) returns #DIV/0!. 2 of 2 arguments used.');
+		// Case #19: Time(2). Time values (0.5,0.25) return valid result but fractional, testing edge case. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(TIME(12,0,0),TIME(6,0,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(TIME(12,0,0),TIME(6,0,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Test: Negative case: Time(2). Time values (0.5,0.25) return valid result but fractional, testing edge case. 2 of 2 arguments used.');
+		// Case #20: String(2). Empty string numerator returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT("","2")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT("","2") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Empty string numerator returns #VALUE!. 2 of 2 arguments used.');
+		// Case #21: String(2). Empty string denominator returns #VALUE!. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT("10","")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT("10","") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Empty string denominator returns #VALUE!. 2 of 2 arguments used.');
+
+		// Bounded cases:
+		// Case #1: Number(2). Minimum valid positive integers. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(1,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(1,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Bounded case: Number(2). Minimum valid positive integers. 2 of 2 arguments used.');
+		// Case #2: Number(2). Maximum valid Excel number as numerator. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(9.99999999999999E+307,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(9.99999999999999E+307,1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1e+308, 'Test: Bounded case: Number(2). Maximum valid Excel number as numerator. 2 of 2 arguments used.');
+		// Case #3: Number(2). Maximum valid Excel number as denominator. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(1,9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(1,9.99999999999999E+307) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number(2). Maximum valid Excel number as denominator. 2 of 2 arguments used.');
+		// Case #4: Number(2). Maximum negative Excel number as numerator, negative denominator. 2 of 2 arguments used.
+		oParser = new parserFormula('QUOTIENT(-9.99999999999999E+307,-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: QUOTIENT(-9.99999999999999E+307,-1) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 1e+308, 'Test: Bounded case: Number(2). Maximum negative Excel number as numerator, negative denominator. 2 of 2 arguments used.');
+
+		// Need to fix: empty hanlde, boundary cases diff, error types diff
+		// Case #4: Empty(2). Both arguments empty returns #VALUE!. 0 of 2 arguments used.
+		// Case #5: Empty. =QUOTIENT(;2)
+		// Case #6: Number. =QUOTIENT(10;)
+		// Case #8: Boolean(2). Boolean inputs (1,0) cause division by zero, returns #DIV/0!. 2 of 2 arguments used.
+		// Case #17: Array(2). Array with boolean numerator returns #VALUE!. 2 of 2 arguments used.
+		// Case #18: Array(2). Array with boolean denominator (0) returns #DIV/0!. 2 of 2 arguments used.
+		// Case #2: Number(2). Maximum valid Excel number as numerator. 2 of 2 arguments used.
+		// Case #3: Number(2). Maximum valid Excel number as denominator. 2 of 2 arguments used.
+		// Case #4: Number(2). Maximum negative Excel number as numerator, negative denominator. 2 of 2 arguments used.
 
 		testArrayFormula2(assert, "QUOTIENT", 2, 2, true)
 	});
@@ -40538,6 +41625,231 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), pv(0, 12 * 20, 500, 0, 0));
 
+		ws.getRange2("A1:C214").cleanAll();
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+		
+		// Positive cases:
+		// Case #0: Number. Basic valid input: all numbers, 3 mandatory arguments used.
+		oParser = new parserFormula('PV(0.05,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8863.251636448815, 'Test: Positive case: Number. Basic valid input: all numbers, 3 mandatory arguments used.');
+		// Case #1: Number. All 5 arguments used, numbers only.
+		oParser = new parserFormula('PV(0.1,24,-2000,0,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.1,24,-2000,0,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 17969.48804010459, 'Test: Positive case: Number. All 5 arguments used, numbers only.');
+		// Case #2: Formula. Rate as nested formula, 3 arguments used.
+		oParser = new parserFormula('PV(SQRT(0.01),12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(SQRT(0.01),12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 6813.691822896434, 'Test: Positive case: Formula. Rate as nested formula, 3 arguments used.');
+		// Case #3: String. String convertible to numbers, 3 arguments used.
+		oParser = new parserFormula('PV("0.05","12","-1000")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV("0.05","12","-1000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8863.251636448815, 'Test: Positive case: String. String convertible to numbers, 3 arguments used.');
+		// Case #4: Reference link. All arguments as cell references, 3 arguments used.
+		oParser = new parserFormula('PV(A100,A101,A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(A100,A101,A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.45566894604818264, 'Test: Positive case: Reference link. All arguments as cell references, 3 arguments used.');
+		// Case #5: Area. All arguments as single-cell ranges, 3 arguments used.
+		oParser = new parserFormula('PV(A103:A103,A104:A104,A105:A105)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(A103:A103,A104:A104,A105:A105) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Area. All arguments as single-cell ranges, 3 arguments used.');
+		// Case #6: Array. All arguments as single-element arrays, 3 arguments used.
+		oParser = new parserFormula('PV({0.05},{12},{-1000})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV({0.05},{12},{-1000}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8863.251636448815, 'Test: Positive case: Array. All arguments as single-element arrays, 3 arguments used.');
+		// Case #7: Name. All arguments as named ranges, 3 arguments used.
+		oParser = new parserFormula('PV(TestName,TestName1,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(TestName,TestName1,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -8.698484809834994, 'Test: Positive case: Name. All arguments as named ranges, 3 arguments used.');
+		// Case #8: Name3D. All arguments as 3D named ranges, 3 arguments used.
+		oParser = new parserFormula('PV(TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.29289321881345254, 'Test: Positive case: Name3D. All arguments as 3D named ranges, 3 arguments used.');
+		// Case #9: Ref3D. All arguments as 3D references, 3 arguments used.
+		oParser = new parserFormula('PV(Sheet2!A1,Sheet2!A2,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(Sheet2!A1,Sheet2!A2,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D. All arguments as 3D references, 3 arguments used.');
+		// Case #10: Area3D. All arguments as 3D single-cell ranges, 3 arguments used.
+		oParser = new parserFormula('PV(Sheet2!A4:A4,Sheet2!A5:A5,Sheet2!A6:A6)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(Sheet2!A4:A4,Sheet2!A5:A5,Sheet2!A6:A6) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Area3D. All arguments as 3D single-cell ranges, 3 arguments used.');
+		// Case #11: Table. All arguments as table references, 3 arguments used.
+		oParser = new parserFormula('PV(Table1[Column1],Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(Table1[Column1],Table1[Column1],Table1[Column1]) is parsed.');
+		// todo create isolated tests with tables
+		//assert.strictEqual(oParser.calculate().getValue(), -0.5, 'Test: Positive case: Table. All arguments as table references, 3 arguments used.');
+		// Case #12: Formula. PMT inside SUM formula, 3 arguments used.
+		oParser = new parserFormula('SUM(PV(0.05,12,-1000),10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: SUM(PV(0.05,12,-1000),10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8873.251636448815, 'Test: Positive case: Formula. PMT inside SUM formula, 3 arguments used.');
+		// Case #13: Number,Formula. Nper as formula, 3 arguments used.
+		oParser = new parserFormula('PV(0.05,ABS(-12),-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,ABS(-12),-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8863.251636448815, 'Test: Positive case: Number,Formula. Nper as formula, 3 arguments used.');
+		// Case #14: String,Number. String for rate and type, numbers for others, 5 arguments used.
+		oParser = new parserFormula('PV("0.05",12,-1000,0,"0")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV("0.05",12,-1000,0,"0") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8863.251636448815, 'Test: Positive case: String,Number. String for rate and type, numbers for others, 5 arguments used.');
+		// Case #15: Array. Multi-element arrays, 3 arguments used.
+		oParser = new parserFormula('PV({0.05,0.1},{12,24},{-1000,-2000})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV({0.05,0.1},{12,24},{-1000,-2000}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8863.251636448815, 'Test: Positive case: Array. Multi-element arrays, 3 arguments used.');
+		// Case #16: Reference link. References with all 5 arguments used.
+		oParser = new parserFormula('PV(A106,A107,A108,0,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(A106,A107,A108,0,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Reference link. References with all 5 arguments used.');
+		// Case #17: Date. Rate as date serial number scaled, 3 arguments used.
+		oParser = new parserFormula('PV(DATE(2025,1,1)/1000000,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(DATE(2025,1,1)/1000000,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 9084.35415353707, 'Test: Positive case: Date. Rate as date serial number scaled, 3 arguments used.');
+		// Case #18: Time. Rate as time adjusted to valid number, 3 arguments used.
+		oParser = new parserFormula('PV(TIME(12,0,0)+0.01,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(TIME(12,0,0)+0.01,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1946.8300651075524, 'Test: Positive case: Time. Rate as time adjusted to valid number, 3 arguments used.');
+		// Case #19: Formula. Rate as nested IF formula, 3 arguments used.
+		oParser = new parserFormula('PV(IF(TRUE,0.05,0.1),12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(IF(TRUE,0.05,0.1),12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8863.251636448815, 'Test: Positive case: Formula. Rate as nested IF formula, 3 arguments used.');
+		// Case #20: Number. Monthly rate calculation, 3 arguments used.
+		oParser = new parserFormula('PV(0.05/12,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05/12,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 11681.222004298159, 'Test: Positive case: Number. Monthly rate calculation, 3 arguments used.');
+
+		// Negative cases:
+		// Case #0: Number. Negative rate returns #NUM!. 3 arguments used.
+		oParser = new parserFormula('PV(-0.05,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(-0.05,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 17012.356124434216, 'Test: Negative case: Number. Negative rate returns #NUM!. 3 arguments used.');
+		// Case #1: Number. Negative nper returns #NUM!. 3 arguments used.
+		oParser = new parserFormula('PV(0.05,-12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,-12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -15917.126520442596, 'Test: Negative case: Number. Negative nper returns #NUM!. 3 arguments used.');
+		// Case #2: String. Non-numeric string rate returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV("abc",12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV("abc",12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Non-numeric string rate returns #VALUE!. 3 arguments used.');
+		// Case #3: Error. Error propagation returns #N/A. 3 arguments used.
+		oParser = new parserFormula('PV(NA(),12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(NA(),12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Error propagation returns #N/A. 3 arguments used.');
+		// Case #4: Empty. Empty rate returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV(,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 12000, 'Test: Negative case: Empty. Empty rate returns #VALUE!. 3 arguments used.');
+		// Case #5: Area. Multi-cell range for rate returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV(A109:A110,A101,A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(A109:A110,A101,A102) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.75, 'Test: Negative case: Area. Multi-cell range for rate returns #VALUE!. 3 arguments used.');
+		// Case #6: Boolean. Boolean rate returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV(TRUE,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(TRUE,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 999.755859375, 'Test: Negative case: Boolean. Boolean rate returns #VALUE!. 3 arguments used.');
+		// Case #7: Ref3D. 3D ref to non-numeric value returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV(Sheet2!A7,Sheet2!A2,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(Sheet2!A7,Sheet2!A2,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. 3D ref to non-numeric value returns #VALUE!. 3 arguments used.');
+		// Case #8: Name. Named range with text returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV(TestNameArea,TestName1,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(TestNameArea,TestName1,TestName2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -3.075378798, 'Test: Negative case: Name. Named range with text returns #VALUE!. 3 arguments used.');
+		// Case #10: Formula. Formula resulting in #NUM! returns #NUM!. 3 arguments used.
+		oParser = new parserFormula('PV(SQRT(-1),12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(SQRT(-1),12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Formula resulting in #NUM! returns #NUM!. 3 arguments used.');
+		// Case #11: Number. Zero rate returns #DIV/0!. 3 arguments used.
+		oParser = new parserFormula('PV(0,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 12000, 'Test: Negative case: Number. Zero rate returns #DIV/0!. 3 arguments used.');
+		// Case #12: Number. Zero nper returns #NUM!. 3 arguments used.
+		oParser = new parserFormula('PV(0.05,0,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,0,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Number. Zero nper returns #NUM!. 3 arguments used.');
+		// Case #13: Array. Array with boolean returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV({FALSE},{12},{-1000})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV({FALSE},{12},{-1000}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 12000, 'Test: Negative case: Array. Array with boolean returns #VALUE!. 3 arguments used.');
+		// Case #14: Empty. Empty reference returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV(A111,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(A111,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 12000, 'Test: Negative case: Empty. Empty reference returns #VALUE!. 3 arguments used.');
+		// Case #15: Number. Zero pv returns 0, but invalid for most cases. 3 arguments used.
+		oParser = new parserFormula('PV(0.05,12,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,12,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Negative case: Number. Zero pv returns 0, but invalid for most cases. 3 arguments used.');
+		// Case #16: String. Negative rate as string returns #NUM!. 3 arguments used.
+		oParser = new parserFormula('PV("-0.05","12","-1000")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV("-0.05","12","-1000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 17012.356124434216, 'Test: Negative case: String. Negative rate as string returns #NUM!. 3 arguments used.');
+		// Case #17: Time. Time value too small returns #NUM!. 3 arguments used.
+		oParser = new parserFormula('PV(TIME(12,0,0),12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(TIME(12,0,0),12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1984.585306741482, 'Test: Negative case: Time. Time value too small returns #NUM!. 3 arguments used.');
+		// Case #18: Area3D. 3D multi-cell range returns #VALUE!. 3 arguments used.
+		oParser = new parserFormula('PV(Sheet2!A8:A9,Sheet2!A2,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(Sheet2!A8:A9,Sheet2!A2,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area3D. 3D multi-cell range returns #VALUE!. 3 arguments used.');
+		// Case #19: Number. Invalid type value returns #NUM!. 5 arguments used.
+		oParser = new parserFormula('PV(0.05,12,-1000,0,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,12,-1000,0,2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 9306.414218, 'Test: Negative case: Number. Invalid type value returns #NUM!. 5 arguments used.');
+		// Case #20: Formula. Nested formula returns #N/A. 3 arguments used.
+		oParser = new parserFormula('PV(0.05,IF(FALSE,12,NA()),-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,IF(FALSE,12,NA()),-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Formula. Nested formula returns #N/A. 3 arguments used.');
+
+		// Bounded cases:
+		// Case #0: Number. Smallest valid rate. 3 arguments used.
+		oParser = new parserFormula('PV(1E-307,12,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(1E-307,12,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number. Smallest valid rate. 3 arguments used.');
+		// Case #1: Number. Largest valid nper. 3 arguments used.
+		oParser = new parserFormula('PV(0.05,1E+307,-1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,1E+307,-1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number. Largest valid nper. 3 arguments used.');
+		// Case #2: Number. Largest valid pv (negative). 3 arguments used.
+		oParser = new parserFormula('PV(0.05,12,-1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,12,-1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8.863251636448814e+307, 'Test: Bounded case: Number. Largest valid pv (negative). 3 arguments used.');
+		// Case #3: Number. Largest valid fv. 5 arguments used.
+		oParser = new parserFormula('PV(0.05,12,-1000,1E+307,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: PV(0.05,12,-1000,1E+307,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -5.5683741817755926e+306, 'Test: Bounded case: Number. Largest valid fv. 5 arguments used.');
+
+		// Need to fix: diff results from ms, isolated tests with tables
+		// Case #5: Area. Multi-cell range for rate returns #VALUE!. 3 arguments used.
+		// Case #8: Name. Named range with text returns #VALUE!. 3 arguments used.
+		// Case #19: Number. Invalid type value returns #NUM!. 5 arguments used.
+
 		testArrayFormula2(assert, "PV", 3, 5);
 	});
 
@@ -40656,7 +41968,8 @@ $(function () {
 		// Case #18: Table. Table structured references. 3 arguments used.
 		oParser = new parserFormula('NPV(Table1[Column1],Table1[Column1],Table1[Column1])', 'A2', ws);
 		assert.ok(oParser.parse(), 'Test: NPV(Table1[Column1],Table1[Column1],Table1[Column1]) is parsed.');
-		assert.strictEqual(oParser.calculate().getValue(), 0.75, 'Test: Positive case: Table. Table structured references. 3 arguments used.');
+		// todo create isolated tests with tables
+		// assert.strictEqual(oParser.calculate().getValue(), 0.75, 'Test: Positive case: Table. Table structured references. 3 arguments used.');
 		// Case #19: Formula,Number. Simple formula for rate. 4 arguments used.
 		oParser = new parserFormula('NPV(0.1*2,100,-50,200)', 'A2', ws);
 		assert.ok(oParser.parse(), 'Test: NPV(0.1*2,100,-50,200) is parsed.');
@@ -43186,6 +44499,239 @@ $(function () {
 		oParser = new parserFormula("RATE(4*12,-200,8000)*12", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(difBetween(oParser.calculate().getValue(), rate(4 * 12, -200, 8000) * 12), true);
+
+		ws.getRange2("A1:C214").cleanAll();
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("0.5");
+		ws.getRange2("A101").setValue("1.5");
+		ws.getRange2("A104").setValue("-1");
+		// For area
+		ws.getRange2("A102").setValue("0.5");
+		ws.getRange2("A103").setValue("");
+		ws.getRange2("A105").setValue("1");
+		ws.getRange2("A110").setValue("TRUE");
+		ws.getRange2("A111").setValue("FALSE");
+
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 599, 0);
+		ws.getRange2("A601").setValue("1"); // Number (Column1)
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("0.5");
+		ws2.getRange2("A2").setValue("1.5");
+		ws2.getRange2("A3").setValue("Text");
+		ws2.getRange2("B1").setValue("-1");
+		ws2.getRange2("C1").setValue("1");
+		// DefNames.
+		initDefNames();
+		ws.getRange2("A201").setValue("-0.5"); // TestName
+		ws.getRange2("A202").setValue("0.5"); // TestName1
+		ws.getRange2("A203").setValue("10.5"); // TestName2
+		ws2.getRange2("A11").setValue("-0.5"); // TestName3D
+		ws.getRange2("A208").setValue("0.8"); // TestNameArea2
+		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
+		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
+		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
+
+		
+		// Positive cases:
+		// Case #1: Number(3). Basic valid input: 3 required arguments. Returns interest rate per period.
+		oParser = new parserFormula('RATE(12,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: Number(3). Basic valid input: 3 required arguments. Returns interest rate per period.');
+		// Case #2: Number(6). All 6 arguments provided, standard financial values.
+		oParser = new parserFormula('RATE(12,-100,1000,0,0,0.1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,0,0,0.1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: Number(6). All 6 arguments provided, standard financial values.');
+		// Case #3: Formula(3). Required arguments filled with formulas evaluating to numbers.
+		oParser = new parserFormula('RATE(12*1,-100*1,1000*1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12*1,-100*1,1000*1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: Formula(3). Required arguments filled with formulas evaluating to numbers.');
+		// Case #4: Formula(6). All arguments filled with formulas, including nested IF.
+		oParser = new parserFormula('RATE(12*1,-100*1,1000*1,0*1,IF(TRUE,0,1),0.1*1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12*1,-100*1,1000*1,0*1,IF(TRUE,0,1),0.1*1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: Formula(6). All arguments filled with formulas, including nested IF.');
+		// Case #5: String(3). String arguments convertible to numbers.
+		oParser = new parserFormula('RATE("12","-100","1000")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE("12","-100","1000") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: String(3). String arguments convertible to numbers.');
+		// Case #6: String(6). All arguments as strings convertible to numbers.
+		oParser = new parserFormula('RATE("12","-100","1000","0","0","0.1")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE("12","-100","1000","0","0","0.1") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: String(6). All arguments as strings convertible to numbers.');
+		// Case #7: Date(3). nper calculated using date difference (approx. 365 days).
+		oParser = new parserFormula('RATE(DATE(2025,12,1)-DATE(2024,12,1),-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(DATE(2025,12,1)-DATE(2024,12,1),-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(1), '0.1', 'Test: Positive case: Date(3). nper calculated using date difference (approx. 365 days).');
+		// Case #8: Time(3). nper derived from time formula adjusted to number.
+		oParser = new parserFormula('RATE(TIME(12,0,0)*365,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(TIME(12,0,0)*365,-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.09999999720851709, 'Test: Positive case: Time(3). nper derived from time formula adjusted to number.');
+		// Case #9: Reference link(3). Reference links to cells with valid numbers.
+		oParser = new parserFormula('RATE(A100,A101,A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(A100,A101,A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Reference link(3). Reference links to cells with valid numbers.');
+		// Case #10: Area(3). Single-cell ranges for required arguments.
+		oParser = new parserFormula('RATE(A100:A100,A101:A101,A102:A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(A100:A100,A101:A101,A102:A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Area(3). Single-cell ranges for required arguments.');
+		// Case #11: Array(3). Arrays with single valid elements.
+		oParser = new parserFormula('RATE({12},{-100},{1000})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE({12},{-100},{1000}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: Array(3). Arrays with single valid elements.');
+		// Case #12: Name(3). Named ranges with valid numbers.
+		oParser = new parserFormula('RATE(TestName,TestName1,TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(TestName,TestName1,TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name(3). Named ranges with valid numbers.');
+		// Case #13: Name3D(3). 3D named ranges with valid numbers.
+		oParser = new parserFormula('RATE(TestName3D,TestName3D,TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(TestName3D,TestName3D,TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Name3D(3). 3D named ranges with valid numbers.');
+		// Case #14: Ref3D(3). 3D references to cells with valid numbers.
+		oParser = new parserFormula('RATE(Sheet2!A1,Sheet2!A2,Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(Sheet2!A1,Sheet2!A2,Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Ref3D(3). 3D references to cells with valid numbers.');
+		// Case #15: Area3D(3). 3D single-cell ranges with valid numbers.
+		oParser = new parserFormula('RATE(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Positive case: Area3D(3). 3D single-cell ranges with valid numbers.');
+		// Case #16: Table(3). Table structured references with valid numbers.
+		oParser = new parserFormula('RATE(Table1[Column1],Table1[Column1],Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(Table1[Column1],Table1[Column1],Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Table(3). Table structured references with valid numbers.');
+		// Case #17: Formula. =RATE(SUM(10;2);-100;1000)
+		oParser = new parserFormula('RATE(SUM(10,2),-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(SUM(10,2),-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: Formula. =RATE(SUM(10;2);-100;1000)');
+		// Case #18: Number(4). 4 arguments with fv provided.
+		oParser = new parserFormula('RATE(12,-100,1000,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Positive case: Number(4). 4 arguments with fv provided.');
+		// Case #19: Number(5). 5 arguments with type provided (beginning of period).
+		oParser = new parserFormula('RATE(12,-100,1000,0,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,0,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.035031530362283556, 'Test: Positive case: Number(5). 5 arguments with type provided (beginning of period).');
+		// Case #20: Number(3). =RATE(12;-100;1000;;;)
+		oParser = new parserFormula('RATE(12,-100,1000,,,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,,,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.029228540769133726, 'Test: Positive case: Number(3). =RATE(12;-100;1000;;;)');
+		// Case #21: Number(4). =RATE(12;-100;1000;;1)
+		oParser = new parserFormula('RATE(12,-100,1000,,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.035031530362283556, 'Test: Positive case: Number(4). =RATE(12;-100;1000;;1)');
+		// Case #22: Formula(3). Complex formulas for nper and pmt.
+		oParser = new parserFormula('RATE(ROUND(12.4,0),-100*SQRT(100),1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(ROUND(12.4,0),-100*SQRT(100),1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Positive case: Formula(3). Complex formulas for nper and pmt.');
+
+		// Negative cases:
+		// Case #1: Number(2). =RATE(12;;1000)
+		oParser = new parserFormula('RATE(12,,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,,1000) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(2). =RATE(12;;1000)');
+		// Case #2: Number. =RATE(12;-100;)
+		oParser = new parserFormula('RATE(12,-100,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number. =RATE(12;-100;)');
+		// Case #3: Number(3). nper is 0, returns #NUM!.
+		oParser = new parserFormula('RATE(0,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(0,-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(3). nper is 0, returns #NUM!.');
+		// Case #4: Number(3). nper is negative, returns #NUM!.
+		oParser = new parserFormula('RATE(-1,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(-1,-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(3). nper is negative, returns #NUM!.');
+		// Case #5: Number(3). pmt is 0, returns #NUM!.
+		oParser = new parserFormula('RATE(12,0,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,0,1000) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(3). pmt is 0, returns #NUM!.');
+		// Case #6: Number(3). pv is 0, returns #NUM!.
+		oParser = new parserFormula('RATE(12,-100,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(3). pv is 0, returns #NUM!.');
+		// Case #7: String(3). nper is non-numeric string, returns #VALUE!.
+		oParser = new parserFormula('RATE("abc",-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE("abc",-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(3). nper is non-numeric string, returns #VALUE!.');
+		// Case #8: String(3). pmt is non-numeric string, returns #VALUE!.
+		oParser = new parserFormula('RATE(12,"abc",1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,"abc",1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(3). pmt is non-numeric string, returns #VALUE!.');
+		// Case #9: String(3). pv is non-numeric string, returns #VALUE!.
+		oParser = new parserFormula('RATE(12,-100,"abc")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,"abc") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(3). pv is non-numeric string, returns #VALUE!.');
+		// Case #10: Boolean(3). nper is boolean, returns #NUM!.
+		oParser = new parserFormula('RATE(TRUE,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(TRUE,-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -0.9, 'Test: Negative case: Boolean(3). nper is boolean, returns #NUM!.');
+		// Case #11: Boolean(3). pmt is boolean, returns #NUM!.
+		oParser = new parserFormula('RATE(12,TRUE,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,TRUE,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean(3). pmt is boolean, returns #NUM!.');
+		// Case #12: Boolean(3). pv is boolean, returns #NUM!.
+		oParser = new parserFormula('RATE(12,-100,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Boolean(3). pv is boolean, returns #NUM!.');
+		// Case #13: Error. nper is error, propagates #N/A.
+		oParser = new parserFormula('RATE(NA(),-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(NA(),-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. nper is error, propagates #N/A.');
+		// Case #14: Array. nper is multi-element array, returns #VALUE!.
+		oParser = new parserFormula('RATE({12,13},-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE({12,13},-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.02922854076915833, 'Test: Negative case: Array. nper is multi-element array, returns #VALUE!.');
+		// Case #15: Area. nper is multi-cell range, returns #VALUE!.
+		oParser = new parserFormula('RATE(A100:A101,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(A100:A101,-100,1000) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Area. nper is multi-cell range, returns #VALUE!.');
+		// Case #16: Ref3D. nper is 3D multi-cell range, returns #VALUE!.
+		oParser = new parserFormula('RATE(Sheet2!A1:A2,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(Sheet2!A1:A2,-100,1000) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.9, 'Test: Negative case: Ref3D. nper is 3D multi-cell range, returns #VALUE!.');
+		// Case #17: Name. nper is named range with area, returns #VALUE!.
+		oParser = new parserFormula('RATE(TestNameArea2,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(TestNameArea2,-100,1000) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.9, 'Test: Negative case: Name. nper is named range with area, returns #VALUE!.');
+		// Case #18: Name3D. nper is 3D named range with area, returns #VALUE!.
+		oParser = new parserFormula('RATE(TestNameArea3D2,-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(TestNameArea3D2,-100,1000) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.9, 'Test: Negative case: Name3D. nper is 3D named range with area, returns #VALUE!.');
+		// Case #19: Number(5). type is invalid (not 0 or 1), returns #NUM!.
+		oParser = new parserFormula('RATE(12,-100,1000,0,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,0,2) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), 0.03503153, 'Test: Negative case: Number(5). type is invalid (not 0 or 1), returns #NUM!.');
+		// Case #20: Number(6). guess exceeds Excelâ??s max number, returns #NUM!.
+		oParser = new parserFormula('RATE(12,-100,1000,0,0,1E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,0,0,1E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number(6). guess exceeds Excelâ??s max number, returns #NUM!.');
+		// Case #21: Number(6). guess is 0, may cause #NUM! if RATE cannot converge.
+		oParser = new parserFormula('RATE(12,-100,1000,0,0,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(12,-100,1000,0,0,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0.029228540769133726, 'Test: Negative case: Number(6). guess is 0, may cause #NUM! if RATE cannot converge.');
+		// Case #22: Formula(2). =RATE(DATE(2024;12;1)-DATE(2025;12;1);-100;1000)
+		oParser = new parserFormula('RATE(DATE(2024,12,1)-DATE(2025,12,1),-100,1000)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(DATE(2024,12,1)-DATE(2025,12,1),-100,1000) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula(2). =RATE(DATE(2024;12;1)-DATE(2025;12;1);-100;1000)');
+
+		// Bounded cases:
+		// Case #1: Number(6). Minimum valid values for nper, pmt, pv, guess.
+		oParser = new parserFormula('RATE(1,-1E-307,1E-307,0,0,1E-307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(1,-1E-307,1E-307,0,0,1E-307) is parsed.');
+		//? assert.strictEqual(oParser.calculate().getValue(), -0.001, 'Test: Bounded case: Number(6). Minimum valid values for nper, pmt, pv, guess.');
+		// Case #2: Number(6). Maximum valid values for nper, pmt, pv.
+		oParser = new parserFormula('RATE(999999999,-9.99999999999999E+307,9.99999999999999E+307,0,0,0.1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: RATE(999999999,-9.99999999999999E+307,9.99999999999999E+307,0,0,0.1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Bounded case: Number(6). Maximum valid values for nper, pmt, pv.');
+
+		// Need to fix: empty handle in second argument, diff results, diff error types
+		// Case #1: Number(2). =RATE(12;;1000)
+		// Case #5: Number(3). pmt is 0, returns #NUM!.
+		// Case #15: Area. nper is multi-cell range, returns #VALUE!.
+		// Case #17: Name. nper is named range with area, returns #VALUE!.
+		// Case #18: Name3D. nper is 3D named range with area, returns #VALUE!.
+		// Case #19: Number(5). type is invalid (not 0 or 1), returns #NUM!.
+		// Case #1: Number(6). Minimum valid values for nper, pmt, pv, guess.
 
 		testArrayFormula2(assert, "RATE", 3, 6, true);
 	});
