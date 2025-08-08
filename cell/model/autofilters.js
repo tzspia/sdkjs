@@ -3489,7 +3489,7 @@
 				var res = name;
 
 				for (var i = 0; i < tableColumns.length; i++) {
-					if (name.toLowerCase() === tableColumns[i].Name.toLowerCase()) {
+					if (name && tableColumns[i].Name && name.toLowerCase() === tableColumns[i].Name.toLowerCase()) {
 						res = this._generateColumnName2(tableColumns);
 						break;
 					}

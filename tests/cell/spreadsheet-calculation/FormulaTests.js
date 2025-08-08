@@ -803,6 +803,7 @@ $(function () {
 		AscCommonExcel.getFormulasInfo();
 	}
 	wb.dependencyFormulas.lockRecal();
+	getTableType(599, 0, 599, 0); // Init table
 	initDefNames();
 
 	QUnit.module("Formula");
@@ -3542,7 +3543,9 @@ $(function () {
 
 		// remove all created earlier defNames
 		wb.dependencyFormulas._foreachDefName(function(defName) {
-			wb.dependencyFormulas.removeDefName(undefined, defName.name);
+			if (defName.name !== "Table1") {
+				wb.dependencyFormulas.removeDefName(undefined, defName.name);
+			}
 		});
 	});
 
@@ -3555,7 +3558,7 @@ $(function () {
 		ws.getRange2("A102").setValue("0.5");
 		ws.getRange2("A103").setValue("Text");
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -5585,10 +5588,257 @@ $(function () {
 		testArrayFormula2(assert, "BASE", 2, 3);
 	});
 
-	QUnit.test("Test: \"ARABIC('LVII')\"", function (assert) {
-		oParser = new parserFormula('ARABIC("LVII")', "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 57);
+	QUnit.test("Test: \"ARABIC\"", function (assert) {
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("IV");
+		ws.getRange2("A101").setValue("MMXXV");
+		ws.getRange2("A102").setValue("mmxxv");
+		ws.getRange2("A103").setValue("MmXxV");
+		ws.getRange2("A104").setValue("IA");
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 600, 0);
+		ws.getRange2("A601").setValue("IV"); // Column1
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("IV");
+		ws2.getRange2("A2").setValue("MMXXV");
+		// DefNames. Use A201-A208, B208
+		ws.getRange2("A201").setValue("IV"); // TestName
+		ws.getRange2("A202").setValue("XA"); // TestName1
+		ws.getRange2("A206").setValue("IV"); // TestNameArea
+		ws.getRange2("A207").setValue("MMXXV"); // TestNameArea
+		// DefNames 3D. Use A11-A18, B18
+		ws2.getRange2("A11").setValue("IV") // TestName3D
+		ws2.getRange2("A16").setValue("IV"); // TestNameArea3D
+		ws2.getRange2("A17").setValue("MMXXV"); // TestNameArea3D
+
+		// Positive cases:
+
+		// Case #1: String. Text LVII
+		oParser = new parserFormula('ARABIC("LVII")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("LVII") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 57, 'Test: Positive case: String. Text LVII');
+		// Case #2: String. Basic valid Roman numeral IV converts to 4
+		oParser = new parserFormula('ARABIC("IV")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("IV") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: String. Basic valid Roman numeral IV converts to 4');
+		// Case #3: String. Valid Roman numeral MMXXV converts to 2025
+		oParser = new parserFormula('ARABIC("MMXXV")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("MMXXV") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2025, 'Test: Positive case: String. Valid Roman numeral MMXXV converts to 2025');
+		// Case #4: String. Case insensitive - lowercase mmxxv converts to 2025
+		oParser = new parserFormula('ARABIC("mmxxv")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("mmxxv") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2025, 'Test: Positive case: String. Case insensitive - lowercase mmxxv converts to 2025');
+		// Case #5: String. Mixed case MmXxV converts to 2025
+		oParser = new parserFormula('ARABIC("MmXxV")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("MmXxV") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2025, 'Test: Positive case: String. Mixed case MmXxV converts to 2025');
+		// Case #6: String. Negative Roman numeral -X converts to -10
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #15
+		/*oParser = new parserFormula('ARABIC("-X")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("-X") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -10, 'Test: Positive case: String. Negative Roman numeral -X converts to -10');*/
+		// Case #7: String. Leading and trailing spaces are ignored
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #16
+		/*oParser = new parserFormula('ARABIC(" X ")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(" X ") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'Test: Positive case: String. Leading and trailing spaces are ignored');*/
+		// Case #8: String. Empty string returns 0
+		oParser = new parserFormula('ARABIC("")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Tse: String. Empty string returns 0');
+		// Case #9: Formula. Nested formula generating XI returns 11
+		oParser = new parserFormula('ARABIC(CONCATENATE("X","I"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(CONCATENATE("X","I")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 11, 'Test: Positive case: Formula. Nested formula generating XI returns 11');
+		// Case #10: Formula. Nested formula generating XI returns 11
+		oParser = new parserFormula('ARABIC(LEFT("XIV",2))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(LEFT("XIV",2)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 11, 'Test: Positive case: Formula. Nested formula generating XI returns 11');
+		// Case #11: Formula. Nested formula generating ML returns 950
+		oParser = new parserFormula('ARABIC(MID("MCMLXIV",3,2))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(MID("MCMLXIV",3,2)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1050, 'Test: Positive case: Formula. Nested formula generating ML returns 950');
+		// Case #12: Reference link. Reference to cell with valid Roman numeral
+		oParser = new parserFormula('ARABIC(A100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(A100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Reference link. Reference to cell with valid Roman numeral');
+		// Case #13: Area. Single-cell range with valid Roman numeral
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #17
+		/*oParser = new parserFormula('ARABIC(A101:A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(A101:A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2025, 'Test: Positive case: Area. Single-cell range with valid Roman numeral');*/
+		// Case #14: Name. Named range with valid Roman numeral
+		oParser = new parserFormula('ARABIC(TestName)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(TestName) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Name. Named range with valid Roman numeral');
+		// Case #15: Name3D. 3D named range with valid Roman numeral
+		oParser = new parserFormula('ARABIC(TestName3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(TestName3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Name3D. 3D named range with valid Roman numeral');
+		// Case #16: Ref3D. 3D reference to cell with valid Roman numeral
+		oParser = new parserFormula('ARABIC(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Ref3D. 3D reference to cell with valid Roman numeral');
+		// Case #17: Area3D. 3D single-cell range with valid Roman numeral
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #17
+		/*oParser = new parserFormula('ARABIC(Sheet2!A2:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(Sheet2!A2:A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2025, 'Test: Positive case: Area3D. 3D single-cell range with valid Roman numeral');*/
+		// Case #18: Formula. ARABIC inside another formula returns 15
+		oParser = new parserFormula('SUM(ARABIC("V"),ARABIC("X"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula SUM(ARABIC("V"),ARABIC("X")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 15, 'Test: Positive case: Formula. ARABIC inside another formula returns 15');
+		// Case #19: String. Complex Roman numeral MCMXCIX converts to 1999
+		oParser = new parserFormula('ARABIC("MCMXCIX")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("MCMXCIX") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1999, 'Test: Positive case: String. Complex Roman numeral MCMXCIX converts to 1999');
+		// Case #20: String. Large Roman numeral MMMCMXCIX converts to 3999
+		oParser = new parserFormula('ARABIC("MMMCMXCIX")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("MMMCMXCIX") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3999, 'Test: Positive case: String. Large Roman numeral MMMCMXCIX converts to 3999');
+		// Case #21: String. Minimum valid Roman numeral I converts to 1
+		oParser = new parserFormula('ARABIC("I")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("I") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: String. Minimum valid Roman numeral I converts to 1');
+		// Case #22: Formula. Nested IF formula returning X converts to 10
+		oParser = new parserFormula('ARABIC(IF(TRUE,"X","V"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(IF(TRUE,"X","V")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'Test: Positive case: Formula. Nested IF formula returning X converts to 10');
+		// Case #23: Table. Table reference with valid Roman numeral
+		oParser = new parserFormula('ARABIC(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Table. Table reference with valid Roman numeral');
+		// Case #24: Array. Array with single Roman numeral element X converts to 10
+		oParser = new parserFormula('ARABIC({"X"})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC({"X"}) is parsed.');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 10, 'Test: Positive case: Array. Array with single Roman numeral element X converts to 10');
+		// Case #25: Formula. Nested formula with ARABIC as arguments returns 2^2=4
+		oParser = new parserFormula('POWER(ARABIC("II"),ARABIC("II"))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula POWER(ARABIC("II"),ARABIC("II")) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Formula. Nested formula with ARABIC as arguments returns 2^2=4');
+		// Case #26: String. Non-standard but acceptable Roman numeral IIII converts to 4
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #18
+		/*oParser = new parserFormula('ARABIC("IIII")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("IIII") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: String. Non-standard but acceptable Roman numeral IIII converts to 4');
+		// Case #27: String. Incorrectly formed Roman numeral
+		oParser = new parserFormula('ARABIC("IVIV")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("IVIV") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 8, 'Test: Positive case: String. Incorrectly formed Roman numeral');
+		// Case #28: String. Incorrectly ordered Roman numeral
+		oParser = new parserFormula('ARABIC("XM")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("XM") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 990, 'Test: Positive case: String. Incorrectly ordered Roman numeral');
+		// Case #29: String. Roman numeral with repeated M more than 3 times
+		oParser = new parserFormula('ARABIC("MMMM")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("MMMM") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4000, 'Test: Positive case: String. Roman numeral with repeated M more than 3 times');
+		// Case #30: String. Roman numeral with incorrect order
+		oParser = new parserFormula('ARABIC("IXI")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("IXI") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'Test: Positive case: String. Roman numeral with incorrect order');
+		// Case #31: String. Roman numeral with repeated V
+		oParser = new parserFormula('ARABIC("VV")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("VV") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'Test: Positive case: String. Roman numeral with repeated V');
+		// Case #32: String. Roman numeral with repeated L
+		oParser = new parserFormula('ARABIC("LL")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("LL") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 100, 'Test: Positive case: String. Roman numeral with repeated L');
+		// Case #33: String. Roman numeral with repeated D
+		oParser = new parserFormula('ARABIC("DD")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("DD") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1000, 'Test: Positive case: String. Roman numeral with repeated D');
+		// Case #34: String. Roman numeral with I repeated more than 4 times
+		oParser = new parserFormula('ARABIC("IIIII")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("IIIII") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 5, 'Test: Positive case: String. Roman numeral with I repeated more than 4 times');
+		// Case #35: String. Roman numeral with X repeated more than 4 times
+		oParser = new parserFormula('ARABIC("XXXXX")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("XXXXX") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 50, 'Test: Positive case: String. Roman numeral with X repeated more than 4 times');
+		// Case #36: String. Roman numeral with C repeated more than 4 times
+		oParser = new parserFormula('ARABIC("CCCCCC")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("CCCCCC") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 600, 'Test: Positive case: String. Roman numeral with C repeated more than 4 times');*/
+		// Case #37: Area. Multi-cell range
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #17
+		/*oParser = new parserFormula('ARABIC(A102:A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(A102:A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2025, 'Test: Positive case: Area. Multi-cell range');
+		// Case #38: Name. Name with area. Valid Roman number
+		oParser = new parserFormula('ARABIC(TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Name. Name with area. Valid Roman number');
+		// Case #39: Name3D. Name 3D with area. Valid Roman number
+		oParser = new parserFormula('ARABIC(TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Test: Positive case: Name3D. Name 3D with area. Valid Roman number');*/
+
+		// Negative cases:
+
+		// Case #1: String. Invalid Roman numeral returns #VALUE!
+		oParser = new parserFormula('ARABIC("ABC")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("ABC") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Invalid Roman numeral returns #VALUE!');
+		// Case #2: String. Roman numeral with extra text returns #VALUE!
+		oParser = new parserFormula('ARABIC("IV text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("IV text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Roman numeral with extra text returns #VALUE!');
+		// Case #3: Number. Numeric input returns #VALUE!
+		oParser = new parserFormula('ARABIC(123)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(123) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number. Numeric input returns #VALUE!');
+		// Case #4: Date. Date input returns #VALUE!
+		oParser = new parserFormula('ARABIC(DATE(2025,1,1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(DATE(2025,1,1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Date. Date input returns #VALUE!');
+		// Case #5: Error. Error input propagates the error (#N/A)
+		oParser = new parserFormula('ARABIC(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Error input propagates the error (#N/A)');
+		// Case #6: Reference link. Reference to cell with invalid Roman numeral returns #VALUE!
+		oParser = new parserFormula('ARABIC(A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(A104) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Reference link. Reference to cell with invalid Roman numeral returns #VALUE!');
+		// Case #7: Name. Named range with invalid Roman numeral returns #VALUE!
+		oParser = new parserFormula('ARABIC(TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Named range with invalid Roman numeral returns #VALUE!');
+		// Case #8: Boolean. Boolean input returns #VALUE!
+		oParser = new parserFormula('ARABIC(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Boolean. Boolean input returns #VALUE!');
+		// Case #9: String. Roman numeral with special characters returns #VALUE!
+		oParser = new parserFormula('ARABIC("$X")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("$X") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Roman numeral with special characters returns #VALUE!');
+		// Case #10: String. Text instead of Roman number
+		oParser = new parserFormula('ARABIC("Text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("Text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Text instead of Roman number');
+
+		// Bounded cases:
+
+		// Case #1: String. Roman numeral M converts to 1000
+		oParser = new parserFormula('ARABIC("M")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("M") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1000, 'Test: Bounded case: String. Roman numeral M converts to 1000');
+		// Case #2: String. Maximum length Roman numeral (255 M\'s) converts to 255000
+		oParser = new parserFormula('ARABIC(REPT("M",255))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC(REPT("M",255)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 255000, 'Test: Bounded case: String. Maximum length Roman numeral (255 M\'s) converts to 255000');
+		// Case #3: String. Largest standard Roman numeral MMMCMXCIX converts to 3999
+		oParser = new parserFormula('ARABIC("MMMCMXCIX")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("MMMCMXCIX") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 3999, 'Test: Bounded case: String. Largest standard Roman numeral MMMCMXCIX converts to 3999');
+		// Case #4: String. Largest negative standard Roman numeral -MMMCMXCIX converts to -3999
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #15
+		/*oParser = new parserFormula('ARABIC("-MMMCMXCIX")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula ARABIC("-MMMCMXCIX") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), -3999, 'Test: Bounded case: String. Largest negative standard Roman numeral -MMMCMXCIX converts to -3999');*/
 	});
 
 	QUnit.test("Test: \"TDIST\"", function (assert) {
@@ -5930,7 +6180,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -5949,7 +6199,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #1: Number,Area,Number. Basic valid input: number in range, descending order. 3 of 3 arguments used.
 		oParser = new parserFormula('RANK(1,A100:A101,0)', 'A2', ws);
@@ -6189,7 +6439,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -6208,7 +6458,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #1: Number,Area,Number. Basic valid input: number in range, descending order. 3 of 3 arguments used.
 		oParser = new parserFormula('RANK.EQ(1,A100:A101,0)', 'A2', ws);
@@ -6441,7 +6691,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -6460,7 +6710,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #1: Number,Area,Number. Basic valid input: number in range, descending order. 3 of 3 arguments used.
 		oParser = new parserFormula('RANK.AVG(1,A100:A101,0)', 'A2', ws);
@@ -6686,7 +6936,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -6705,7 +6955,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #1: Number. Basic valid input: integer. 1 argument used.
 		oParser = new parserFormula('RADIANS(90)', 'A2', ws);
@@ -6927,7 +7177,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -7203,7 +7453,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("Col1Text"); // Text (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -8874,7 +9124,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -10782,7 +11032,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -11233,7 +11483,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -11895,7 +12145,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("321"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -12123,7 +12373,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("321"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -12352,7 +12602,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("321"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -12579,7 +12829,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("321"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -12844,7 +13094,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -13147,7 +13397,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -13167,7 +13417,7 @@ $(function () {
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
 
-		
+
 		// Positive cases:
 		// Case #1: String. Basic string input with mixed case. 1 argument used.
 		oParser = new parserFormula('PROPER("hello world")', 'A2', ws);
@@ -13395,7 +13645,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -13990,7 +14240,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -14149,7 +14399,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -15541,7 +15791,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -16295,7 +16545,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -16601,7 +16851,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -16867,7 +17117,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -21816,7 +22066,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -21835,7 +22085,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #1: Number. Single integer input. 1 of 3 arguments used.
 		oParser = new parserFormula('PRODUCT(5)', 'A2', ws);
@@ -23676,7 +23926,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -23695,7 +23945,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #1: Number(2). Basic valid input: integer numerator and denominator. 2 of 2 arguments used.
 		oParser = new parserFormula('QUOTIENT(10,2)', 'A2', ws);
@@ -24194,7 +24444,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -24456,7 +24706,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -26616,21 +26866,281 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"AND\"", function (assert) {
-
+		// Data for reference link. Use A100-A111
 		ws.getRange2("A2").setValue("50");
 		ws.getRange2("A3").setValue("100");
+		ws.getRange2("A100").setValue("TRUE");
+		ws.getRange2("A101").setValue("TRUE");
+		ws.getRange2("A102").setValue("FALSE");
+		ws.getRange2("A103").setValue("Test");
+		ws.getRange2("A104").setValue("Text");
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 601, 1);
+		ws.getRange2("A601").setValue("TRUE"); // Column1
+		ws.getRange2("A602").setValue("FALSE"); // Column1
+		ws.getRange2("B601").setValue("Test"); // Column2
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("TRUE");
+		ws2.getRange2("A2").setValue("FALSE");
+		ws2.getRange2("A3").setValue("Test");
+		ws2.getRange2("A4").setValue("");
+		// DefNames. Use A201-A208, B208
+		ws.getRange2("A201").setValue("TRUE"); // TestName
+		ws.getRange2("A202").setValue("TRUE"); // TestName1
+		ws.getRange2("A203").setValue("FALSE"); // TestName2
+		ws.getRange2("A204").setValue("Test"); // TestName3
+		ws.getRange2("A206").setValue("Test"); // TestNameArea
+		ws.getRange2("A207").setValue("Text"); // TestNameArea
+		// DefNames 3D. Use A11-A18, B18
+		ws2.getRange2("A11").setValue("TRUE") // TestName3D
+		ws2.getRange2("A12").setValue("TRUE") // TestName3D1
+		ws2.getRange2("A13").setValue("FALSE") // TestName3D2
+		ws2.getRange2("A14").setValue("Test") // TestName3D3
+		ws2.getRange2("A16").setValue("TRUE"); // TestNameArea3D
+		ws2.getRange2("A17").setValue("TRUE"); // TestNameArea3D
 
-		oParser = new parserFormula("AND(A2>1,A2<100)", "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "TRUE");
+		// Positive cases:
 
-		oParser = new parserFormula('AND(A2<A3,A2<100)', "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "TRUE");
+		// Case #1: Reference link(2). Checking that reference links > 1 and < 100
+		oParser = new parserFormula('AND(A2>1,A2<100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A2>1,A2<100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Reference link(2). Checking that reference links > 1 and < 100');
+		// Case #2: Reference link(2). Checking that reference links > 100 and < 100
+		oParser = new parserFormula('AND(A2<A3,A2<100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A2<A3,A2<100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Reference link(2). Checking that reference links > 100 and < 100');
+		// Case #3: Reference link(2). Checking that reference  links > 1 and < 100
+		oParser = new parserFormula('AND(A3>1,A3<100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A3>1,A3<100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Reference link(2). Checking that reference  links > 1 and < 100');
+		// Case #4: Boolean(2). Checking logical TRUE values with basic AND operation
+		oParser = new parserFormula('AND(TRUE,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TRUE,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Boolean(2). Checking logical TRUE values with basic AND operation');
+		// Case #5: Boolean(2). Checking that AND returns FALSE when one argument is FALSE
+		oParser = new parserFormula('AND(TRUE,FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TRUE,FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Boolean(2). Checking that AND returns FALSE when one argument is FALSE');
+		// Case #6: Number(2). Checking that positive numbers are treated as TRUE in logical operations
+		oParser = new parserFormula('AND(1,2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(1,2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Number(2). Checking that positive numbers are treated as TRUE in logical operations');
+		// Case #7: Number(2). Checking that zero is treated as FALSE in logical operations
+		oParser = new parserFormula('AND(1,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(1,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Number(2). Checking that zero is treated as FALSE in logical operations');
+		// Case #8: Number(3). Checking that multiple non-zero numbers are all treated as TRUE
+		oParser = new parserFormula('AND(1,2,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(1,2,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Number(3). Checking that multiple non-zero numbers are all treated as TRUE');
+		// Case #9: Empty, Boolean. Checking that empty cell is treated as FALSE
+		oParser = new parserFormula('AND(,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Empty, Boolean. Checking that empty cell is treated as FALSE');
+		// Case #10: Reference link(2). Checking AND with multiple cell references containing TRUE values
+		oParser = new parserFormula('AND(A100,A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A100,A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Reference link(2). Checking AND with multiple cell references containing TRUE values');
+		// Case #11: Reference link(2). Checking AND with cell references containing mixed TRUE/FALSE values
+		oParser = new parserFormula('AND(A101,A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A101,A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Reference link(2). Checking AND with cell references containing mixed TRUE/FALSE values');
+		// Case #12: Area. Checking AND with range containing all TRUE values
+		oParser = new parserFormula('AND(A100:A101)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A100:A101) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Area. Checking AND with range containing all TRUE values');
+		// Case #13: Area. Checking AND with range containing mixed TRUE/FALSE values
+		oParser = new parserFormula('AND(A101:A102)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A101:A102) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Area. Checking AND with range containing mixed TRUE/FALSE values');
+		// Case #14: Array. Checking AND with array of all TRUE values
+		oParser = new parserFormula('AND({TRUE,TRUE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND({TRUE,TRUE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Array. Checking AND with array of all TRUE values');
+		// Case #15: Array. Checking AND with array of mixed TRUE/FALSE values
+		oParser = new parserFormula('AND({TRUE,FALSE})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND({TRUE,FALSE}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Array. Checking AND with array of mixed TRUE/FALSE values');
+		// Case #16: Name. Checking AND with named range containing all TRUE values
+		oParser = new parserFormula('AND(TestName, TestName1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TestName, TestName1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Name. Checking AND with named range containing all TRUE values');
+		// Case #17: Name. Checking AND with named range containing mixed TRUE/FALSE values
+		oParser = new parserFormula('AND(TestName1, TestName2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TestName1, TestName2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Name. Checking AND with named range containing mixed TRUE/FALSE values');
+		// Case #18: Name3D. Checking AND with 3D named range containing all TRUE values
+		oParser = new parserFormula('AND(TestNameArea3D)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TestNameArea3D) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Name3D. Checking AND with 3D named range containing all TRUE values');
+		// Case #19: Ref3D. Checking AND with 3D reference to cell with TRUE value
+		oParser = new parserFormula('AND(Sheet2!A1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(Sheet2!A1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Ref3D. Checking AND with 3D reference to cell with TRUE value');
+		// Case #20: Area3D. Checking AND with 3D range containing mixed TRUE/FALSE values
+		oParser = new parserFormula('AND(Sheet2!A1:A2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(Sheet2!A1:A2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Area3D. Checking AND with 3D range containing mixed TRUE/FALSE values');
+		// Case #21: Table. Checking AND with table column containing all TRUE values
+		oParser = new parserFormula('AND(Table1[Column1])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(Table1[Column1]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Table. Checking AND with table column containing all TRUE values');
+		// Case #22: Formula(2). Checking AND with equality and greater than comparisons
+		oParser = new parserFormula('AND(1=1,2>1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(1=1,2>1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Formula(2). Checking AND with equality and greater than comparisons');
+		// Case #23: Formula(2). Checking AND with not equal and greater than or equal comparisons
+		oParser = new parserFormula('AND(1<>2,3>=2)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(1<>2,3>=2) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Formula(2). Checking AND with not equal and greater than or equal comparisons');
+		// Case #24: Formula(3). Checking AND with nested IF functions returning mixed values
+		oParser = new parserFormula('AND(IF(TRUE,TRUE,FALSE),IF(TRUE,TRUE,FALSE),IF(FALSE,FALSE,TRUE))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(IF(TRUE,TRUE,FALSE),IF(TRUE,TRUE,FALSE),IF(FALSE,FALSE,TRUE)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Formula(3). Checking AND with nested IF functions returning mixed values');
+		// Case #25: Formula(2). Checking AND with nested OR function
+		oParser = new parserFormula('AND(TRUE,OR(TRUE,FALSE))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TRUE,OR(TRUE,FALSE)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Formula(2). Checking AND with nested OR function');
+		// Case #26: Formula(3). Checking AND with multiple comparison operators
+		oParser = new parserFormula('AND(10<5,20<30,5=5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(10<5,20<30,5=5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Formula(3). Checking AND with multiple comparison operators');
+		// Case #27: Date, Number. Checking that date values are treated as TRUE
+		oParser = new parserFormula('AND(DATE(2023,1,1),0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(DATE(2023,1,1),0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Date, Number. Checking that date values are treated as TRUE');
+		// Case #28: Time, Number. Checking that non-zero time values are treated as TRUE
+		oParser = new parserFormula('AND(TIME(12,0,0),1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TIME(12,0,0),1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Time, Number. Checking that non-zero time values are treated as TRUE');
+		// Case #29: Formula. Checking AND used inside nested IF and SUM functions
+		oParser = new parserFormula('SUM(IF(AND(TRUE,TRUE),1,0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula SUM(IF(AND(TRUE,TRUE),1,0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Test: Positive case: Formula. Checking AND used inside nested IF and SUM functions');
+		// Case #30: Boolean(3). Checking AND with multiple TRUE arguments
+		oParser = new parserFormula('AND(TRUE,TRUE,TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TRUE,TRUE,TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Boolean(3). Checking AND with multiple TRUE arguments');
+		// Case #31: Formula(2). Checking AND with arithmetic expressions in comparisons
+		oParser = new parserFormula('AND(2*3>5,4^2=16)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(2*3>5,4^2=16) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Positive case: Formula(2). Checking AND with arithmetic expressions in comparisons');
+		// Case #32: Formula(2). Checking AND with multiple FALSE information functions
+		oParser = new parserFormula('AND(ISNUMBER("text"),ISTEXT(123))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(ISNUMBER("text"),ISTEXT(123)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Positive case: Formula(2). Checking AND with multiple FALSE information functions');
 
-		oParser = new parserFormula('AND(A3>1,A3<100)', "A1", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "FALSE");
+		// Negative cases:
+
+		// Case #1: String. Checking that non-numeric text causes #VALUE! error
+		oParser = new parserFormula('AND("text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND("text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String. Checking that non-numeric text causes #VALUE! error');
+		// Case #2: String, Boolean. Checking that non-numeric text with boolean
+		// Different result with MS TODO Need to fix. Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row #14
+		/*oParser = new parserFormula('AND("text",TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND("text",TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Negative case: String, Boolean. Checking that non-numeric text with boolean');*/
+		// Case #3: Error. Checking that NA() error propagates through AND
+		oParser = new parserFormula('AND(NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error. Checking that NA() error propagates through AND');
+		// Case #4: Boolean, Error. Checking that error values propagate even with valid arguments
+		oParser = new parserFormula('AND(TRUE,NA())', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TRUE,NA()) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Boolean, Error. Checking that error values propagate even with valid arguments');
+		// Case #5: Formula. Checking that division by zero error propagates through AND
+		oParser = new parserFormula('AND(1/0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(1/0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Formula. Checking that division by zero error propagates through AND');
+		// Case #6: Reference link. Checking that reference to cell with error propagates error
+		oParser = new parserFormula('AND(A103)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A103) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Reference link. Checking that reference to cell with error propagates error');
+		// Case #7: Area. Checking that range containing error value propagates error
+		oParser = new parserFormula('AND(A103:A104)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(A103:A104) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area. Checking that range containing error value propagates error');
+		// Case #8: Array. Checking that array with error value propagates error
+		oParser = new parserFormula('AND({TRUE,#N/A})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND({TRUE,#N/A}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Array. Checking that array with error value propagates error');
+		// Case #9: Name. Checking that named range with error value propagates error
+		oParser = new parserFormula('AND(TestName3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TestName3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Checking that named range with error value propagates error');
+		// Case #10: Name3D. Checking that 3D named range with error propagates error
+		oParser = new parserFormula('AND(TestName3D3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TestName3D3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name3D. Checking that 3D named range with error propagates error');
+		// Case #11: Ref3D. Checking that 3D reference to error value propagates error
+		oParser = new parserFormula('AND(Sheet2!A3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(Sheet2!A3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Ref3D. Checking that 3D reference to error value propagates error');
+		// Case #12: Area3D. Checking that 3D range with error value propagates error
+		oParser = new parserFormula('AND(Sheet2!A3:A4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(Sheet2!A3:A4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area3D. Checking that 3D range with error value propagates error');
+		// Case #13: Table. Checking that table column with error propagates error
+		oParser = new parserFormula('AND(Table1[Column2])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(Table1[Column2]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Table. Checking that table column with error propagates error');
+		// Case #14: Formula. Checking that #NUM! error from SQRT propagates through AND
+		oParser = new parserFormula('AND(SQRT(-1))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(SQRT(-1)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Formula. Checking that #NUM! error from SQRT propagates through AND');
+		// Case #15: Error. Checking  #REF! error
+		oParser = new parserFormula('AND(#REF!)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(#REF!) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#REF!', 'Test: Negative case: Error. Checking  #REF! error');
+		// Case #16: Formula. Checking that #DIV/0! in comparison propagates through AND
+		oParser = new parserFormula('AND(5/0=10)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(5/0=10) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#DIV/0!', 'Test: Negative case: Formula. Checking that #DIV/0! in comparison propagates through AND');
+		// Case #17: Name. Checking that named range with area returns logical result of all cells
+		oParser = new parserFormula('AND(TestNameArea)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TestNameArea) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Name. Checking that named range with area returns logical result of all cells');
+		// Case #18: String(2). Checking that strings convertible to numbers Numbers: "1", "2"
+		oParser = new parserFormula('AND("1","2")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND("1","2") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Checking that strings convertible to numbers Numbers: "1", "2"');
+		// Case #19: String(2). Checking that strings convertible to numbers. Numbers: "1", "0"
+		oParser = new parserFormula('AND("1","0")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND("1","0") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String(2). Checking that strings convertible to numbers. Numbers: "1", "0"');
+
+		// Bounded cases:
+
+		// Case #1: Boolean. Checking minimum arguments (1) with TRUE value
+		oParser = new parserFormula('AND(TRUE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(TRUE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Bounded case: Boolean. Checking minimum arguments (1) with TRUE value');
+		// Case #2: Boolean. Checking minimum arguments (1) with FALSE value
+		oParser = new parserFormula('AND(FALSE)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(FALSE) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Bounded case: Boolean. Checking minimum arguments (1) with FALSE value');
+		// Case #3: Number. Checking minimum arguments (1) with numeric TRUE
+		oParser = new parserFormula('AND(1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Bounded case: Number. Checking minimum arguments (1) with numeric TRUE');
+		// Case #4: Number. Checking minimum arguments (1) with numeric FALSE
+		oParser = new parserFormula('AND(0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'FALSE', 'Test: Bounded case: Number. Checking minimum arguments (1) with numeric FALSE');
+		// Case #5: Number. Checking AND with maximum valid Excel number
+		oParser = new parserFormula('AND(9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(9.99999999999999E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Bounded case: Number. Checking AND with maximum valid Excel number');
+		// Case #6: Number. Checking AND with minimum valid Excel number
+		oParser = new parserFormula('AND(-9.99999999999999E+307)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(-9.99999999999999E+307) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Bounded case: Number. Checking AND with minimum valid Excel number');
+		// Case #7: Formula(3). Checking AND with boundary value comparisons
+		oParser = new parserFormula('AND(9.99999999999999E+307>0,0>-9.99999999999999E+307,0.00000000000001<>0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AND(9.99999999999999E+307>0,0>-9.99999999999999E+307,0.00000000000001<>0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 'TRUE', 'Test: Bounded case: Formula(3). Checking AND with boundary value comparisons');
 
 		testArrayFormula2(assert, "AND", 1, 8, null, true);
 	});
@@ -26665,7 +27175,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -29461,7 +29971,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -29591,7 +30101,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -29762,7 +30272,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -30001,7 +30511,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -30342,7 +30852,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -30807,7 +31317,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -31061,7 +31571,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("321"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -31414,7 +31924,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -31853,7 +32363,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -32133,7 +32643,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -32379,7 +32889,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -32647,7 +33157,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -32903,7 +33413,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -33157,7 +33667,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -33397,7 +33907,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -33650,7 +34160,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -33897,7 +34407,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -34165,7 +34675,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -34404,7 +34914,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -34662,7 +35172,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -34915,7 +35425,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -35151,7 +35661,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -35415,7 +35925,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -35672,7 +36182,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -35916,7 +36426,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -36175,7 +36685,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -36464,7 +36974,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -36709,7 +37219,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -36959,7 +37469,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -37191,7 +37701,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -37442,7 +37952,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -37688,7 +38198,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -37965,7 +38475,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -38205,7 +38715,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -38539,7 +39049,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -38559,7 +39069,7 @@ $(function () {
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
 
-		
+
 		// Positive cases:
 		// Case #0: Array, Number. Array with valid numbers, quart = 2 (median). 2 arguments used.
 		oParser = new parserFormula('QUARTILE({1,2,3,4},2)', 'A2', ws);
@@ -38803,7 +39313,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -38823,7 +39333,7 @@ $(function () {
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
 
-		
+
 		// Positive cases:
 		// Case #0: Array, Number. Array with valid numbers, quart = 2 (median). 2 arguments used.
 		oParser = new parserFormula('QUARTILE.INC({1,2,3,4},2)', 'A2', ws);
@@ -39071,7 +39581,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -39091,7 +39601,7 @@ $(function () {
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
 
-		
+
 		// Positive cases:
 		// Case #0: Array, Number. Array with valid numbers, quart = 2 (median). 2 arguments used.
 		oParser = new parserFormula('QUARTILE.EXC({1,2,3,4},2)', 'A2', ws);
@@ -42932,7 +43442,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -43213,7 +43723,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -43477,7 +43987,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -43496,7 +44006,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #0: Number. Basic valid input: all numbers, 3 mandatory arguments used.
 		oParser = new parserFormula('PV(0.05,12,-1000)', 'A2', ws);
@@ -43711,7 +44221,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -45503,22 +46013,360 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"AMORDEGRC\"", function (assert) {
+		// Data for reference link. Use A100-A111
+		ws.getRange2("A100").setValue("2400");
+		ws.getRange2("A101").setValue("39679");
+		ws.getRange2("A102").setValue("39813");
+		ws.getRange2("A103").setValue("300");
+		ws.getRange2("A104").setValue("1");
+		ws.getRange2("A105").setValue("0.15");
+		ws.getRange2("A106").setValue("1");
+		// Table type. Use A601:L6**
+		getTableType(599, 0, 600, 6);
+		ws.getRange2("A601").setValue("2400"); // Column1
+		ws.getRange2("B601").setValue("39679"); // Column2
+		ws.getRange2("C601").setValue("39813"); // Column3
+		ws.getRange2("D601").setValue("300"); // Column4
+		ws.getRange2("E601").setValue("1"); // Column5
+		ws.getRange2("F601").setValue("0.15"); // Column6
+		ws.getRange2("G601").setValue("1"); // Column7
+		// 3D links. Use A1:Z10
+		let ws2 = getSecondSheet();
+		ws2.getRange2("A1").setValue("2400");
+		ws2.getRange2("A2").setValue("39679");
+		ws2.getRange2("A3").setValue("39813");
+		ws2.getRange2("A4").setValue("300");
+		ws2.getRange2("A5").setValue("1");
+		ws2.getRange2("A6").setValue("0.15");
+		ws2.getRange2("A7").setValue("1");
+		// DefNames. Use A201-A208, B208
+		ws.getRange2("A201").setValue("39679"); // TestName
+		ws.getRange2("A202").setValue("0.3"); // TestName1
+		ws.getRange2("A203").setValue("39813"); // TestName2
+		ws.getRange2("A204").setValue("300"); // TestName3
+		ws.getRange2("A205").setValue("3"); // TestName4
+		// DefNames 3D. Use A11-A18, B18
+		ws2.getRange2("A11").setValue("39679") // TestName3D
+		ws2.getRange2("A12").setValue("0.3") // TestName3D1
+		ws2.getRange2("A13").setValue("39813") // TestName3D2
+		ws2.getRange2("A14").setValue("300") // TestName3D3
+		ws2.getRange2("A15").setValue("3") // TestName3D4
 
-		oParser = new parserFormula("AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,1)", "A2", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 776);
+		// Positive cases:
 
-		oParser = new parserFormula("AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.50,0)", "A2", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
+		// Case #1: Number, Formula(2), Number(4). Standard expected input data. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number, Formula(2), Number(4). Standard expected input data. 7 of 7 arguments used.');
+		// Case #2: Number, Formula(2), Number(4). Standard expected input data. Rate had different value (0.20). 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Link to https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#19
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.20,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.20,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 819, 'Test: Positive case: Number, Formula(2), Number(4). Standard expected input data. Rate had different value (0.20). 7 of 7 arguments used.'); // Must be 820
+		// Case #3: Number, Formula(2), Number(4). Standard expected input data. Rate had different value (0.33). 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Link to https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#19
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.33,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.33,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 972, 'Test: Positive case: Number, Formula(2), Number(4). Standard expected input data. Rate had different value (0.33). 7 of 7 arguments used.'); // Must be 973
+		// Case #4: Number, Formula(2), Number(3). Basis omitted, defaults to 0. 6 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number, Formula(2), Number(3). Basis omitted, defaults to 0. 6 of 7 arguments used.');
+		// Case #5: Number(7). Dates represented as serial numbers. Basis - 0 (US 30/360). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,39679,39813,300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,39679,39813,300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number(7). Dates represented as serial numbers. Basis - 0 (US 30/360). 7 of 7 arguments used.');
+		// Case #6: String(2), Number(5). Cost and date_purchased as strings convertible to numbers. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC("2400","39679",39813,300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC("2400","39679",39813,300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: String(2), Number(5). Cost and date_purchased as strings convertible to numbers. 7 of 7 arguments used.');
+		// Case #7: String(4), Number(3). First 4 arguments as strings convertible to numbers. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC("2400","39679","39813","300",1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC("2400","39679","39813","300",1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: String(4), Number(3). First 4 arguments as strings convertible to numbers. 7 of 7 arguments used.');
+		// Case #8: Formula(2), Number(5). Cost and date_purchased as formulas returning numbers. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(SUM(1200,1200),DATE(2008,8,19),39813,300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(SUM(1200,1200),DATE(2008,8,19),39813,300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Formula(2), Number(5). Cost and date_purchased as formulas returning numbers. 7 of 7 arguments used.');
+		// Case #9: Number(5), Formula(2). Rate and basis as formulas returning numbers. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,39679,39813,300,1,ROUND(0.15,2),INT(0.9))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,39679,39813,300,1,ROUND(0.15,2),INT(0.9)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number(5), Formula(2). Rate and basis as formulas returning numbers. 7 of 7 arguments used.');
+		// Case #10: Reference link(7). All arguments as reference links. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(A100,A101,A102,A103,A104,A105,A106)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(A100,A101,A102,A103,A104,A105,A106) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Reference link(7). All arguments as reference links. 7 of 7 arguments used.');
+		// Case #11: Area(7). All arguments as single-cell areas. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(A100:A100,A101:A101,A102:A102,A103:A103,A104:A104,A105:A105,A106:A106)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(A100:A100,A101:A101,A102:A102,A103:A103,A104:A104,A105:A105,A106:A106) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Area(7). All arguments as single-cell areas. 7 of 7 arguments used.');
+		// Case #12: Array(7). All arguments as single-element arrays. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC({2400},{39679},{39813},{300},{1},{0.15},{0})', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC({2400},{39679},{39813},{300},{1},{0.15},{0}) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Array(7). All arguments as single-element arrays. 7 of 7 arguments used.');
+		// Case #13: Name(7). All arguments as named ranges. 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Link to https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#19
+		oParser = new parserFormula('AMORDEGRC(TestName,TestName,TestName2,TestName3,TestName4,TestName1,TestName4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(TestName,TestName,TestName2,TestName3,TestName4,TestName1,TestName4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4509, 'Test: Positive case: Name(7). All arguments as named ranges. 7 of 7 arguments used.'); // Must be 9109
+		// Case #14: Name3D(7). All arguments as 3D named ranges. 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Link to https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#19
+		oParser = new parserFormula('AMORDEGRC(TestName3D,TestName3D,TestName3D2,TestName3D3,TestName3D4,TestName3D1,TestName3D4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(TestName3D,TestName3D,TestName3D2,TestName3D3,TestName3D4,TestName3D1,TestName3D4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 4509, 'Test: Positive case: Name3D(7). All arguments as 3D named ranges. 7 of 7 arguments used.'); // Must be 9109
+		// Case #15: Ref3D(7). All arguments as 3D references. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4,Sheet2!A5,Sheet2!A6,Sheet2!A7)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(Sheet2!A1,Sheet2!A2,Sheet2!A3,Sheet2!A4,Sheet2!A5,Sheet2!A6,Sheet2!A7) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Ref3D(7). All arguments as 3D references. 7 of 7 arguments used.');
+		// Case #16: Area3D(7). All arguments as 3D single-cell areas. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4,Sheet2!A5:A5,Sheet2!A6:A6,Sheet2!A7:A7)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(Sheet2!A1:A1,Sheet2!A2:A2,Sheet2!A3:A3,Sheet2!A4:A4,Sheet2!A5:A5,Sheet2!A6:A6,Sheet2!A7:A7) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Area3D(7). All arguments as 3D single-cell areas. 7 of 7 arguments used.');
+		// Case #17: Table(7). All arguments as table references. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5],Table1[Column6],Table1[Column7])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5],Table1[Column6],Table1[Column7]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Table(7). All arguments as table references. 7 of 7 arguments used.');
+		// Case #18: Number, Formula(2), Number(4). Period = 2, basis = 3 (European 30/360). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,2,0.15,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,2,0.15,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 485, 'Test: Positive case: Number, Formula(2), Number(4). Period = 2, basis = 3 (European 30/360). 7 of 7 arguments used.');
+		// Case #19: Number, Formula(2), Number(4). Period = 3, basis = 3 (Actual/365). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,3,0.15,3)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,3,0.15,3) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 303, 'Test: Positive case: Number, Formula(2), Number(4). Period = 3, basis = 3 (Actual/365). 7 of 7 arguments used.');
+		// Case #20: Number, Formula(2), Number(4). Period = 4, basis = 4 (European 30/360). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,4,0.15,4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,4,0.15,4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 190, 'Test: Positive case: Number, Formula(2), Number(4). Period = 4, basis = 4 (European 30/360). 7 of 7 arguments used.');
+		// Case #21: Number, Formula(2), Number(4). Higher rate (25%), larger cost value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(10000,DATE(2012,1,1),DATE(2012,12,31),1000,1,0.25,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(10000,DATE(2012,1,1),DATE(2012,12,31),1000,1,0.25,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 2344, 'Test: Positive case: Number, Formula(2), Number(4). Higher rate (25%), larger cost value. 7 of 7 arguments used.');
+		// Case #22: Formula. AMORDEGRC used inside SUM formula. 7 of 7 arguments used.
+		oParser = new parserFormula('SUM(AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0),100)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula SUM(AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0),100) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 876, 'Test: Positive case: Formula. AMORDEGRC used inside SUM formula. 7 of 7 arguments used.');
+		// Case #23: Number(7). All numeric arguments with decimal values (will be rounded or truncated as needed). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400.5,39679.25,39813.75,300.5,1.9,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400.5,39679.25,39813.75,300.5,1.9,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number(7). All numeric arguments with decimal values (will be rounded or truncated as needed). 7 of 7 arguments used.');
+		// Case #24: Number(6), Empty. Basis argument empty (defaults to 0). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,39679,39813,300,1,0.15,)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,39679,39813,300,1,0.15,) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number(6), Empty. Basis argument empty (defaults to 0). 7 of 7 arguments used.');
+		// Case #27: Number, Formula(2), Number(4). Large gap between purchase date and first period date. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2020,12,31),300,10,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2020,12,31),300,10,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Positive case: Number, Formula(2), Number(4). Large gap between purchase date and first period date. 7 of 7 arguments used.');
+		// Case #28: Formula(4), Number(3). First 4 arguments as formulas returning valid values. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(ROUND(2400,0),DATEVALUE("2008-08-19"),DATEVALUE("2008-12-31"),ROUND(300,0),1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(ROUND(2400,0),DATEVALUE("2008-08-19"),DATEVALUE("2008-12-31"),ROUND(300,0),1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Formula(4), Number(3). First 4 arguments as formulas returning valid values. 7 of 7 arguments used.');
+		// Case #29: String(4), Formula(3). Mixed string and formula arguments. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC("2400","08/19/2008","12/31/2008","300",INT(1.9),ROUND(0.15,2),INT(0))', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC("2400","08/19/2008","12/31/2008","300",INT(1.9),ROUND(0.15,2),INT(0)) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: String(4), Formula(3). Mixed string and formula arguments. 7 of 7 arguments used.');
+		// Case #30: Number, Formula(2), Number(4). Salvage value is 0 (complete depreciation). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),0,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),0,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number, Formula(2), Number(4). Salvage value is 0 (complete depreciation). 7 of 7 arguments used.');
+		// Case #31: Number, Formula(2), Number(4). Salvage value close to cost (minimal depreciation). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),2399,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),2399,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 900, 'Test: Positive case: Number, Formula(2), Number(4). Salvage value close to cost (minimal depreciation). 7 of 7 arguments used.');
+		// Case #32: Number, Formula(2), Number(4). Period is 0 (first period). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,0,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,0,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 330, 'Test: Positive case: Number, Formula(2), Number(4). Period is 0 (first period). 7 of 7 arguments used.');
+		// Case #33: Array, Formula(2), Number(4). Cost as multi-element array. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC({2400,2500},DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC({2400,2500},DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Array, Formula(2), Number(4). Cost as multi-element array. 7 of 7 arguments used.');
+		// Case #34: Number, Array, Formula, Number(4). Date_purchased as multi-element array. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,{"08/19/2008","09/19/2008"},DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,{"08/19/2008","09/19/2008"},DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 776, 'Test: Positive case: Number, Array, Formula, Number(4). Date_purchased as multi-element array. 7 of 7 arguments used.');
 
-		oParser = new parserFormula("AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.20,0)", "A2", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 819);
+		// Negative cases:
 
-		oParser = new parserFormula("AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.33,0)", "A2", ws);
-		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), 972);
+		// Case #1: Number, Formula(2), Number(4). Rate is not correct. 7 of 7 arguments used. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.50,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.50,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Rate is not correct. 7 of 7 arguments used. 7 of 7 arguments used.');
+		// Case #1(2): Empty, Formula(2), Number(4). Cost argument is missing. 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#20
+		/*oParser = new parserFormula('AMORDEGRC(,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Empty, Formula(2), Number(4). Cost argument is missing. 7 of 7 arguments used.');
+		// Case #2: Number, Empty, Formula, Number(4). Date_purchased argument is missing. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,,DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,,DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Empty, Formula, Number(4). Date_purchased argument is missing. 7 of 7 arguments used.');
+		// Case #3: Number, Formula, Empty, Number(4). First_period argument is missing. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),,300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),,300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Formula, Empty, Number(4). First_period argument is missing. 7 of 7 arguments used.');
+		// Case #4: Number, Formula(2), Empty, Number(3). Salvage argument is missing. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Formula(2), Empty, Number(3). Salvage argument is missing. 7 of 7 arguments used.');
+		// Case #5: Number, Formula(2), Number, Empty, Number(2). Period argument is missing. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Formula(2), Number, Empty, Number(2). Period argument is missing. 7 of 7 arguments used.');
+		// Case #6: Number, Formula(2), Number(2), Empty, Number. Rate argument is missing. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Formula(2), Number(2), Empty, Number. Rate argument is missing. 7 of 7 arguments used.');*/
+		// Case #7: Number, Formula(2), Number(4). Negative cost value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(-2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(-2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Negative cost value. 7 of 7 arguments used.');
+		// Case #8: Number, Formula(2), Number(4). Negative salvage value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),-300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),-300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Negative salvage value. 7 of 7 arguments used.');
+		// Case #9: Number, Formula(2), Number(4). Negative period value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,-1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,-1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Negative period value. 7 of 7 arguments used.');
+		// Case #10: Number, Formula(2), Number(4). Negative rate value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,-0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,-0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Negative rate value. 7 of 7 arguments used.');
+		// Case #11: Number, Formula(2), Number(4). Negative basis value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,-1)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,-1) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Negative basis value. 7 of 7 arguments used.');
+		// Case #12: Number, Formula(2), Number(4). Basis value out of range (0-4). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,5)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,5) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Basis value out of range (0-4). 7 of 7 arguments used.');
+		// Case #13: Number, Formula(2), Number(4). First_period earlier than date_purchased.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,12,31),DATE(2008,8,19),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,12,31),DATE(2008,8,19),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). First_period earlier than date_purchased.');
+		// Case #14: Number, Formula(2), Number(4). Salvage value greater than cost. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),2500,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),2500,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Salvage value greater than cost. 7 of 7 arguments used.');
+		// Case #15: String,  Formula(2), Number(4). Cost as non-numeric string. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC("text",DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC("text",DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: String,  Formula(2), Number(4). Cost as non-numeric string. 7 of 7 arguments used.');
+		// Case #16: Number, String, Number(5). Date_purchased as non-date string. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,"text",DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,"text",DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, String, Number(5). Date_purchased as non-date string. 7 of 7 arguments used.');
+		// Case #17: Number, Formula, String, Number(4). First_period as non-date string. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),"text",300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),"text",300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Formula, String, Number(4). First_period as non-date string. 7 of 7 arguments used.');
+		// Case #18: Number, Formula(2), String, Number(3). Salvage as non-numeric string. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),"text",1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),"text",1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Formula(2), String, Number(3). Salvage as non-numeric string. 7 of 7 arguments used.');
+		// Case #19: Number, Formula(2), Number, String, Number(2). Period as non-numeric string. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,"text",0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,"text",0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Formula(2), Number, String, Number(2). Period as non-numeric string. 7 of 7 arguments used.');
+		// Case #20: Number, Formula(2), Number(2), String, Number. Rate as non-numeric string. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,"text",0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,"text",0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Formula(2), Number(2), String, Number. Rate as non-numeric string. 7 of 7 arguments used.');
+		// Case #21: Number, Formula(2), Number(3), String. Basis as non-numeric string. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,"text")', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,"text") is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Formula(2), Number(3), String. Basis as non-numeric string. 7 of 7 arguments used.');
+		// Case #22: Error, Formula(2), Number(4). Cost as error value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(NA(),DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(NA(),DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Error, Formula(2), Number(4). Cost as error value. 7 of 7 arguments used.');
+		// Case #23: Number, Error, Formula, Number(4). Date_purchased as error value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,NA(),DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,NA(),DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Error, Formula, Number(4). Date_purchased as error value. 7 of 7 arguments used.');
+		// Case #24: Number, Formula, Error, Number(4). First_period as error value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),NA(),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),NA(),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#N/A', 'Test: Negative case: Number, Formula, Error, Number(4). First_period as error value. 7 of 7 arguments used.');
+		// Case #25: Area, Formula(2), Number(4). Cost as multi-cell area. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(A100:A101,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(A100:A101,DATE(2008,8,19),DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Area, Formula(2), Number(4). Cost as multi-cell area. 7 of 7 arguments used.');
+		// Case #26: Number, Formula,Area, Number(4). First_period as multi-cell area. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),A101:A102,300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),A101:A102,300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Formula,Area, Number(4). First_period as multi-cell area. 7 of 7 arguments used.');
+		// Case #27: Number, Area, Formula, Number(4). Date_purchased as multi-cell area. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,A101:A102,DATE(2008,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,A101:A102,DATE(2008,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Area, Formula, Number(4). Date_purchased as multi-cell area. 7 of 7 arguments used.');
+		// Case #28: Number, Formula(2), Area, Number(3). Salvage as multi-cell area. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),A103:A104,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),A103:A104,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Number, Formula(2), Area, Number(3). Salvage as multi-cell area. 7 of 7 arguments used.');
+		// Case #29: Number, Formula(2), Number(4). Zero cost value. 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#24
+		/*oParser = new parserFormula('AMORDEGRC(0,DATE(2008,8,19),DATE(2008,12,31),0,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(0,DATE(2008,8,19),DATE(2008,12,31),0,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Zero cost value. 7 of 7 arguments used.');*/
+		// Case #30: Number, Formula(2), Number(4). Zero rate value. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#NUM!', 'Test: Negative case: Number, Formula(2), Number(4). Zero rate value. 7 of 7 arguments used.');
+		// Case #31: Table(7). Table with 2 rows. 7 of 7 argumenrs used.
+		getTableType(599, 0, 601, 6);
+		oParser = new parserFormula('AMORDEGRC(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5],Table1[Column6],Table1[Column7])', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(Table1[Column1],Table1[Column2],Table1[Column3],Table1[Column4],Table1[Column5],Table1[Column6],Table1[Column7]) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), '#VALUE!', 'Test: Negative case: Table(7). Table with 2 rows. 7 of 7 argumenrs used.');
+
+		// Bounded cases:
+
+		// Case #1: Number, Formula(2), Number(4). Minimum positive values for numeric arguments, earliest dates. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(0.000000001,DATE(1900,1,1),DATE(1900,1,2),0,0,0.000000001,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(0.000000001,DATE(1900,1,1),DATE(1900,1,2),0,0,0.000000001,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number, Formula(2), Number(4). Minimum positive values for numeric arguments, earliest dates. 7 of 7 arguments used.');
+		// Case #2: Number, Formula(2), Number(4). Maximum numeric values, latest valid dates. 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#25
+		/*oParser = new parserFormula('AMORDEGRC(9.99999E+307,DATE(9999,12,30),DATE(9999,12,31),1,1,0.49,4)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(9.99999E+307,DATE(9999,12,30),DATE(9999,12,31),1,1,0.49,4) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 1.9477e+307, 'Test: Bounded case: Number, Formula(2), Number(4). Maximum numeric values, latest valid dates. 7 of 7 arguments used.');
+		*/// Case #3: Number, Formula(2), Number(4). Minimum rate that produces non-zero depreciation). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,1E-307,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,1E-307,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number, Formula(2), Number(4). Minimum rate that produces non-zero depreciation). 7 of 7 arguments used.');
+		// Case #4: Number, Formula(2), Number(4). Maximum common rate value (49%). 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#25
+		/*oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.49,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.49,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 877, 'Test: Bounded case: Number, Formula(2), Number(4). Maximum common rate value (49%). 7 of 7 arguments used.');*/
+		// Case #5: Number, Formula(2), Number(4). Minimum time between date_purchased and first_period (1 day). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,8,20),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,8,20),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 899, 'Test: Bounded case: Number, Formula(2), Number(4). Minimum time between date_purchased and first_period (1 day). 7 of 7 arguments used.');
+		// Case #6: Number, Formula(2), Number(4). Salvage value approaches cost. 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),2399.999,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),2399.999,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 900, 'Test: Bounded case: Number, Formula(2), Number(4). Salvage value approaches cost. 7 of 7 arguments used.');
+		// Case #7: Number, Formula(2), Number(4). High period number (past normal life). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,20,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,20,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 0, 'Test: Bounded case: Number, Formula(2), Number(4). High period number (past normal life). 7 of 7 arguments used.');
+		// Case #8: Number, Formula(2), Number(4). High rate value (49.9%) just below threshold where formula behavior changes. 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#25
+		/*oParser = new parserFormula('AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.499,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(2008,8,19),DATE(2008,12,31),300,1,0.499,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 871, 'Test: Bounded case: Number, Formula(2), Number(4). High rate value (49.9%) just below threshold where formula behavior changes. 7 of 7 arguments used.');*/
+		// Case #9: Number, Formula(2), Number(4). Earliest valid date (1900-01-01). 7 of 7 arguments used.
+		// Different result with MS TODO: Need to fix: Blocked by https://nct.onlyoffice.com/Products/Files/DocEditor.aspx?fileid=366936 Bugs Row#19
+		/*oParser = new parserFormula('AMORDEGRC(2400,DATE(1900,1,1),DATE(1900,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(1900,1,1),DATE(1900,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 563, 'Test: Bounded case: Number, Formula(2), Number(4). Earliest valid date (1900-01-01). 7 of 7 arguments used.');
+		*/// Case #10: Number, Formula(2), Number(4). Latest valid date (9999-12-31). 7 of 7 arguments used.
+		oParser = new parserFormula('AMORDEGRC(2400,DATE(9999,12,30),DATE(9999,12,31),300,1,0.15,0)', 'A2', ws);
+		assert.ok(oParser.parse(), 'Test: Formula AMORDEGRC(2400,DATE(9999,12,30),DATE(9999,12,31),300,1,0.15,0) is parsed.');
+		assert.strictEqual(oParser.calculate().getValue(), 563, 'Test: Bounded case: Number, Formula(2), Number(4). Latest valid date (9999-12-31). 7 of 7 arguments used.');
 
 		testArrayFormula2(assert, "AMORDEGRC", 6, 7, true);
 	});
@@ -45669,7 +46517,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -45899,7 +46747,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -46352,7 +47200,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -46372,7 +47220,7 @@ $(function () {
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
 
-		
+
 		// Positive cases:
 		// Case #1: Number(3). Basic valid input: 3 required arguments. Returns interest rate per period.
 		oParser = new parserFormula('RATE(12,-100,1000)', 'A2', ws);
@@ -47633,7 +48481,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -47977,7 +48825,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -48182,7 +49030,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -48201,7 +49049,7 @@ $(function () {
 		ws.getRange2("B208").setValue("-0.8"); // TestNameArea2
 		ws2.getRange2("A18").setValue("0.8"); // TestNameArea3D2
 		ws2.getRange2("B18").setValue("-0.8"); // TestNameArea3D2
-		
+
 		// Positive cases:
 		// Case #1: Number. Basic valid input: all numbers, 4 of 6 arguments used.
 		oParser = new parserFormula('PPMT(0.1,1,12,1000)', 'A2', ws);
@@ -48455,7 +49303,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -50419,7 +51267,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -50702,7 +51550,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -50983,7 +51831,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -51962,7 +52810,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("Col1Text"); // Text (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -52473,7 +53321,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -52712,7 +53560,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -53324,7 +54172,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("321"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -53518,7 +54366,7 @@ $(function () {
 		ws.getRange2("A112").setValue("");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("321"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
@@ -53919,7 +54767,7 @@ $(function () {
 		ws.getRange2("A111").setValue("FALSE");
 
 		// Table type. Use A601:L6**
-		getTableType(599, 0, 599, 0);
+		getTableType(599, 0, 600, 0);
 		ws.getRange2("A601").setValue("1"); // Number (Column1)
 		// 3D links. Use A1:Z10
 		let ws2 = getSecondSheet();
