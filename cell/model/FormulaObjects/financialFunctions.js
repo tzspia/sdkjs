@@ -1203,7 +1203,7 @@ function (window, undefined) {
 					countedPeriod++;
 					c++;
 				}
-				return new cNumber(Math.floor(depr));
+				return new cNumber(depr);
 			}
 		}
 
