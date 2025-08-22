@@ -3978,6 +3978,8 @@ function (window, undefined) {
 					count++;
 				} else if (cElementType.string === _argV.type) {
 					count++;
+				} else if (cElementType.error === _argV.type) {
+					return _argV;
 				}
 			} else if (cElementType.cellsRange === _arg.type || cElementType.cellsRange3D === _arg.type) {
 				var _argAreaValue = _arg.getValue();
@@ -3988,6 +3990,8 @@ function (window, undefined) {
 						count++;
 					} else if (cElementType.string === __arg.type) {
 						count++;
+					} else if (cElementType.error === __arg.type) {
+						return __arg;
 					}
 				}
 			} else if (cElementType.array === _arg.type) {
