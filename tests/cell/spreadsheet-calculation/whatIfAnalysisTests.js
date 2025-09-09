@@ -102,7 +102,7 @@ $(function () {
     let CParserFormula = AscCommonExcel.parserFormula;
     let g_oIdCounter = AscCommon.g_oIdCounter;
     let sData = AscCommon.getEmpty();
-    let wb, ws, oParserFormula, oGoalSeek, nResult, nChangingVal, nExpectedVal, api;
+    let wb, ws, oParserFormula, oGoalSeek, nResult, nChangingVal, nExpectedVal, api, wsView;
     // Solver
     let CSolver = AscCommonExcel.CSolver;
     let asc_CSolverParams = AscCommonExcel.asc_CSolverParams;
@@ -140,9 +140,10 @@ $(function () {
         wb.handlers.add("asc_onConfirmAction", function (test1, callback) {
             callback(true);
         });
-        let wsView = api.wb.getWorksheet(0);
+        wsView = api.wb.getWorksheet(0);
         wsView.handlers = api.handlers;
         wsView.objectRender = new AscFormat.DrawingObjects();
+        api.wb.wsActive = wb.getActive();
 
         let docInfo = new Asc.asc_CDocInfo();
         docInfo.asc_putTitle("TeSt.xlsx");
@@ -343,6 +344,9 @@ $(function () {
         fAfter("redo_" + desc);
         AscCommon.History.Undo();
     };
+    const getActiveCell = function(wsView) {
+        return wsView.getActiveCell(0, 0, false).getName(Asc.referenceType.A);
+    }
 
     QUnit.module('Goal seek');
     QUnit.test('PMT formula', function (assert) {
@@ -1505,9 +1509,10 @@ $(function () {
         oRange.fillData(testData);
 
         // Testing api. Test saving Solver params. Test GetSolverParams and CloseSolver api. Options have default values
+        const sCellActiveName = getActiveCell(wsView, ws);
         let solverParams = api.asc_GetSolverParams();
         assert.ok(solverParams, 'Check API. asc_GetSolverParams is created. Open Solver params dialogue window');
-        assert.strictEqual(solverParams.getObjectiveFunction(), null, 'Check API. asc_GetSolverParams. objectiveFunction is null');
+        assert.strictEqual(solverParams.getObjectiveFunction(), sCellActiveName, 'Check API. asc_GetSolverParams. objectiveFunction is ' + sCellActiveName);
         assert.strictEqual(solverParams.getOptimizeResultTo(), c_oAscOptimizeTo.max, 'Check API. asc_GetSolverParams. optimizeResultTo is max');
         assert.strictEqual(solverParams.getValueOf(), '0', 'Check API. asc_GetSolverParams. valueOf is 0');
         assert.strictEqual(solverParams.getChangingCells(), null, 'Check API. asc_GetSolverParams. changingCells is null');
@@ -1536,7 +1541,7 @@ $(function () {
         assert.strictEqual(solverParams.getSolvingMethod(), c_oAscSolvingMethod.simplexLP, 'Check API. asc_GetSolverParams. solvingMethod is simplexLP');
         // Checks define names
         let aDefNames = getHiddenDefinedNamesWS(wb.dependencyFormulas);
-        assert.strictEqual(aDefNames.length, 36, 'Check API. Define names is created. Count of define names is 36');
+        assert.strictEqual(aDefNames.length, 25, 'Check API. Define names is created. Count of define names is 25');
         // Checks start solve with enabled Show iterative result.
         solverParams = api.asc_GetSolverParams();
         solverParams.getOptions().setShowIterResults(true);

@@ -6282,6 +6282,11 @@
 
 		const solverParams = new AscCommonExcel.asc_CSolverParams();
 		solverParams.getDefNames(this.model);
+		if (solverParams.getObjectiveFunction() === null) {
+			const wsView = this.getWorksheet();
+			const activeCell = wsView.getActiveCell(0, 0, false).getName(Asc.referenceType.A);
+			solverParams.setObjectiveFunction(activeCell);
+		}
 
 		return solverParams;
 	}

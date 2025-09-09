@@ -1017,7 +1017,11 @@ function (window, undefined) {
 		function fillAttribute (oAttribute, sDefName) {
 			let oDefName = mSolverDefNames.get(sDefName);
 			if (oDefName) {
-				oAttribute = typeof oAttribute === 'boolean' ? oDefName.Ref === 1 : oDefName.Ref;
+				if (aCollectionElements.includes(sDefName)) {
+					oAttribute = Number(oDefName.Ref);
+				} else {
+					oAttribute = typeof oAttribute === 'boolean' ? Number(oDefName.Ref) === 1 : oDefName.Ref;
+				}
 			}
 			return oAttribute;
 		}
@@ -1028,6 +1032,7 @@ function (window, undefined) {
 		const oOptions = this.getOptions();
 		const oOptionsDefNameToAttribute = oOptions.getDefNameToAttribute();
 		const mSolverDefNames = new Map();
+		const aCollectionElements = ['solver_typ', 'solver_eng'];
 
 		if (!aWsDefNames.length) {
 			return;
@@ -1095,12 +1100,12 @@ function (window, undefined) {
 		this.oDefNameToAttribute = {
 			'solver_pre': 'sConstraintPrecision',
 			'solver_scl': 'bAutomaticScaling',
-			'solver_sho': 'bShowIterResults',
+			/*'solver_sho': 'bShowIterResults',*/
 			'solver_rlx': 'bIgnoreIntConstriants',
 			'solver_tol': 'sIntOptimal',
 			'solver_tim': 'sMaxTime',
 			'solver_itr': 'sIterations',
-			'solver_nod': 'sMaxSubproblems',
+			/*'solver_nod': 'sMaxSubproblems',
 			'solver_mip': 'sMaxFeasibleSolution',
 			'solver_cvg': 'sConvergence',
 			'solver_drv': 'nDerivatives',
@@ -1109,7 +1114,7 @@ function (window, undefined) {
 			'solver_rsd': 'sRandomSeed',
 			'solver_rbv': 'bRequireBounds',
 			'solver_mrt': 'sMutationRate',
-			'solver_mni': 'sEvoMaxTime'
+			'solver_mni': 'sEvoMaxTime'*/
 		};
 	}
 
