@@ -14775,6 +14775,8 @@
 	 */
 	ApiTextPr.prototype.GetStyle = function()
 	{
+		this.private_Update();
+
 		var oDocument	= private_GetLogicDocument();
 		var oStyles		= oDocument.GetStyles();
 		let nStyleId	= this.TextPr.RStyle;
@@ -14811,6 +14813,7 @@
 	 */
 	ApiTextPr.prototype.GetBold = function()
 	{
+		this.private_Update();
 		return this.TextPr.GetBold();
 	};
 
@@ -14839,6 +14842,7 @@
 	 */
 	ApiTextPr.prototype.GetItalic = function()
 	{
+		this.private_Update();
 		return this.TextPr.GetItalic();
 	};
 
@@ -14867,6 +14871,7 @@
 	 */
 	ApiTextPr.prototype.GetStrikeout = function()
 	{
+		this.private_Update();
 		return this.TextPr.GetStrikeout();
 	};
 
@@ -14896,6 +14901,7 @@
 	 */
 	ApiTextPr.prototype.GetUnderline = function()
 	{
+		this.private_Update();
 		return this.TextPr.GetUnderline();
 	};
 
@@ -14928,6 +14934,8 @@
 	 */
 	ApiTextPr.prototype.GetFontFamily = function(fontSlot)
 	{
+		this.private_Update();
+
 		let textPr = this.TextPr;
 		let logicDocument = private_GetLogicDocument();
 		if (logicDocument && logicDocument.IsDocumentEditor())
@@ -14974,6 +14982,8 @@
 	 */
 	ApiTextPr.prototype.GetFontSize = function()
 	{
+		this.private_Update();
+
 		let nFontSize = this.TextPr.GetFontSize();
 		if (nFontSize !== undefined)
 			return 2 * nFontSize;
@@ -15009,6 +15019,8 @@
 	 */
 	ApiTextPr.prototype.GetColor = function()
 	{
+		this.private_Update();
+
 		let oColor = this.TextPr.GetColor();
 		if (oColor !== undefined) {
 			return new ApiRGBColor(oColor.r, oColor.g, oColor.b);
@@ -15051,6 +15063,8 @@
 	 */
 	ApiTextPr.prototype.GetVertAlign = function()
 	{
+		this.private_Update();
+
 		let nType = this.TextPr.GetVertAlign();
 		let sType;
 
@@ -15107,6 +15121,8 @@
 	 */
 	ApiTextPr.prototype.GetHighlight = function()
 	{
+		this.private_Update();
+
 		let HighLight;
 		if (Asc.editor.editorId === AscCommon.c_oEditorId.Word)
 			HighLight = this.TextPr.HighLight;
@@ -15141,6 +15157,8 @@
 	 */
 	ApiTextPr.prototype.GetSpacing = function()
 	{
+		this.private_Update();
+
 		let nSpacing = this.TextPr.GetSpacing();
 		if (nSpacing != undefined) {
 			return private_MM2Twips(nSpacing);
@@ -15174,6 +15192,7 @@
 	 */
 	ApiTextPr.prototype.GetDoubleStrikeout = function()
 	{
+		this.private_Update();
 		return this.TextPr.GetDStrikeout();
 	};
 
@@ -15202,6 +15221,7 @@
 	 */
 	ApiTextPr.prototype.GetCaps = function()
 	{
+		this.private_Update();
 		return this.TextPr.GetCaps();
 	};
 
@@ -15231,6 +15251,7 @@
 	 */
 	ApiTextPr.prototype.GetSmallCaps = function()
 	{
+		this.private_Update();
 		return this.TextPr.GetSmallCaps();
 	};
 
@@ -15261,6 +15282,8 @@
 	 */
 	ApiTextPr.prototype.GetPosition = function()
 	{
+		this.private_Update();
+
 		let nPosition = this.TextPr.GetPosition();
 		
 		if (nPosition != undefined) {
@@ -15301,6 +15324,8 @@
 	 */
 	ApiTextPr.prototype.GetLanguage = function()
 	{
+		this.private_Update();
+
 		let nLcid = this.TextPr.GetLang();
 		
 		if (nLcid !== undefined)
@@ -15339,6 +15364,8 @@
 	 */
 	ApiTextPr.prototype.GetShd = function()
 	{
+		this.private_Update();
+
 		let oShd = this.TextPr.GetShd();
 		if (oShd) {
 			return new ApiRGBColor(oShd.Fill.r, oShd.Fill.g, oShd.Fill.b);
@@ -15372,6 +15399,8 @@
 	 */
 	ApiTextPr.prototype.GetFill = function()
 	{
+		this.private_Update();
+
 		let oUniFill = this.TextPr.Unifill;
 		if (oUniFill) {
 			return new ApiFill(oUniFill);
@@ -15405,6 +15434,8 @@
 	 */
 	ApiTextPr.prototype.GetTextFill = function()
 	{
+		this.private_Update();
+
 		let oUniFill = this.TextPr.TextFill;
 		if (oUniFill) {
 			return new ApiFill(oUniFill);
@@ -15438,6 +15469,8 @@
 	 */
 	ApiTextPr.prototype.GetOutLine = function()
 	{
+		this.private_Update();
+
 		let oOutline = this.TextPr.TextOutline;
 		if (oOutline) {
 			return new ApiStroke(oOutline);
@@ -15470,6 +15503,10 @@
 		return JSON.stringify(oJSON);
 	};
 
+	ApiTextPr.prototype.private_Update = function () {
+		if (this.Parent && this.Parent instanceof ApiSelection && this.Parent.private_updateTextPrFromCurrentSelection)
+			this.Parent.private_updateTextPrFromCurrentSelection(this);
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -26909,7 +26946,7 @@
 	ApiSelection.prototype.GetFont = ApiSelection.prototype.GetTextPr = function () {
 		const range = this.GetRange();
 		const rangeTextPr = range.GetTextPr();
-		const selectionTextPr = new ApiSelectionTextPr(this, rangeTextPr.TextPr);
+		const selectionTextPr = new ApiTextPr(this, rangeTextPr.TextPr);
 		return selectionTextPr;
 	};
 
@@ -26928,6 +26965,13 @@
 		const range = this.GetRange();
 		const rangeTextPr = range.GetTextPr();
 		apiTextPr.TextPr.Set_FromObject(rangeTextPr.TextPr);
+	};
+
+	ApiSelection.prototype.OnChangeTextPr = function (oApiTextPr) {
+		const range = this.GetRange();
+		if (range && range.SetTextPr) {
+			range.SetTextPr(oApiTextPr);
+		}
 	};
 
 	/* Fields:
@@ -28452,27 +28496,6 @@
 		}
 	})(ApiRangeTextPr.prototype);
 
-	function ApiSelectionTextPr(apiSelection, textPr) {
-		ApiTextPr.call(this, apiSelection, textPr);
-	}
-	ApiSelectionTextPr.prototype = Object.create(ApiTextPr.prototype);
-	ApiSelectionTextPr.prototype.constructor = ApiSelectionTextPr;
-	ApiSelectionTextPr.prototype.private_updateFromCurrentSelection = function () {
-		if (this.Parent && this.Parent.private_updateTextPrFromCurrentSelection)
-			this.Parent.private_updateTextPrFromCurrentSelection(this);
-	};
-	const wrapGetMethodsForApiSelectionTextPr = function (prototype) {
-		for (let key in prototype) {
-			if (typeof (prototype[key]) === 'function' && key.startsWith('Get')) {
-				prototype[key] = function () {
-					this.private_updateFromCurrentSelection();
-					return ApiTextPr.prototype[key].apply(this, arguments);
-				};
-			}
-		}
-	};
-	wrapGetMethodsForApiSelectionTextPr(ApiSelectionTextPr.prototype);
-
 	function ToApiForm(oForm)
 	{
 		if (!oForm)
@@ -29534,7 +29557,7 @@
 	};
 	ApiTextPr.prototype.private_OnChange = function()
 	{
-		if (this.Parent)
+		if (this.Parent && this.Parent.OnChangeTextPr)
 			this.Parent.OnChangeTextPr(this);
 	};
 	ApiParaPr.prototype.private_OnChange = function()
