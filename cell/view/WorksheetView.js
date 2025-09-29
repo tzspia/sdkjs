@@ -5416,7 +5416,12 @@ function isAllowPasteLink(pastedWb) {
 
                     SearchEngine: {
                         Selection: []
-                    }
+                    },
+
+					IsVisioEditor: function() {
+						return false;
+					}
+
                 };
 
                 const oShape = new AscFormat.CShape();
