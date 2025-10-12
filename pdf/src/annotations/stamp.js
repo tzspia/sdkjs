@@ -548,10 +548,10 @@
 
         // original rect (save)
         if (memory.docRenderer) {
-            memory.WriteDouble(aInRect[0] - (nBorderW / 2) * nScale); // x1
-            memory.WriteDouble(aInRect[3] - (nBorderW / 2) * nScale); // y1
-            memory.WriteDouble(aInRect[4] + (nBorderW / 2) * nScale); // x2
-            memory.WriteDouble(aInRect[1] + (nBorderW / 2) * nScale); // y2
+            memory.WriteDouble(aInRect[0]); // x1
+            memory.WriteDouble(aInRect[3]); // y1
+            memory.WriteDouble(aInRect[4]); // x2
+            memory.WriteDouble(aInRect[1]); // y2
         }
         else { // copying
             aInRect.forEach(function(measure) {
