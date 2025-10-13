@@ -4212,7 +4212,7 @@
 	/**
 	 * Form type.
 	 * The available form types.
-	 * @typedef {"textForm" | "comboBoxForm" | "dropDownForm" | "checkBoxForm" | "radioButtonForm" | "pictureForm" | "complexForm"} FormType
+	 * @typedef {"textForm" | "comboBoxForm" | "dropDownForm" | "checkBoxForm" | "radioButtonForm" | "pictureForm" | "complexForm" | "dateForm"} FormType
 	 * @see office-js-api/Examples/Enumerations/FormType.js
 	 */
 
@@ -6136,6 +6136,19 @@
 	{
 		let contentControl = this.Document.GetCurrentContentControl();
 		return contentControl ? ToApiContentControl(contentControl) : null;
+	};
+	
+	/**
+	 * Returns the currently selected content control.
+	 * @memberof ApiDocumentContent
+	 * @typeofeditors ["CDE"]
+	 * @since 9.1.0
+	 * @returns {ApiDocumentVisitor}
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetDocumentVisitor.js
+	 */
+	ApiDocumentContent.prototype.GetDocumentVisitor = function()
+	{
+		return new ApiDocumentVisitor(this);
 	};
 
 	/**
@@ -10413,9 +10426,7 @@
 			'ltr': false,
 			'rtl': true
 		};
-		this.Paragraph.SetApplyToAll(true);
 		this.Paragraph.SetParagraphBidi(map[readingOrder]);
-		this.Paragraph.SetApplyToAll(false);
 		return this;
 	};
 	/**
@@ -19099,6 +19110,8 @@
 	 */
 	ApiPath.prototype.SetStroke = function(bStroke)
 	{
+		if (bStroke !== true && bStroke !== false)
+			return;
 		this.path.setStroke(bStroke);
 	};
 
@@ -19121,8 +19134,14 @@
 	 * @see office-js-api/Examples/{Editor}/ApiPath/Methods/SetFill.js
 	 * @since 9.1.0
 	 */
+
 	ApiPath.prototype.SetFill = function(sFill)
 	{
+		const FILL_ALLOWED = ["none", "norm", "lighten", "lightenLess", "darken", "darkenLess"];
+		if (FILL_ALLOWED.indexOf(sFill) === -1)
+		{
+			return;
+		}
 		this.path.setFill(sFill);
 	};
 
@@ -19147,6 +19166,8 @@
 	 */
 	ApiPath.prototype.SetWidth = function(nWidth)
 	{
+		if (!AscFormat.isRealNumber(nWidth) || nWidth < 0)
+			return;
 		this.path.setPathW(nWidth);
 	};
 
@@ -19171,6 +19192,8 @@
 	 */
 	ApiPath.prototype.SetHeight = function(nHeight)
 	{
+		if (!AscFormat.isRealNumber(nHeight) || nHeight < 0)
+			return;
 		this.path.setPathH(nHeight);
 	};
 
@@ -23501,6 +23524,18 @@
 		}, this);
 	};
 	/**
+	 * Returns the placeholder text from the current form.
+	 * @memberof ApiFormBase
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 9.1.0
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/GetPlaceholderText.js
+	 */
+	ApiFormBase.prototype.GetPlaceholderText = function()
+	{
+		return this.Sdt.GetPlaceholderText();
+	};
+	/**
 	 * Sets the text properties to the current form.
 	 * *Used if possible for this type of form*
 	 * @memberof ApiFormBase
@@ -25634,10 +25669,14 @@
 	 * @memberof ApiComment
 	 * @typeofeditors ["CDE", "CPE"]
 	 * @param {string} sText - The comment text.
-	 * @returns {ApiComment} - this
+	 * @returns {?ApiComment} - this
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/SetText.js
 	 */
 	ApiComment.prototype.SetText = function (sText) {
+		sText = GetStringParameter(sText, null);
+		if (!sText)
+			return null;
+
 		this.Comment.GetData().Set_Text(sText);
 		this.private_OnChange();
 		return this;
@@ -25659,10 +25698,14 @@
 	 * @memberof ApiComment
 	 * @typeofeditors ["CDE", "CPE"]
 	 * @param {string} sAuthorName - The comment author's name.
-	 * @returns {ApiComment} - this
+	 * @returns {?ApiComment} - this
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/SetAuthorName.js
 	 */
 	ApiComment.prototype.SetAuthorName = function (sAuthorName) {
+		sAuthorName = GetStringParameter(sAuthorName, null);
+		if (!sAuthorName)
+			return null;
+
 		this.Comment.GetData().Set_Name(sAuthorName);
 		this.private_OnChange();
 		return this;
@@ -25826,9 +25869,9 @@
 	 * Adds a reply to a comment.
 	 * @memberof ApiComment
 	 * @typeofeditors ["CDE", "CPE"]
-	 * @param {String} sText - The comment reply text (required).
-	 * @param {String} sAuthorName - The name of the comment reply author (optional).
-	 * @param {String} sUserId - The user ID of the comment reply author (optional).
+	 * @param {String} sText - The comment reply text.
+	 * @param {String} [sAuthorName] - The name of the comment reply author.
+	 * @param {String} [sUserId] - The user ID of the comment reply author.
 	 * @param {Number} [nPos=-1] - The comment reply position. If nPos=-1 add to the end.
 	 * @returns {ApiComment?} - this
 	 * @see office-js-api/Examples/{Editor}/ApiComment/Methods/AddReply.js
@@ -25959,10 +26002,14 @@
 	 * @memberof ApiCommentReply
 	 * @typeofeditors ["CDE", "CPE"]
 	 * @param {string} sText - The comment reply text.
-	 * @returns {ApiCommentReply} - this
+	 * @returns {?ApiCommentReply} - this
 	 * @see office-js-api/Examples/{Editor}/ApiCommentReply/Methods/SetText.js
 	 */
 	ApiCommentReply.prototype.SetText = function (sText) {
+		sText = GetStringParameter(sText, null);
+		if (!sText)
+			return null;
+
 		this.Data.Set_Text(sText);
 		this.private_OnChange();
 		return this;
@@ -25984,10 +26031,14 @@
 	 * @memberof ApiCommentReply
 	 * @typeofeditors ["CDE", "CPE"]
 	 * @param {string} sAuthorName - The comment reply author's name.
-	 * @returns {ApiCommentReply} - this
+	 * @returns {?ApiCommentReply} - this
 	 * @see office-js-api/Examples/{Editor}/ApiCommentReply/Methods/SetAuthorName.js
 	 */
 	ApiCommentReply.prototype.SetAuthorName = function (sAuthorName) {
+		sAuthorName = GetStringParameter(sAuthorName, null);
+		if (!sAuthorName)
+			return null;
+
 		this.Data.Set_Name(sAuthorName);
 		this.private_OnChange();
 		return this;
@@ -26089,6 +26140,10 @@
 	 */
 	ApiWatermarkSettings.prototype.SetText = function (sText)
 	{
+		sText = GetStringParameter(sText, null);
+		if (!sText)
+			return false;
+
 		this.Settings.put_Text(sText);
 		return true;
 	};
@@ -26947,7 +27002,7 @@
 		});
 		return property ? property.asc_getValue() : null;
 	};
-
+	
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiSelection (https://learn.microsoft.com/en-us/office/vba/api/word.selection)
@@ -27227,6 +27282,217 @@
 		WholeStory
 	*/
 
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiDocumentVisitor
+	//
+	//------------------------------------------------------------------------------------------------------------------
+	function ApiDocumentVisitor(docContent)
+	{
+		AscWord.DocumentVisitor.call(this);
+		
+		this.docContent = docContent;
+	}
+	ApiDocumentVisitor.prototype = Object.create(AscWord.DocumentVisitor.prototype);
+	ApiDocumentVisitor.prototype.constructor = ApiDocumentVisitor;
+	ApiDocumentVisitor.prototype.paragraph = function(paragraph, isStart)
+	{
+		if (isStart)
+			return this["Paragraph"](new ApiParagraph(paragraph));
+		else
+			return this["ParagraphEnd"](new ApiParagraph(paragraph));
+	};
+	ApiDocumentVisitor.prototype.table = function(table, isStart)
+	{
+		if (isStart)
+			return this["Table"](new ApiTable(table));
+		else
+			return this["TableEnd"](new ApiTable(table));
+	};
+	ApiDocumentVisitor.prototype.tableRow = function(tableRow, isStart)
+	{
+		if (isStart)
+			return this["TableRow"](new ApiTableRow(tableRow));
+		else
+			return this["TableRowEnd"](new ApiTableRow(tableRow));
+	};
+	ApiDocumentVisitor.prototype.tableCell = function(tableCell, isStart)
+	{
+		if (isStart)
+			return this["TableCell"](new ApiTableCell(tableCell));
+		else
+			return this["TableCellEnd"](new ApiTableCell(tableCell));
+	};
+	ApiDocumentVisitor.prototype.fldSimple = function(field, isStart)
+	{
+		return true;
+	};
+	ApiDocumentVisitor.prototype.blockLevelSdt = function(sdt, isStart)
+	{
+		if (isStart)
+			return this["BlockLevelSdt"](new ApiBlockLvlSdt(sdt));
+		else
+			return this["BlockLevelSdtEnd"](new ApiBlockLvlSdt(sdt));
+	};
+	ApiDocumentVisitor.prototype.inlineLevelSdt = function(sdt, isStart)
+	{
+		if (isStart)
+			return this["InlineLevelSdt"](new ApiInlineLvlSdt(sdt));
+		else
+			return this["InlineLevelSdtEnd"](new ApiInlineLvlSdt(sdt));
+	};
+	ApiDocumentVisitor.prototype.oform = function(form, isStart)
+	{
+		if (!isStart)
+			return true;
+		
+		let apiForm = private_CheckForm(form);
+		if (!apiForm || apiForm instanceof ApiUnsupported)
+			return true;
+		
+		this["Form"](apiForm);
+		
+		// Внутрь формы не даем заходить
+		return true;
+	};
+	ApiDocumentVisitor.prototype.run = function(run, isStart)
+	{
+		function isParaEndRun(run)
+		{
+			return run && 1 === run.Content.length && run.Content[0].IsParaEnd();
+		}
+		if (isParaEndRun(run))
+			return;
+		
+		if (!isStart)
+			return this["RunEnd"](new ApiRun(run));
+		
+		if (this["Run"](new ApiRun(run)))
+			return true;
+		
+		let text = "";
+		let _t = this;
+		function flushText()
+		{
+			if ("" === text)
+				return;
+			
+			_t["Text"](text);
+			text = "";
+		}
+		
+		for (let i = 0; i < run.Content.length; ++i)
+		{
+			let runItem = run.Content[i];
+			if (runItem.IsText() || runItem.IsSpace())
+			{
+				text += String.fromCodePoint(runItem.GetCodePoint())
+			}
+			else if (runItem.IsBreak())
+			{
+				text += "\n";
+			}
+			else if (runItem.IsTab())
+			{
+				text += "\t";
+			}
+			else if (runItem.IsDrawing() && runItem.IsForm())
+			{
+				flushText();
+				let form = runItem.GetInnerForm();
+				let apiForm = private_CheckForm(form);
+				if (apiForm && !(apiForm instanceof ApiUnsupported))
+					return this["Form"](apiForm);
+			}
+			else
+			{
+				flushText();
+			}
+		}
+		flushText();
+	};
+	//------------------------------------------------------------------------------------------------------------------
+	ApiDocumentVisitor.prototype["Traverse"] = function(isSelection)
+	{
+		let docContent = this.docContent.Document;
+		if (isSelection)
+		{
+			let _t = this;
+			AscCommon.ExecuteNoHistory(function()
+			{
+				let selectedContent = docContent.GetSelectedContent(false);
+				_t.traverseSelectedContent(selectedContent)
+			});
+		}
+		else
+		{
+			this.visitDocContent(docContent.Content);
+		}
+	};
+	ApiDocumentVisitor.prototype["Paragraph"] = function(paragraph)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["ParagraphEnd"] = function(paragraph)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["Table"] = function(table)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["TableEnd"] = function(table)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["TableRow"] = function(tableRow)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["TableRowEnd"] = function(table)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["TableCell"] = function(tableCell)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["TableCellEnd"] = function(tableCell)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["BlockLevelSdt"] = function(sdt)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["BlockLevelSdtEnd"] = function(sdt)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["InlineLevelSdt"] = function(sdt)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["InlineLevelSdtEnd"] = function(sdt)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["Form"] = function(form)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["Run"] = function(run)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["RunEnd"] = function(run)
+	{
+		return false;
+	};
+	ApiDocumentVisitor.prototype["Text"] = function(text)
+	{
+		return false;
+	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -27329,6 +27595,7 @@
 	ApiDocumentContent.prototype["GetCurrentParagraph"]      = ApiDocumentContent.prototype.GetCurrentParagraph;
 	ApiDocumentContent.prototype["GetCurrentRun"]            = ApiDocumentContent.prototype.GetCurrentRun;
 	ApiDocumentContent.prototype["GetCurrentContentControl"] = ApiDocumentContent.prototype.GetCurrentContentControl;
+	ApiDocumentContent.prototype["GetDocumentVisitor"]       = ApiDocumentContent.prototype.GetDocumentVisitor;
 
 	ApiRange.prototype["GetClassType"]               = ApiRange.prototype.GetClassType;
 	ApiRange.prototype["GetParagraph"]               = ApiRange.prototype.GetParagraph;
@@ -27474,6 +27741,7 @@
 	ApiDocument.prototype["MoveCursorToStart"]             = ApiDocument.prototype.MoveCursorToStart;
 	ApiDocument.prototype["MoveCursorToEnd"]               = ApiDocument.prototype.MoveCursorToEnd;
 	ApiDocument.prototype["GoToPage"]                      = ApiDocument.prototype.GoToPage;
+	ApiDocument.prototype["GetDocumentVisitor"]            = ApiDocument.prototype.GetDocumentVisitor;
 	ApiDocument.prototype["GetSelection"]                  = ApiDocument.prototype.GetSelection;
 
 	ApiParagraph.prototype["GetClassType"]           = ApiParagraph.prototype.GetClassType;
@@ -28227,6 +28495,7 @@
 	ApiFormBase.prototype["Clear"]              = ApiFormBase.prototype.Clear;
 	ApiFormBase.prototype["GetWrapperShape"]    = ApiFormBase.prototype.GetWrapperShape;
 	ApiFormBase.prototype["SetPlaceholderText"] = ApiFormBase.prototype.SetPlaceholderText;
+	ApiFormBase.prototype["GetPlaceholderText"] = ApiFormBase.prototype.GetPlaceholderText;
 	ApiFormBase.prototype["SetTextPr"]          = ApiFormBase.prototype.SetTextPr;
 	ApiFormBase.prototype["GetTextPr"]          = ApiFormBase.prototype.GetTextPr;
 	ApiFormBase.prototype["MoveCursorOutside"]  = ApiFormBase.prototype.MoveCursorOutside;
@@ -28641,9 +28910,10 @@
 		CommentData.SetText(oProps.text);
 		CommentData.SetQuoteText(oProps.quoteText);
 		CommentData.SetUserName(oProps.author || AscCommon.UserInfoParser.getCurrentName());
-		CommentData.m_sUserId	= oProps.userId || Asc.editor.documentUserId;
-		CommentData.m_sTime		= ((new Date()).getTime() - (new Date()).getTimezoneOffset() * 60000).toString();
-		CommentData.m_sOOTime	= ((new Date()).getTime()).toString();
+		CommentData.m_sUserId     = oProps.userId || Asc.editor.documentUserId;
+		CommentData.m_sProviderId = "Teamlab";
+		CommentData.m_sTime       = ((new Date()).getTime() - (new Date()).getTimezoneOffset() * 60000).toString();
+		CommentData.m_sOOTime     = ((new Date()).getTime()).toString();
 		
 		return CommentData;
 	};

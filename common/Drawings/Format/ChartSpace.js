@@ -2725,10 +2725,6 @@ function(window, undefined) {
 				return;
 			}
 		}
-
-		//Set the properties which was already set. It needs for the fast coediting. TODO: check it
-		this.setChart(this.chart.createDuplicate());
-		this.setStyle(this.style);
 		this.setDisplayTrendlinesEquation(oProps.displayTrendlinesEquation);
 
 		//Apply chart preset TODO: remove this when chartStyle will be implemented
@@ -10761,6 +10757,7 @@ function(window, undefined) {
 		return AscFormat.isScatterChartType(this.getChartType());
 	};
 	CChartSpace.prototype.changeChartType = function (nType) {
+		if (!AscFormat.isRealNumber(nType)) return false;
 		if (this.chart) {
 			this.chart.changeChartType(nType);
 			this.checkDlblsPosition();
