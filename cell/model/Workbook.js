@@ -16155,6 +16155,9 @@
 			} else {
 				oRange = oRefElement.getRange();
 			}
+			if (!oRange) {
+				continue;
+			}
 			let oRes = fAction(oRange, i, nLastIndex);
 			if (oRes != null) {
 				return;
