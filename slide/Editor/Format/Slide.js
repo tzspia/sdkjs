@@ -242,16 +242,21 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
 	    this.cSld.forEachSp(function(oSp) {
 		    oSp.Reassign_ImageUrls(images_rename);
 	    });
-        if(this.cSld.Bg &&
-            this.cSld.Bg.bgPr &&
-            this.cSld.Bg.bgPr.Fill &&
-            this.cSld.Bg.bgPr.Fill.fill instanceof AscFormat.CBlipFill &&
-            typeof this.cSld.Bg.bgPr.Fill.fill.RasterImageId === "string" &&
-            images_rename[this.cSld.Bg.bgPr.Fill.fill.RasterImageId])
+        let bg = this.cSld && this.cSld.Bg;
+        let bgPr = bg && bg.bgPr;
+        let fill = bgPr && bgPr.Fill && bgPr.Fill.fill;
+
+        if (fill instanceof AscFormat.CBlipFill &&
+            typeof fill.RasterImageId === "string" &&
+            images_rename[fill.RasterImageId])
         {
-            let oBg = this.cSld.Bg.createFullCopy();
+            let oBg = bg.createFullCopy();
             oBg.bgPr.Fill.fill.RasterImageId = images_rename[oBg.bgPr.Fill.fill.RasterImageId];
             this.changeBackground(oBg);
+
+            if (this.recalculateBackground) {
+                this.recalculateBackground();
+            }
         }
     };
     Slide.prototype.Clear_CollaborativeMarks = function()
@@ -779,6 +784,9 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
                     if (matching_shape == null && layout.cSld.spTree[j]) {
                         var sp = layout.cSld.spTree[j].copy(undefined);
                         sp.setParent(this);
+											if (sp.txBody) {
+												sp.txBody.setBodyPr(new AscFormat.CBodyPr());
+											}
                         !bIsSpecialPh && sp.clearContent && sp.clearContent();
                         this.addToSpTreeToPos(this.cSld.spTree.length, sp)
                     }
@@ -1102,6 +1110,20 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
 			oSp.getAllRasterImages(images);
 		});
     };
+
+	Slide.prototype.getAllRasterImagesOnSlide = function (aImages) {
+		aImages = aImages || [];
+		this.getAllRasterImages(aImages);
+		const oLayout = this.Layout;
+		if (oLayout) {
+			oLayout.getAllRasterImages(aImages);
+			const oMaster = oLayout.Master;
+			if (oMaster) {
+				oMaster.getAllRasterImages(aImages);
+			}
+		}
+		return aImages;
+	};
 
 
     Slide.prototype.getAllRasterImagesForDraw = function(images) {
@@ -1861,13 +1883,14 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
         return null;
     };
 
-    Slide.prototype.showChartSettings = function()
-    {
-        editor.asc_onOpenChartFrame();
-        editor.sendEvent("asc_doubleClickOnChart", this.graphicObjects.getChartObject());
-        this.graphicObjects.changeCurrentState(new AscFormat.NullState(this.graphicObjects));
-    };
-
+Slide.prototype.openChartEditor = function()
+{
+	this.graphicObjects.openChartEditor();
+};
+Slide.prototype.openOleEditor = function()
+{
+	this.graphicObjects.openOleEditor();
+};
 
     Slide.prototype.Clear_ContentChanges  = function()
     {
@@ -2289,19 +2312,19 @@ PropLocker.prototype = {
 
 };
 
-AscFormat.CTextBody.prototype.Get_StartPage_Absolute = function()
+AscFormat.CTextBody.prototype.GetAbsoluteStartPage = function()
 {
-    if(this.parent && this.parent.Get_StartPage_Absolute)
+    if(this.parent && this.parent.GetAbsoluteStartPage)
     {
-        return this.parent.Get_StartPage_Absolute();
+        return this.parent.GetAbsoluteStartPage();
     }
     return 0;
 };
-AscFormat.CTextBody.prototype.Get_AbsolutePage = function(CurPage)
+AscFormat.CTextBody.prototype.GetAbsolutePage = function(CurPage)
 {
-    return this.Get_StartPage_Absolute();
+    return this.GetAbsoluteStartPage();
 };
-AscFormat.CTextBody.prototype.Get_AbsoluteColumn = function(CurPage)
+AscFormat.CTextBody.prototype.GetAbsoluteColumn = function(CurPage)
 {
     return 0;//TODO;
 };

@@ -708,16 +708,15 @@ CFraction.prototype.GetTextOfElement = function(oMathText)
 	oMathText.ResetGlobalStyle()
 	return oMathText;
 };
-CFraction.fromMathML = function (reader)
+CFraction.fromMathMLContentMarkup = function (reader, num, den)
 {
 	let props = new CMathFractionPr();
-	props.content = [];
-	let depth = reader.GetDepth();
-	while (reader.ReadNextSiblingNode(depth))
-	{
-		props.content.push(AscWord.ParaMath.readMathMLContent(reader));
-	}
-	
+
+	props.content = [
+		AscWord.ParaMath.createContentFromText(num),
+		AscWord.ParaMath.createContentFromText(den)
+	];
+
 	return new CFraction(props);
 };
 /**

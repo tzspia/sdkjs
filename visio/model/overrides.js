@@ -49,10 +49,10 @@ AscFormat.CShape.prototype.getParentObjects = function ()
 {
 	let oTheme = null;
 	if (this.parent) {
-		oTheme = this.parent.theme;
+		oTheme = this.parent.themes[0];
 	} else {
-		AscCommon.consoleLog("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
-		oTheme = AscFormat.GenerateDefaultTheme(null, null);
+		AscCommon.consoleLog("Parent was not set for shape/group. GetDefaultTheme will be used. shape/group:", this);
+		oTheme = AscFormat.GetDefaultTheme();
 	}
 	return {slide: null, layout: null, master: null, theme: oTheme};
 };
@@ -63,6 +63,11 @@ AscFormat.CShape.prototype.getParentObjects = function ()
  */
 AscFormat.CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
 
+/**
+ * @memberOf AscFormat.CImageShape
+ * @type {function(): {layout: null, slide: null, theme: CTheme, master: null}}
+ */
+AscFormat.CImageShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
 
 /**
  * Draw editor.
@@ -80,7 +85,7 @@ AscFormat.CShape.prototype.recalculate = function ()
 	}
 
 	// var check_slide_placeholder = !this.isPlaceholder() || (this.parent && (this.parent.getObjectType() === AscDFH.historyitem_type_Slide));
-	let check_placeholder = !this.isPlaceholder() || (this.parent && this.parent.isVisioDocument);
+	let check_placeholder = !this.isPlaceholder() || (this.parent && this.parent.IsVisioEditor());
 	AscFormat.ExecuteNoHistory(function(){
 
 		var bRecalcShadow = this.recalcInfo.recalculateBrush ||
@@ -151,20 +156,22 @@ AscFormat.CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorSh
 	let fmtScheme = (isConnectorShape && this.themeElements.themeExt) ?
 		this.themeElements.themeExt.fmtConnectorScheme :
 		this.themeElements.fmtScheme;
-	if (idx >= 1 && idx <= 999) {
-		if (fmtScheme.fillStyleLst[idx - 1]) {
-			ret = fmtScheme.fillStyleLst[idx - 1].createDuplicate();
-			if (ret) {
-				ret.checkPhColor(unicolor, false);
-				return ret;
+	if (fmtScheme) {
+		if (idx >= 1 && idx <= 999) {
+			if (fmtScheme.fillStyleLst[idx - 1]) {
+				ret = fmtScheme.fillStyleLst[idx - 1].createDuplicate();
+				if (ret) {
+					ret.checkPhColor(unicolor, false);
+					return ret;
+				}
 			}
-		}
-	} else if (idx >= 1001) {
-		if (fmtScheme.bgFillStyleLst[idx - 1001]) {
-			ret = fmtScheme.bgFillStyleLst[idx - 1001].createDuplicate();
-			if (ret) {
-				ret.checkPhColor(unicolor, false);
-				return ret;
+		} else if (idx >= 1001) {
+			if (fmtScheme.bgFillStyleLst[idx - 1001]) {
+				ret = fmtScheme.bgFillStyleLst[idx - 1001].createDuplicate();
+				if (ret) {
+					ret.checkPhColor(unicolor, false);
+					return ret;
+				}
 			}
 		}
 	}
@@ -719,10 +726,10 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 	var oDateTime;
 	if(typeof this.FieldType === 'string')
 	{
-		// let format;
-		// if (this.vsdxFieldFormat) {
-		// 	format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
-		// }
+		let format;
+		if (this.vsdxFieldFormat) {
+			format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
+		}
 		let logicDocument = this.Paragraph && this.Paragraph.GetLogicDocument();
 		const sFieldType = this.FieldType.toUpperCase();
 
@@ -775,7 +782,7 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		// 	//leave value
 		// }
 		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)
-			&& !this.vsdxFieldFormat) {
+			&& (!this.vsdxFieldFormat || "General" === format || "@" === format)) {
 		// else if (this.vsdxFieldValue.u === "STR" && (sFieldType === "INH" || !sFieldType)) {
 			// handle simple values. consider is function is INH value is calculated correctly already
 			// like
@@ -802,10 +809,6 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		// 	// const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 		// 	// sStr =  format._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
 		// } else {
-		let format;
-		if (this.vsdxFieldFormat) {
-			format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
-		}
 		const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 		sStr =  oFormat._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
 		// sStr = val + "";
@@ -813,6 +816,8 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 	}
 	return sStr;
 };
+
+AscFormat.GenerateDefaultTheme = AscFormat.GenerateDefaultVisioTheme;
 
 //todo CMobileDelegateEditorDiagram
 AscCommon.CMobileDelegateEditorPresentation.prototype.GetObjectTrack = function(x, y, page, bSelected, bText) { return false; }

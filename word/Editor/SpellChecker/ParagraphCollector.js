@@ -75,6 +75,8 @@
 		this.ContentPos   = new AscWord.CParagraphContentPos();
 		this.SpellChecker = oSpellChecker;
 
+		this.ParaBidi = oSpellChecker.Paragraph.isRtlDirection();
+		this.Lang     = null;
 		this.CurLcid  = -1;
 		this.bWord    = false;
 		this.sWord    = "";
@@ -181,6 +183,7 @@
 			
 			this.apostrophe     = null;
 			this.lastApostrophe = null;
+			this.CurLcid        = -1;
 		}
 	};
 	/**
@@ -193,6 +196,8 @@
 	{
 		if (this.IsWordLetter(oElement))
 		{
+			this.CheckLang(oElement.GetDirectionFlag());
+			
 			if (!this.bWord)
 			{
 				this.startRun      = run;
@@ -244,14 +249,9 @@
 
 		this.IncreaseCheckedCounter();
 	};
-	CParagraphSpellCheckerCollector.prototype.HandleLang = function(nLang)
+	CParagraphSpellCheckerCollector.prototype.HandleLang = function(lang)
 	{
-		if (this.CurLcid === nLang)
-			return;
-
-		this.FlushWord();
-
-		this.CurLcid = nLang;
+		this.Lang = lang;
 	};
 	CParagraphSpellCheckerCollector.prototype.IsPunctuation = function(oElement)
 	{
@@ -273,6 +273,22 @@
 			return false;
 		
 		return !!(APOSTROPHES[oElement.GetCodePoint()]);
+	};
+	CParagraphSpellCheckerCollector.prototype.CheckLang = function(dirFlag)
+	{
+		let lcid = -1;
+		if (AscBidi.DIRECTION_FLAG.LTR === dirFlag)
+			lcid = this.Lang.Val;
+		else if (AscBidi.DIRECTION_FLAG.RTL === dirFlag)
+			lcid = this.Lang.Bidi;
+		
+		if (-1 === lcid)
+			return;
+		
+		if (-1 !== this.CurLcid && this.CurLcid !== lcid)
+			this.FlushWord();
+		
+		this.CurLcid = lcid;
 	};
 
 	/**

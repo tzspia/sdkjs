@@ -75,7 +75,7 @@ function (window, undefined) {
 	var arrayFunctionsMap = {"SUMPRODUCT": 1, "FILTER": 1, "SUM": 1, "LOOKUP": 1, "AGGREGATE": 1};
 
 	var importRangeLinksState = {importRangeLinks: null, startBuildImportRangeLinks: null};
-	const aExcludeRecursiveFormulas = ['ISFORMULA', 'SHEETS', 'AREAS', 'COLUMN', 'COLUMNS', 'ROW', 'ROWS', 'CELL', 'INDIRECT'];
+	const aExcludeRecursiveFormulas = ['ISFORMULA','SHEET','SHEETS', 'AREAS', 'COLUMN', 'COLUMNS', 'ROW', 'ROWS', 'CELL', 'OFFSET'];
 
 	const cReplaceFormulaType = {
 		val: 1,
@@ -2747,7 +2747,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			to = this.hdtcendIndex.index;
 		}
 		for (var i = from; i <= to; ++i) {
-			res.push(table.TableColumns[i].Name);
+			res.push(table.TableColumns[i].getTableColumnName());
 		}
 		return res;
 	};
@@ -3110,10 +3110,12 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			 ir++, ret += digitDelim ? FormulaSeparators.arrayRowSeparator : FormulaSeparators.arrayRowSeparatorDef) {
 			for (var ic = 0; ic < this.countElementInRow[ir]; ic++, ret +=
 				digitDelim ? FormulaSeparators.arrayColSeparator : FormulaSeparators.arrayColSeparatorDef) {
-				if (this.array[ir][ic] instanceof cString) {
-					ret += '"' + this.array[ir][ic].toLocaleString(digitDelim) + '"';
-				} else {
-					ret += this.array[ir][ic].toLocaleString(digitDelim) + "";
+			if (this.array[ir] && this.array[ir][ic]) {
+					if (this.array[ir][ic] instanceof cString) {
+						ret += '"' + this.array[ir][ic].toLocaleString(digitDelim) + '"';
+					} else {
+						ret += this.array[ir][ic].toLocaleString(digitDelim) + "";
+					}
 				}
 			}
 			if (ret[ret.length - 1] === digitDelim ? FormulaSeparators.arrayColSeparator :
@@ -3163,6 +3165,22 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		}
 
 		return this.array;
+	};
+	cArray.prototype.getMatrixCopy = function () {
+		let retArrCopy = [];
+		for (let ir = 0; ir < this.array.length; ir++) {
+			retArrCopy[ir] = [];
+			for (let ic = 0; ic < this.array[ir].length; ic++) {
+				// let elem = this.array[ir][ic];
+				retArrCopy[ir].push(this.array[ir][ic]);
+			}
+			if (ir === this.rowCount - 1) {
+				break;
+			}
+		}
+
+		return retArrCopy;
+
 	};
 	cArray.prototype.fillFromArray = function (arr, fChangeElems) {
 		if (arr && arr.length !== undefined) {
@@ -3215,7 +3233,12 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return {col: realSize ? realSize.col : col, row: realSize ? realSize.row : row};
 	};
 	cArray.prototype.fillMatrix = function (replace_empty) {
-		let maxColCount = Math.max.apply(null, this.countElementInRow);
+		let maxColCount = 0;
+		for (let i = 0; i < this.countElementInRow.length; i++) {
+			if (this.countElementInRow[i] > maxColCount) {
+				maxColCount = this.countElementInRow[i];
+			}
+		}
 		this.countElementInRow = [];
 		this.countElement = 0;
 		for (let i = 0; i < this.rowCount; i++) {
@@ -5042,6 +5065,18 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		delete cFormulaFunction[sName];
 		delete cAllFormulaFunction[sName];
 	}
+	function removeCustomFunctions() {
+		if (AscCommonExcel.cFormulaFunctionGroup["Custom"] && AscCommonExcel.cFormulaFunctionGroup["Custom"].length) {
+			let aCustomFunc = AscCommonExcel.cFormulaFunctionGroup["Custom"];
+			for (let i = 0; i < aCustomFunc.length; i++) {
+				let sName = aCustomFunc[i].prototype.name;
+				AscCommonExcel.removeCustomFunction(sName);
+			}
+			AscCommonExcel.cFormulaFunctionGroup["Custom"] = [];
+			return true;
+		}
+		return false;
+	}
 	function getRangeByRef(ref, ws, onlyRanges, checkMultiSelection, checkFormula) {
 		var activeCell = ws.getSelection().activeCell;
 		var bbox = new Asc.Range(activeCell.col, activeCell.row, activeCell.col, activeCell.row);
@@ -5090,6 +5125,11 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 		};
 
+		forEachElementInRef(pushRanges, ref, ws, checkFormula);
+		return ranges;
+	}
+
+	function forEachElementInRef(callback, ref, ws, checkFormula) {
 		//TODO вызываю проверку на то, что это может быть формула только для печати. необходимо проверить везде - для этого необходимо просмотреть весь смежный функционал
 		var isFormula;
 		if(checkFormula && ref) {
@@ -5100,7 +5140,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		}
 
 		if (isFormula && isFormula.type !== cElementType.error) {
-			pushRanges({oper: isFormula});
+			callback({oper: isFormula});
 		} else {
 			// ToDo in parser formula
 			if (ref[0] === '(') {
@@ -5121,12 +5161,14 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 				var _f = new AscCommonExcel.parserFormula(refItem, null, ws);
 				var parseResult = new AscCommonExcel.ParseResult([]);
 				if (_f.parse(null, null, parseResult)) {
-					parseResult.refPos.forEach(pushRanges);
+					for (let i = 0; i < parseResult.refPos.length; i++) {
+						if (callback(parseResult.refPos[i])) {
+							break;
+						}
+					}
 				}
 			});
 		}
-
-		return ranges;
 	}
 
 
@@ -5352,13 +5394,13 @@ _func[cElementType.string][cElementType.string] = function ( arg0, arg1, what ) 
 
 	let _arg0, _arg1;
 	if (what === ">") {
-		res = arg0.getValue(true) > arg1.getValue(true);
+		res = AscCommonExcel.stringCompare(arg0.getValue(true), arg1.getValue(true)) > 0;
 	} else if (what === ">=") {
-		res = arg0.getValue(true) >= arg1.getValue(true);
+		res = AscCommonExcel.stringCompare(arg0.getValue(true), arg1.getValue(true)) >= 0;
 	} else if (what === "<") {
-		res = arg0.getValue(true) < arg1.getValue(true);
+		res = AscCommonExcel.stringCompare(arg0.getValue(true), arg1.getValue(true)) < 0;
 	} else if (what === "<=") {
-		res = arg0.getValue(true) <= arg1.getValue(true);
+		res = AscCommonExcel.stringCompare(arg0.getValue(true), arg1.getValue(true)) <= 0;
 	} else if (what === "=") {
 		res = isEqualStrings(arg0.getValue(true), arg1.getValue(true));
 	} else if (what === "<>") {
@@ -5881,77 +5923,6 @@ _func[cElementType.number][cElementType.array] = _func[cElementType.string][cEle
             return res;
         };
 
-
-_func.binarySearch = function ( sElem, arrTagert, regExp ) {
-	var first = 0, /* The number of the first element in the array */
-		last = arrTagert.length - 1, /* The number of the element in the array that comes AFTER the last one */
-		/* If the viewed segment is not empty, first<last */
-		mid;
-
-	var arrTagertOneType = [], isString = false;
-
-	for (var i = 0; i < arrTagert.length; i++) {
-		if ((arrTagert[i] instanceof cString || sElem instanceof cString) && !isString) {
-			i = 0;
-			isString = true;
-			sElem = new cString(sElem.toString().toLowerCase());
-		}
-		if (isString) {
-			arrTagertOneType[i] = new cString(arrTagert[i].toString().toLowerCase());
-		} else {
-			arrTagertOneType[i] = arrTagert[i].tocNumber();
-		}
-	}
-
-	// comparing the lengths of arrays and the first and last element
-	if (arrTagert.length === 0) {
-		return -1;
-		/* array empty */
-	} else if (arrTagert[0].value > sElem.value) {
-		return -2;
-	} else if (arrTagert[arrTagert.length - 1].value < sElem.value) {
-		return arrTagert.length - 1;
-	}
-
-	// according to the sorting in MS, the comparison will be like this: cError > cBool > cText > (cNumber == cEmpty)
-	while (first < last) {
-		mid = Math.floor(first + (last - first) / 2);
-		if (sElem.type !== arrTagert[mid].type) {
-			if (sElem.type === cElementType.empty || arrTagert[mid].type === cElementType.empty) {
-				if (sElem.value <= arrTagert[mid].value) {
-					// cEmpty.tocNumber() ?
-					last = mid;
-				} else {
-					first = mid + 1;
-				}
-			} else {
-				if (cElementTypeWeight.get(sElem.type) < cElementTypeWeight.get(arrTagert[mid].type)) {
-					last = mid;
-				} else {
-					first = mid + 1;
-				}
-			}
-		} else {
-			// if cError && cError ?
-			if (sElem.value < arrTagert[mid].value || ( regExp && regExp.test(arrTagert[mid].value) )) {
-				last = mid;
-			} else {
-				first = mid + 1;
-			}
-		}
-	}
-
-	/* If the conditional operator if(n==0) and so on is omitted at the beginning - then uncomment it here!    */
-	if (/* last<n &&*/ arrTagert[last].value === sElem.value) {
-		return last;
-		/* The desired element is found. last is the desired index */
-	} else {
-		return last - 1;
-		/* The desired element is not found. But if you suddenly need to insert it with a shift, its place is at last.    */
-	}
-
-};
-
 _func.lookupBinarySearch = function ( sElem, arrayNoEmpty, isByRangeCall, regExp ) {
 	let first = 0, last, mid;
 	let typedArr;
@@ -6002,7 +5973,7 @@ _func.lookupBinarySearch = function ( sElem, arrayNoEmpty, isByRangeCall, regExp
 	} else if (cacheIndex !== undefined && typedArr[cacheIndex].v.value <= sElem.value) {
 		return typedArr[cacheIndex].i;
 	} else {
-		return -2;
+		return -1;
 	}
 };
 
@@ -6318,22 +6289,25 @@ _func[cElementType.cell3D] = _func[cElementType.cell];
 		return res;
 	};
 
-	ParseResult.prototype.getActiveFunction = function(start, end) {
+	ParseResult.prototype.getActiveFunction = function(start, end, opt_get_arg_pos) {
 		var res = null;
 		if (this.allFunctionsPos) {
 			var startFuncs, endFuncs, i, j;
 			for (i = 0; i < this.allFunctionsPos.length; i++) {
-				if (this.allFunctionsPos[i].start + 1 <= start && this.allFunctionsPos[i].end + 1 >= start) {
+				var func = this.allFunctionsPos[i];
+				var endCheck = opt_get_arg_pos && func.isComplete ? func.end : func.end + 1;
+				
+				if (func.start + 1 <= start && endCheck >= start) {
 					if (!startFuncs) {
 						startFuncs = [];
 					}
-					startFuncs.push(this.allFunctionsPos[i]);
+					startFuncs.push(func);
 				}
-				if (start !== end && this.allFunctionsPos[i].start + 1 <= end && this.allFunctionsPos[i].end + 1 >= end) {
+				if (start !== end && func.start + 1 <= end && endCheck >= end) {
 					if (!endFuncs) {
 						endFuncs = [];
 					}
-					endFuncs.push(this.allFunctionsPos[i]);
+					endFuncs.push(func);
 				}
 			}
 
@@ -6364,9 +6338,56 @@ _func[cElementType.cell3D] = _func[cElementType.cell];
 							res = commonFuncs[i];
 						}
 					}
+					
+					if (opt_get_arg_pos && res.isComplete && start > res.end) {
+						var incompleteOuter = null;
+						for (i = 0; i < commonFuncs.length; i++) {
+							if (!commonFuncs[i].isComplete && commonFuncs[i].start < res.start) {
+								incompleteOuter = commonFuncs[i];
+								break;
+							}
+						}
+						if (incompleteOuter) {
+							res = incompleteOuter;
+						}
+					}
 				}
 			}
 
+			if (opt_get_arg_pos) {
+				if (res) {
+					let checkInside = function (pos, start, end, isComplete) {
+						if (pos >= start && pos <= end) {
+							return true;
+						}
+						if (!isComplete && pos === end + 1) {
+							return true;
+						}
+						return false;
+					};
+
+					let activeFunction = res, fCurrent, fPos, argPos;
+
+					let functionNameEnd = activeFunction.start + ((activeFunction.func && activeFunction.func.name) ? activeFunction.func.name.length : 0);
+
+					if (start <= functionNameEnd) {
+						argPos = null;
+					} else if (activeFunction.args && activeFunction.args.length > 0) {
+						for (let k = 0; k < activeFunction.args.length; k++) {
+							let arg = activeFunction.args[k];
+							if (checkInside(start, arg.start, arg.end, k === activeFunction.args.length - 1 ? activeFunction.isComplete : true)) {
+								argPos = k;
+								break;
+							}
+						}
+
+						if (argPos === null && !activeFunction.isComplete && activeFunction.args.length > 0) {
+							argPos = activeFunction.args.length - 1;
+						}
+					}
+					res.argPos = argPos;
+				}
+			}
 		}
 		return res;
 	};
@@ -6833,9 +6854,11 @@ function parserFormula( formula, parent, _ws ) {
 		let oDefaultResult = null;
 
 		if (sFunctionName === "IF") {
-			aLogicalTests.push(aOutStack.shift());
-			aTrueResults.push(aOutStack.shift());
-			oFalseResult = aOutStack.shift();
+			aLogicalTests.push(aOutStack[0]);
+			aTrueResults.push(aOutStack[1]);
+			oFalseResult = aOutStack[2];
+			// Remove processed arguments from stack
+			aOutStack.splice(0, 3);
 
 			return [aLogicalTests, aTrueResults, oFalseResult];
 		}
@@ -7908,7 +7931,7 @@ function parserFormula( formula, parent, _ws ) {
 				if (!parseResult.allFunctionsPos) {
 					parseResult.allFunctionsPos = [];
 				}
-				parseResult.allFunctionsPos.push({func: levelFuncMap[currentFuncLevel].func, start: levelFuncMap[currentFuncLevel].startPos, end: ph.pCurrPos, args: _argPos});
+				parseResult.allFunctionsPos.push({func: levelFuncMap[currentFuncLevel].func, start: levelFuncMap[currentFuncLevel].startPos, end: ph.pCurrPos, args: _argPos, isComplete: true});
 
 				currentFuncLevel--;
 			}
@@ -8146,6 +8169,7 @@ function parserFormula( formula, parent, _ws ) {
 			found_operand = null;
 
 			let needSplitString = true;
+			let removeUnarOperator = false;
 			let _doSplitString = function(str) {
 				// Cache concatenation operator to avoid repeated lookups
 				const concatOperator = cFormulaOperators["&"].prototype;
@@ -8542,6 +8566,12 @@ function parserFormula( formula, parent, _ws ) {
 						return false;
 					}
 					found_operand = new cNumber(_number);
+					if (local) {
+						let lastElem = elemArr[elemArr.length-1];
+						if (lastElem && lastElem.name && lastElem.name === "un_plus") {
+							removeUnarOperator = true;
+						}
+					}
 				} else {
 					parseResult.setError(c_oAscError.ID.FrmlAnotherParsingError);
 					if (!ignoreErrors) {
@@ -8631,6 +8661,10 @@ function parserFormula( formula, parent, _ws ) {
 			}
 
 			if (null !== found_operand) {
+				if (removeUnarOperator) {
+					elemArr.pop();
+				}
+
 				t.outStack.push(found_operand);
 				parseResult.addElem(found_operand);
 				parseResult.operand_expected = false;
@@ -8663,16 +8697,79 @@ function parserFormula( formula, parent, _ws ) {
 					1) {
 					parseResult.activeArgumentPos = argFuncMap[currentFuncLevel].count;
 				}
+
+				if (undefined === parseResult.argPos && currentFuncLevel >= 0 && levelFuncMap[currentFuncLevel]) {
+					var currentArgCount = 1;
+					
+					if (argFuncMap[currentFuncLevel] && argFuncMap[currentFuncLevel].count >= 0) {
+						currentArgCount = argFuncMap[currentFuncLevel].count + 1;
+					} else {
+						var foundParenthesesIndex = -1;
+						var functionCount = 0;
+						
+						for (var i = elemArr.length - 1; i >= 0; i--) {
+							if (elemArr[i].type === cElementType.operator && elemArr[i].name === '(') {
+								if (functionCount === 0) {
+									foundParenthesesIndex = i;
+									break;
+								}
+								functionCount--;
+							} else if (elemArr[i].type === cElementType.func) {
+								functionCount++;
+							}
+						}
+						
+						if (foundParenthesesIndex >= 0 && leftParentArgumentsCurrentArr[foundParenthesesIndex]) {
+							currentArgCount = leftParentArgumentsCurrentArr[foundParenthesesIndex];
+						}
+					}
+					
+					parseResult.argPos = currentArgCount;
+				}
 				var _argPos = argPosArrMap[currentFuncLevel];
 				var lastArgPos = _argPos && _argPos[_argPos.length - 1];
 				if (lastArgPos && undefined === lastArgPos.end) {
 					lastArgPos.end = lastArgPos.start > ph.pCurrPos ? lastArgPos.start : ph.pCurrPos;
 				}
-				if (levelFuncMap[currentFuncLevel]) {
+				/*if (levelFuncMap[currentFuncLevel]) {
 					if (!parseResult.allFunctionsPos) {
 						parseResult.allFunctionsPos = [];
 					}
 					parseResult.allFunctionsPos.push({func: levelFuncMap[currentFuncLevel].func, start: levelFuncMap[currentFuncLevel].startPos, end: ph.pCurrPos, args: _argPos});
+				}*/
+
+
+				if (!parseResult.allFunctionsPos) {
+					parseResult.allFunctionsPos = [];
+				}
+				
+				for (var level = 0; level <= currentFuncLevel; level++) {
+					if (levelFuncMap[level]) {
+						var _argPosForLevel = argPosArrMap[level];
+						var lastArgPosForLevel = _argPosForLevel && _argPosForLevel[_argPosForLevel.length - 1];
+						if (lastArgPosForLevel && undefined === lastArgPosForLevel.end) {
+							lastArgPosForLevel.end = lastArgPosForLevel.start > ph.pCurrPos ? lastArgPosForLevel.start : ph.pCurrPos;
+						}
+						
+						var alreadyExists = false;
+						for (let i = 0; i < parseResult.allFunctionsPos.length; i++) {
+							if (parseResult.allFunctionsPos[i].func === levelFuncMap[level].func && 
+								parseResult.allFunctionsPos[i].start === levelFuncMap[level].startPos) {
+								alreadyExists = true;
+								break;
+							}
+						}
+						
+						if (!alreadyExists) {
+							parseResult.allFunctionsPos.push({
+								func: levelFuncMap[level].func, 
+								start: levelFuncMap[level].startPos, 
+								end: ph.pCurrPos, 
+								args: _argPosForLevel,
+								isComplete: false
+							});
+						}
+					}
 				}
 			}
 		};
@@ -9057,7 +9154,7 @@ function parserFormula( formula, parent, _ws ) {
 							this._endCalculate();
 							opt_oCalculateResult.setError(c_oAscError.ID.FrmlOperandExpected);
 							return this.value;
-						} else {
+						} else if (!(this.promiseResult && this.promiseResult[i])) {
 							formulaArray = cBaseFunction.prototype.checkFormulaArray.call(currentElement, arg, opt_bbox, opt_defName, this, bIsSpecialFunction, argumentsCount);
 						}
 
@@ -9892,7 +9989,15 @@ function parserFormula( formula, parent, _ws ) {
 			ref = this.outStack[i];
 
 			if (ref.type === cElementType.table) {
-				this.wb.dependencyFormulas.startListeningDefName(ref.tableName, this);
+				// analyze table structure - if its full link, write defnamelistener
+				const isFullTableLink = ref.reservedColumnIndex === AscCommon.FormulaTablePartInfo.all;
+				const refAreaRange = ref.area && ref.area.getRange && ref.area.getRange();
+				
+				if (isFullTableLink || !refAreaRange) {
+					this.wb.dependencyFormulas.startListeningDefName(ref.tableName, this, null, ref);
+				} else {
+					this._buildDependenciesRef(ref.ws.getId(), refAreaRange.getBBox0(), null, /*isStart*/true);
+				}
 			} else if (ref.type === cElementType.name) {
 				this.wb.dependencyFormulas.startListeningDefName(ref.value, this);
 			} else if (ref.type === cElementType.name3D) {
@@ -9931,8 +10036,14 @@ function parserFormula( formula, parent, _ws ) {
 				let externalLink = this.wb.getExternalLinkByName(i);
 				if (externalLink) {
 					for (let j in this.importFunctionsRangeLinks[i]) {
+						let firstSheet;
 						let _rangeInfo = this.importFunctionsRangeLinks[i][j];
-						let _ws = externalLink.worksheets[_rangeInfo.sheet];
+						if (!_rangeInfo.sheet) {
+							// get first sheet if we haven't sheet name in rangeInfo object
+							firstSheet = externalLink.SheetNames && externalLink.SheetNames[0];
+						}
+
+						let _ws = externalLink.worksheets[firstSheet ? firstSheet : _rangeInfo.sheet];
 						if (_ws) {
 							this._buildDependenciesRef(_ws.getId(), AscCommonExcel.g_oRangeCache.getRangesFromSqRef(_rangeInfo.range)[0], null, true);
 						}
@@ -9962,7 +10073,14 @@ function parserFormula( formula, parent, _ws ) {
 			ref = this.outStack[i];
 
 			if (ref.type === cElementType.table) {
-				this.wb.dependencyFormulas.endListeningDefName(ref.tableName, this);
+				const isFullTableLink = ref.reservedColumnIndex === AscCommon.FormulaTablePartInfo.all;
+				const refAreaRange = ref.area && ref.area.getRange && ref.area.getRange();
+				
+				if (isFullTableLink || !refAreaRange) {
+					this.wb.dependencyFormulas.endListeningDefName(ref.tableName, this);
+				} else {
+					this._buildDependenciesRef(ref.ws.getId(), refAreaRange.getBBox0(), null, /*isStart*/false);
+				}
 			} else if (ref.type === cElementType.name) {
 				this.wb.dependencyFormulas.endListeningDefName(ref.value, this);
 			} else if (ref.type === cElementType.name3D) {
@@ -10001,8 +10119,14 @@ function parserFormula( formula, parent, _ws ) {
 				let externalLink = this.wb.getExternalLinkByName(i);
 				if (externalLink) {
 					for (let j in this.importFunctionsRangeLinks[i]) {
+						let firstSheet;
 						let _rangeInfo = this.importFunctionsRangeLinks[i][j];
-						let _ws = externalLink.worksheets[_rangeInfo.sheet];
+						if (!_rangeInfo.sheet) {
+							// get first sheet if we haven't sheet name in rangeInfo object
+							firstSheet = externalLink.SheetNames && externalLink.SheetNames[0];
+						}
+
+						let _ws = externalLink.worksheets[firstSheet ? firstSheet : _rangeInfo.sheet];
 						if (_ws) {
 							this._buildDependenciesRef(_ws.getId(), AscCommonExcel.g_oRangeCache.getRangesFromSqRef(_rangeInfo.range)[0], null, false);
 						}
@@ -10421,6 +10545,10 @@ function parserFormula( formula, parent, _ws ) {
 		this.nCellPasteValue = null; // for paste recursive cell
 		this.bIsCellEdited = false;
 		this.bIsSheetCreating = false;
+		this.oIndirectFuncResult = null;
+		this.oOffsetFuncResult = null;
+		this.oCellContentFuncRes = null;
+		this.aCycleCell = [];
 
 		this.bIsEnabledRecursion = null;
 		this.nMaxIterations = null; // Max iterations of recursion calculations. Default value: 100.
@@ -11129,6 +11257,88 @@ function parserFormula( formula, parent, _ws ) {
 	CalcRecursion.prototype.setIsSheetCreating = function (bIsSheetCreating) {
 		this.bIsSheetCreating = bIsSheetCreating;
 	};
+	/**
+	 * Method saves the result of the formula, which needs to be checked for cycle after being calculated.
+	 * @memberof CalcRecursion
+	 * @param {string}sFuncName
+	 * @param {cRef|cRef3D|cArea|cArea3D|cName|cName3D}oResult
+	 */
+	CalcRecursion.prototype.saveFunctionResult = function (sFuncName, oResult) {
+		if (oResult.type === cElementType.error) {
+			return;
+		}
+		switch (sFuncName) {
+			case 'INDIRECT':
+				this.oIndirectFuncResult = oResult;
+				break;
+			case 'OFFSET':
+				this.oOffsetFuncResult = oResult;
+				break;
+			case 'CELL':
+				this.oCellContentFuncRes = oResult;
+				break;
+		}
+	};
+	/**
+	 * Method returns the array of result of functions, which need to be checked for cycle after being calculated.
+	 * @memberof CalcRecursion
+	 * @returns {[]}
+	 */
+	CalcRecursion.prototype.getFunctionsResult = function () {
+		const aFunctionResults = [];
+
+		if (this.oIndirectFuncResult) {
+			aFunctionResults.push(this.oIndirectFuncResult);
+		}
+		if (this.oOffsetFuncResult) {
+			aFunctionResults.push(this.oOffsetFuncResult);
+		}
+		if (this.oCellContentFuncRes) {
+			aFunctionResults.push(this.oCellContentFuncRes);
+		}
+
+		return aFunctionResults;
+	};
+	/**
+	 * Method clears result of formulas, which need to be checked for cycle after being calculated.
+	 *  @memberof CalcRecursion
+	 */
+	CalcRecursion.prototype.clearFunctionsResult = function () {
+		this.oIndirectFuncResult = null;
+		this.oOffsetFuncResult = null;
+		this.oCellContentFuncRes = null;
+	};
+	/**
+	 * Method returns array of cycle cells.
+	 * Uses when "Iteration calculation" setting is disabled.
+	 * @memberof CalcRecursion
+	 * @returns {Cell[]}
+	 */
+	CalcRecursion.prototype.getCycleCells = function () {
+		return this.aCycleCell;
+	};
+	/**
+	 * Method adds cycle cell to array.
+	 * Uses when "Iteration calculation" setting is disabled.
+	 * @memberof CalcRecursion
+	 * @param {Cell} oCell
+	 */
+	CalcRecursion.prototype.addCycleCell = function (oCell) {
+		let bDuplicateElem = this.aCycleCell.some(function (oElem) {
+			return oElem.nRow === oCell.nRow && oElem.nCol === oCell.nCol && oElem.ws.getName() === oCell.ws.getName();
+		});
+		if (bDuplicateElem) {
+			return;
+		}
+		this.aCycleCell.push(oCell);
+	};
+	/**
+	 * Method clears array of cycle cells.
+	 * @memberof CalcRecursion
+	 */
+	CalcRecursion.prototype.clearCycleCells = function () {
+		this.aCycleCell = [];
+	};
 
 	const g_cCalcRecursion = new CalcRecursion();
 
@@ -11164,7 +11374,81 @@ function parserFormula( formula, parent, _ws ) {
 
 		return res;
 	}
-
+	/**
+	 * @param {cElementType} type
+	 * @param {string} op
+	 * @param {boolean} isWildcard
+	 * @returns {Function}
+	 */
+	function getMatchingFunction(type, op, isWildcard) {
+		if (type === cElementType.string) {
+			switch (op) {
+				case ">":
+					return function (a, b) {
+						return AscCommonExcel.stringCompare(a, b) > 0;
+					};
+				case "<":
+					return function (a, b) {
+						return AscCommonExcel.stringCompare(a, b) < 0;
+					};
+				case ">=":
+					return function (a, b) {
+						return AscCommonExcel.stringCompare(a, b) >= 0;
+					};
+				case "<=":
+					return function (a, b) {
+						return AscCommonExcel.stringCompare(a, b) <= 0;
+					};
+				case "<>":
+					if (isWildcard) {
+						return function (a, b) {
+							return !AscCommonExcel.searchRegExp2(a, b);
+						};
+					}
+					return function (a, b) {
+						return AscCommonExcel.stringCompare(a, b) !== 0;
+					};
+				case "=":
+				default:
+					if (isWildcard) {
+						return function (a, b) {
+							return AscCommonExcel.searchRegExp2(a, b);
+						};
+					}
+					return function (a, b) {
+						return AscCommonExcel.stringCompare(a, b) === 0;
+					};
+			}
+		} else {
+			switch (op) {
+				case ">":
+					return function (a, b) {
+						return a > b;
+					};
+				case "<":
+					return function (a, b) {
+						return a < b;
+					};
+				case ">=":
+					return function (a, b) {
+						return a >= b;
+					};
+				case "<=":
+					return function (a, b) {
+						return a <= b;
+					};
+				case "<>":
+					return function (a, b) {
+						return a !== b;
+					};
+				case "=":
+				default:
+					return function (a, b) {
+						return a === b;
+					};
+			}
+		}
+	}
 	function matching(x, matchingInfo, doNotParseNum, doNotParseFormat) {
 		var y = matchingInfo.val;
 		var operator = matchingInfo.op;
@@ -11901,8 +12185,10 @@ function parserFormula( formula, parent, _ws ) {
 
 	window['AscCommonExcel'].getFormulasInfo = getFormulasInfo;
 	window['AscCommonExcel'].getRangeByRef = getRangeByRef;
+	window['AscCommonExcel'].forEachElementInRef = forEachElementInRef;
 	window['AscCommonExcel'].addNewFunction = addNewFunction;
 	window['AscCommonExcel'].removeCustomFunction = removeCustomFunction;
+	window['AscCommonExcel'].removeCustomFunctions = removeCustomFunctions;
 	window['AscCommonExcel'].getRangeByName = getRangeByName;
 
 	window['AscCommonExcel']._func = _func;
@@ -11913,6 +12199,7 @@ function parserFormula( formula, parent, _ws ) {
 
 	window['AscCommonExcel'].parseNum = parseNum;
 	window['AscCommonExcel'].matching = matching;
+	window['AscCommonExcel'].getMatchingFunction = getMatchingFunction;
 	window['AscCommonExcel'].matchingValue = matchingValue;
 	window['AscCommonExcel'].GetDiffDate360 = GetDiffDate360;
 	window['AscCommonExcel'].searchRegExp2 = searchRegExp2;

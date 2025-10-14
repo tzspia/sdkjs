@@ -506,7 +506,9 @@
 				document.oncopy           = function(e)
 				{
 					if (g_clipboardBase.isUseNewCopy()) {
-						e.preventDefault();
+						if (g_clipboardBase.Api.asc_IsFocus(true) && !g_clipboardBase._isUseMobileNewCopy()) {
+							e.preventDefault();
+						}
 						return g_clipboardBase.Copy_New();
 					} else {
 						return g_clipboardBase._private_oncopy(e)
@@ -515,7 +517,9 @@
 				document.oncut            = function(e)
 				{
 					if (g_clipboardBase.isUseNewCopy()) {
-						e.preventDefault();
+						if (g_clipboardBase.Api.asc_IsFocus(true) && !g_clipboardBase._isUseMobileNewCopy()) {
+							e.preventDefault();
+						}
 						return g_clipboardBase.Copy_New(true);
 					} else {
 						return g_clipboardBase._private_oncut(e)
@@ -980,11 +984,35 @@
 			}
 		},
 
+		isSupportExecCommand : function(type)
+		{
+			if (AscCommon.AscBrowser.isSafariMacOs && !AscCommon.AscBrowser.isAppleDevices)
+				return false;
+			return true;
+		},
+
 		isUseNewCopy : function()
 		{
 			if (navigator.clipboard) {
+
+				if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["getEngineVersion"])
+				{
+					let nVersion = window["AscDesktopEditor"]["getEngineVersion"]();
+					if (nVersion < 109)
+						return false;
+				}
+
 				return true;
 			}
+			if (this._isUseMobileNewCopy())
+			{
+				return true;
+			}
+			return false;
+		},
+
+		_isUseMobileNewCopy : function()
+		{
 			if (this.Api.isMobileVersion)
 			{
 				if (this.Api.isViewMode || this.Api.isRestrictionView())
@@ -1006,6 +1034,10 @@
 		Copy_New : function(isCut)
 		{
 			let oThis = this;
+			//todo add check on mobile version, because before all work without focus check
+			if (!this.Api.asc_IsFocus(true) && !this._isUseMobileNewCopy()) {
+				return;
+			}
 			if (navigator.clipboard)
 			{
 				this.LastCopyBinary = null;
@@ -1037,8 +1069,10 @@
 					//don't put custom format, because FF don't write all in clipboard, if we try write custom format
 					//"web text/x-custom" : new Blob(["asc_internalData2;" + copy_data.data[c_oAscClipboardDataFormat.Internal]], {type: "web text/x-custom"})
 
-					const data = [new ClipboardItem(clipboardData)];
-					navigator.clipboard.write(data).then(function(){},function(){});
+					if (this.isCopyOutEnabled()) {
+						const data = [new ClipboardItem(clipboardData)];
+						navigator.clipboard.write(data).then(function(){},function(){});
+					}
 
 					if (isCut === true)
 						this.Api.asc_SelectionCut();
@@ -1128,7 +1162,7 @@
 			return false;
 		},
 
-		Button_Copy : function()
+		Button_Copy : function(oldCopy)
 		{
 			if (window["AscDesktopEditor"])
 			{
@@ -1139,7 +1173,7 @@
 			if (window["NATIVE_EDITOR_ENJINE"])
 				return false;
 			
-			if (this.isUseNewCopy())
+			if (this.isUseNewCopy() && !oldCopy)
 			{
 				if (this.Button_Copy_New()) {
 					return true;
@@ -1159,7 +1193,8 @@
 			var _ret = false;
 			try
 			{
-				_ret = document.execCommand("copy");
+				if (this.isSupportExecCommand("copy"))
+					_ret = document.execCommand("copy");
 			}
 			catch (err)
 			{
@@ -1204,7 +1239,8 @@
 			var _ret = false;
 			try
 			{
-				_ret = document.execCommand("cut");
+				if (this.isSupportExecCommand("cut"))
+					_ret = document.execCommand("cut");
 			}
 			catch (err)
 			{
@@ -1252,7 +1288,8 @@
 			var _ret = false;
 			try
 			{
-				_ret = document.execCommand("paste");
+				if (this.isSupportExecCommand("paste"))
+					_ret = document.execCommand("paste");
 			}
 			catch (err)
 			{
@@ -1288,24 +1325,32 @@
 			return _ret;
 		},
 
-		ClearBuffer : function()
-		{
-
-			if (this.isUseNewCopy()) {
-				navigator.clipboard.writeText('');
+		ClearBuffer: function() {
+			let oThis = this;
+			if (this.isUseNewCopy() && navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText('')
+					.then(function() {
+						oThis.LastCopyBinary = null;
+					})
+					.catch(function(err) {
+						oThis.ClearBufferOld();
+					});
 			} else {
-				if (-1 != this.clearBufferTimerId)
-				{
-					// clear old timer (restart interval)
-					clearTimeout(this.clearBufferTimerId);
-				}
-				this.clearBufferTimerId = setTimeout(function(){
-					if (AscCommon.g_clipboardBase)
-						AscCommon.g_clipboardBase.clearBufferTimerId = -1;
-				}, 500);
-
-				this.Button_Copy();
+				this.ClearBufferOld();
 			}
+		},
+
+		ClearBufferOld: function() {
+			if (-1 != this.clearBufferTimerId) {
+				clearTimeout(this.clearBufferTimerId);
+			}
+			this.clearBufferTimerId = setTimeout(function(){
+				if (AscCommon.g_clipboardBase) {
+					AscCommon.g_clipboardBase.clearBufferTimerId = -1;
+				}
+			}, 500);
+
+			this.Button_Copy(true);
 		},
 
 		isCopyOutEnabled : function()
@@ -1526,7 +1571,7 @@
 			}
 
 			var props = this.buttonInfo;
-			if(props && props.options)
+			if(props && props.options && props.options.length)
 			{
 				if((Asc["editor"] && Asc["editor"].wb) || props.cellCoord)
 				{

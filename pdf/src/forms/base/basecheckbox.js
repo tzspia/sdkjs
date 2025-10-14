@@ -57,7 +57,7 @@
     CBaseCheckBoxField.prototype.constructor = CBaseCheckBoxField;
 
     CBaseCheckBoxField.prototype.Draw = function(oGraphicsPDF, oGraphicsWord) {
-        if (this.IsHidden() && !this.IsEditMode())
+        if (this.IsHidden() && !Asc.editor.IsEditFieldsMode())
             return;
 
         this.DrawBackground(oGraphicsPDF);
@@ -68,6 +68,35 @@
 
         this.DrawLocks(oGraphicsPDF);
         this.DrawEdit(oGraphicsWord);
+    };
+    CBaseCheckBoxField.prototype.SetDefaultValue = function(value) {
+        let oParent = this.GetParent();
+        let hasSameKids = oParent && oParent.IsAllKidsWidgets();
+
+        if (hasSameKids || this.IsWidget()) {
+            const shouldUpdate = value && !this.GetParentValue() || this.GetParentValue() !== value;
+
+            if (shouldUpdate) {
+                this.SetValue(value);
+                this.Commit();
+            }
+
+            if (hasSameKids) {
+                return oParent.SetDefaultValue(value);
+            }
+        }
+
+        let sOldDefValue = this.GetDefaultValue();
+        if (value === sOldDefValue) {
+            return true;
+        }
+
+        AscCommon.History.Add(new CChangesPDFFormDefaultValue(this, sOldDefValue, value));
+
+        this._defaultValue = value;
+        this.SetWasChanged(true);
+
+        return true;
     };
     CBaseCheckBoxField.prototype.IsChecked = function() {
         return this._checked;
@@ -86,7 +115,8 @@
         this._hovered = bValue;
     };
     CBaseCheckBoxField.prototype.DrawCheckedSymbol = function(oGraphicsPDF) {
-        let aOrigRect       = this.GetOrigRect();
+        let aOrigRect = this.GetRect();
+        let nRotAngle = this.GetRotate();
 
         let X       = aOrigRect[0];
         let Y       = aOrigRect[1];
@@ -101,6 +131,8 @@
         oGraphicsPDF.SetFillStyle(oRGB.r, oRGB.g, oRGB.b);
         oGraphicsPDF.SetLineWidth(1);
         oGraphicsPDF.SetLineDash([]);
+
+        let rot = -nRotAngle * Math.PI/180;
 
         let nStyle = this.GetStyle();
         switch (nStyle) {
@@ -169,33 +201,24 @@
             }
                 
             case AscPDF.CHECKBOX_STYLES.star: {
-                // set the position of the center of the star
-                let nCenterX = X + nWidth / 2;
-                let nCenterY = Y + nHeight / 2;
+                let cx    = X + nWidth/2;
+                let cy    = Y + nHeight/2;
+                let R     = Math.min(nWidth, nHeight)/2 - oMargins.bottom - Math.min(nWidth, nHeight)/20;
+                let r     = R/2.5;
+                let pts   = 5;
+                let step  = Math.PI/pts;
+                let start = -Math.PI/2 + rot;  // «вверх» + учёт поворота страницы
 
-                // set the outer and inner radius of the star
-                let outerRadius = Math.min(nWidth, nHeight) / 2 - oMargins.bottom - Math.min(nWidth, nHeight) / 20;
-                let innerRadius = outerRadius / 2.5;
-
-                // set the number of points of the star
-                let numPoints = 5;
-
-                // create a path for the star
                 oGraphicsPDF.BeginPath();
-                for (let i = 0; i < numPoints * 2; i++) {
-                    let radius = i % 2 === 0 ? outerRadius : innerRadius;
-                    let angle = Math.PI / numPoints * i;
-                    let pointX = nCenterX + radius * Math.sin(angle);
-                    let pointY = nCenterY - radius * Math.cos(angle);
-                    if (i === 0) {
-                    oGraphicsPDF.MoveTo(pointX, pointY);
-                    } else {
-                    oGraphicsPDF.LineTo(pointX, pointY);
-                    }
+                for (let i = 0; i < pts*2; i++) {
+                    let curR  = (i % 2 === 0 ? R : r);
+                    let angle = start + i * step;
+                    let px    = cx + curR * Math.cos(angle);
+                    let py    = cy + curR * Math.sin(angle);
+                    if (i === 0) oGraphicsPDF.MoveTo(px, py);
+                    else         oGraphicsPDF.LineTo(px, py);
                 }
                 oGraphicsPDF.ClosePath();
-
-                // fill the star with a color
                 oGraphicsPDF.Fill();
                 break;
             }
@@ -230,7 +253,7 @@
                 context.fillRect(0, 0, canvas.width, canvas.height);
 
                 oGraphicsPDF.SetIntegerGrid(true);
-                oGraphicsPDF.DrawImageXY(canvas, x, y);
+                oGraphicsPDF.DrawImageXY(canvas, x, y, rot);
                 oGraphicsPDF.SetIntegerGrid(false);
             }
         }
@@ -331,8 +354,6 @@
         oDoc.activeForm = this;
         
         if (oDoc.IsEditFieldsMode()) {
-            let oController = oDoc.GetController();
-            this.editShape.select(oController, this.GetPage());
             this.editShape.onMouseDown(x, y, e);
             return;
         }
@@ -475,6 +496,13 @@
         return this._noToggleToOff;
     };
     CBaseCheckBoxField.prototype.SetOptions = function(aOpt) {
+        let oParent = this.GetParent();
+        if (oParent && oParent.IsAllKidsWidgets()) {
+            oParent.SetOptions(aOpt);
+        }
+        
+        let hasOptions = !!this._options;
+        
         AscCommon.History.Add(new CChangesPDFCheckOptions(this, this._options, aOpt));
 
         if (this._options == aOpt) {
@@ -488,10 +516,38 @@
             widget.SetExportValue(undefined, true);
         });
 
+        let sDefValue = this.GetDefaultValue();
+        let sCurExpValue;
+
+        if (sDefValue) {
+            if (!hasOptions) {
+                sCurExpValue = this.GetDefaultValue();
+            }
+            else {
+                sCurExpValue = aOpt[sDefValue];
+            }
+
+            this.SetDefaultValue(String(aOpt.indexOf(sCurExpValue)));
+        }
+
         return true;
     };
-    CBaseCheckBoxField.prototype.GetOptions = function() {
+    CBaseCheckBoxField.prototype.GetOptions = function(bInherit) {
+        let oParent = this.GetParent();
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
+            return oParent.GetOptions();
+
         return this._options;
+    };
+    CBaseCheckBoxField.prototype.GetOptionsIndex = function() {
+        let oParent = this.GetParent();
+        let aOptions = oParent ? oParent.GetOptions() : null;
+        if (aOptions) {
+            let aKids = oParent.GetKids();
+            return aKids.indexOf(this);
+        }
+
+        return -1;
     };
     CBaseCheckBoxField.prototype.AddKid = function(oField) {
         let aOptions = this.GetOptions();
@@ -505,6 +561,31 @@
         this._kids.push(oField);
         oField._parent = this;
 
+        if (false == Asc.editor.getDocumentRenderer().IsOpenFormsInProgress) {
+            if (oField.IsWidget()) {
+                oField.SyncValue();
+            }
+
+            if (!aOptions) {
+                aOptions = [];
+
+                let bSetOptions = false;
+
+                this._kids.forEach(function(widget) {
+                    let sExportValue = widget.GetExportValue();
+                    if (aOptions.includes(sExportValue)) {
+                        bSetOptions = true;
+                    }
+
+                    aOptions.push(sExportValue);
+                });
+
+                if (bSetOptions) {
+                    aNewOptions = aOptions;
+                }
+            }
+        }
+        
         if (aNewOptions) {
             this.SetOptions(aNewOptions);
         }
@@ -514,7 +595,9 @@
 
         let aOptions = this.GetOptions();
         let aNewOptions = aOptions ? aOptions.slice() : null;
+        let sExportValue;
         if (aNewOptions) {
+            sExportValue = aNewOptions[nIndex];
             aNewOptions.splice(nIndex, 1);
             this.SetOptions(aNewOptions);
         }
@@ -523,6 +606,11 @@
             this._kids.splice(nIndex, 1);
             AscCommon.History.Add(new CChangesPDFFormKidsContent(this, nIndex, [oField], false))
             oField._parent = null;
+
+            if (aNewOptions) {
+                oField.SetExportValue(sExportValue);
+            }
+
             return true;
         }
 
@@ -534,7 +622,7 @@
         if (oParent && sValue !== undefined) {
             let aWidgets        = oParent.GetAllWidgets();
             let nIndex          = aWidgets.indexOf(this);
-            let aExpValues      = aWidgets.map(w => w.GetExportValue());
+            let aExpValues      = aWidgets.map(function(w) { return w.GetExportValue() });
             let aCurOptions     = oParent.GetOptions();
 
             const newValues = aExpValues.slice();
@@ -621,13 +709,12 @@
         this.SetWasChanged(true);
         this.AddToRedraw();
 
-        let oDoc = this.GetDocument();
         if (bChecked) {
-            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetValue(), this.GetExportValue()));
+            AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetValue(), this.GetExportValue()));
             this._checked = true;
         }
         else {
-            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetValue(), "Off"));
+            AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetValue(), "Off"));
             this._checked = false;
         }
     };
@@ -637,41 +724,35 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CBaseCheckBoxField.prototype.SyncValue = function() {
-        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
-        
-        for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] != this) {
-                if (this.GetExportValue() == aFields[i].GetParentValue()) {
-                    this.SetChecked(true);
-                    this.AddToRedraw();
-                }
-                else {
-                    this.SetChecked(false);
-                    this.AddToRedraw();
-                }
-
-                break;
-            }
+        if (this.GetExportValue() == this.GetParentValue()) {
+            this.SetChecked(true);
+            this.AddToRedraw();
+        }
+        else {
+            this.SetChecked(false);
+            this.AddToRedraw();
         }
     };
     CBaseCheckBoxField.prototype.DrainLogicFrom = function(oFieldToInherit, bClearFrom) {
         AscPDF.CBaseField.prototype.DrainLogicFrom.call(this, oFieldToInherit, bClearFrom);
 
         this.SetNoToggleToOff(oFieldToInherit.IsNoToggleToOff());
-        this.SetOptions(oFieldToInherit.GetOptions());
-
         if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
             this.SetRadiosInUnison(oFieldToInherit.IsRadiosInUnison());
         }
 
         if (bClearFrom !== false) {
             oFieldToInherit.SetNoToggleToOff(false);
-            oFieldToInherit.SetOptions(undefined);
 
             if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
                 oFieldToInherit.SetRadiosInUnison(false);
             }
         }
+    };
+    CBaseCheckBoxField.prototype.DrainViewPropsFrom = function(oField) {
+        AscPDF.CBaseField.prototype.DrainViewPropsFrom.call(this, oField);
+
+        this.SetStyle(oField.GetStyle());
     };
     CBaseCheckBoxField.prototype.WriteToBinary = function(memory) {
         memory.WriteByte(AscCommon.CommandType.ctAnnotField);
@@ -700,18 +781,18 @@
         // check symbol
         memory.WriteByte(this.GetStyle());
 
-        let sExportValue = this.GetExportValue(false);
+        let sExportValue = this.GetExportValue(memory.isCopyPaste);
         if (sExportValue != null) {
             memory.fieldDataFlags |= (1 << 14);
             memory.WriteString(sExportValue);
         }
 
-        if (this.IsNoToggleToOff(false)) {
+        if (this.IsNoToggleToOff(memory.isCopyPaste)) {
             memory.widgetFlags |= (1 << 14);
         }
 
         if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
-            if (this.IsRadiosInUnison(false)) {
+            if (this.IsRadiosInUnison(memory.isCopyPaste)) {
                 memory.widgetFlags |= (1 << 25);
             }
         }

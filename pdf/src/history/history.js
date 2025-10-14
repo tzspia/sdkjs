@@ -68,7 +68,9 @@
     };
     History.prototype.EndNoHistoryMode = function() {
         this.TurnOn();
-        AscCommon.g_oTableId.TurnOn();
+        if (this.IsOn()) {
+            AscCommon.g_oTableId.TurnOn();
+        }
     };
 	History.prototype.Add = function(_Class, Data) {
 		AscCommon.CHistory.prototype.Add.call(this, _Class, Data);
@@ -253,6 +255,18 @@
                     };
 
                     oClass.Lock.Check(check_obj);
+                }
+                // lock merge
+                else if (oClass instanceof AscPDF.CPDFDoc && point.Items[changeIndex].Data instanceof CChangesPDFDocumentStartMergePages) {
+                    const oLocker = oClass.locks.merge; 
+                    let sId = oLocker.GetId();
+                    let oCheckData = {
+                        "type":     AscPDF.AscLockTypeElemPDF.Document,
+                        "objId":    sId,
+                        "guid":     sId
+                    };
+                        
+                    oLocker.Lock.Check(oCheckData);
                 }
  			}
 		}

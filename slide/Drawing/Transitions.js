@@ -2776,7 +2776,10 @@ function CDemonstrationManager(htmlpage)
         // не кэшируем вотермарк никогда
         let oldWatermark = this.HtmlPage.m_oApi.watermarkDraw;
         this.HtmlPage.m_oApi.watermarkDraw = null;
+				const oOldAnnotations = this.SlideAnnotations;
+	    this.SlideAnnotations = null;
         oPlayer.drawFrame(_image.image, {x:0, y: 0, w: _w, h: _h});
+	    this.SlideAnnotations = oOldAnnotations;
         this.HtmlPage.m_oApi.watermarkDraw = oldWatermark;
         const oSlideImage = new CCacheSlideImage();
         oSlideImage.Image = _image;
@@ -3323,9 +3326,19 @@ function CDemonstrationManager(htmlpage)
             this.HtmlPage.m_oApi.watermarkDraw.Draw(ctx, rect.x, rect.y, rect.w, rect.h);
         }
     };
+	this.CheckAnnotationsInternal = function(oGraphics, oSlide)
+	{
+		const oAnnotations = this.SlideAnnotations;
+		if (oAnnotations)
+		{
+			oAnnotations.draw(oGraphics, oSlide);
+		}
+	};
 
     this.Redraw = function ()
     {
+	    oThis.SlideIndexes[0] = -1;
+	    oThis.SlideIndexes[1] = -1;
         oThis.Clear();
         oThis.OnPaintSlide(true);
     };
@@ -3376,7 +3389,7 @@ function CDemonstrationManager(htmlpage)
         }
 
         oThis.WaitAnimationEnd = false;
-        if (oSlide && oSlide.isAdvanceAfterTransition())
+        if (oSlide && oSlide.isAdvanceAfterTransition() && oThis.CheckSlideDuration === -1)
         {
             oThis.CheckSlideDuration = setTimeout(function()
             {
@@ -3394,11 +3407,18 @@ function CDemonstrationManager(htmlpage)
             }, oSlide.getAdvanceDuration());
         }
     };
-
+		this.EndDrawInk = function() {
+			const oSlide = oThis.GetCurrentSlide();
+			const oController = oSlide && oSlide.graphicObjects;
+			if (oController && oController.curState instanceof AscFormat.CInkDrawState) {
+				oController.curState.onMouseUp({ClickCount : 1, X : 0, Y : 0}, 0, 0, oThis.SlideNum);
+			}
+		};
     this.AdvanceAfter = function()
     {
         if (oThis.IsPlayMode)
         {
+					oThis.EndDrawInk();
             oThis.TmpSlideVisible = oThis.SlideNum;
             oThis.GoToNextVisibleSlide();
             oThis.PauseAnimation(oThis.TmpSlideVisible);
@@ -3991,6 +4011,9 @@ function CDemonstrationManager(htmlpage)
 
     this.onMouseDown = function(e)
     {
+        oThis.startPageX = e.pageX;
+        oThis.startPageY = e.pageY;
+
         AscCommon.global_mouseEvent.LockMouse()
         var documentMI = oThis.documentMouseInfo(e);
         if (documentMI)
@@ -4111,12 +4134,34 @@ function CDemonstrationManager(htmlpage)
 
         AscCommon.global_mouseEvent.UnLockMouse();
 
-				const isMouseDown = oThis.isMouseDown || isFromMainToReporterMouseDown;
-				oThis.isMouseDown = false;
+        const isMouseDown = oThis.isMouseDown || isFromMainToReporterMouseDown;
+        oThis.isMouseDown = false;
 		if (isFromMainToReporter && oThis.PointerDiv && oThis.HtmlPage.m_oApi.isReporterMode)
 		    oThis.PointerRemove();
 
-		if (oThis.PointerDiv && oThis.HtmlPage.m_oApi.isReporterMode)
+        let handleSwipe = false;
+        if (e.pointerType === "touch")
+        {
+            let iN = AscFormat.isRealNumber;
+            if (iN(oThis.startPageX) && iN(oThis.startPageY) && iN(e.pageX) && iN(e.pageY) )
+            {
+                if (e.pageX - oThis.startPageX > 20)
+                {
+                    oThis.OnPrevSlide();
+                    handleSwipe = true;
+                }
+                else if (oThis.startPageX - e.pageX > 20 ||
+                        (Math.abs(e.pageX - oThis.startPageX) < 1 &&
+                            Math.abs(e.pageY- oThis.startPageY) < 1))
+                {
+                    oThis.OnNextSlide();
+                    handleSwipe = true;
+                }
+            }
+        }
+        this.startPageX = null;
+        this.startPageY = null;
+		if (handleSwipe || oThis.PointerDiv && oThis.HtmlPage.m_oApi.isReporterMode)
 		{
 			AscCommon.stopEvent(e);
 			return false;

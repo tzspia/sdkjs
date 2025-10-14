@@ -126,10 +126,11 @@
 	 */
 
 	/**
-	 * Content control list element
+	 * The content control list element.
 	 * @typedef {Object} ContentControlListElement
-	 * @property {string} Display - element display text
-	 * @property {string} Value - element value
+	 * @property {string} Display - The element display text.
+	 * @property {string} Value - The element value.
+	 * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ContentControlListElement.js
 	 */
 
     var Api = window["asc_docs_api"];
@@ -210,7 +211,7 @@
         for (var i = 0; i < _blocks.length; i++)
         {
             _obj = _blocks[i].GetContentControlPr();
-            _ret.push({"Tag" : _obj.Tag, "Id" : _obj.Id, "Lock" : _obj.Lock, "InternalId" : _obj.InternalId});
+            _ret.push(_obj.GetEventObject());
         }
         return _ret;
     };
@@ -273,26 +274,7 @@
 			prop.CC.SelectContentControl();
 		}
 
-		var result =
-		{
-			"Tag"        : prop.Tag,
-			"Id"         : prop.Id,
-			"Lock"       : prop.Lock,
-			"Alias"      : prop.Alias,
-			"InternalId" : prop.InternalId,
-			"Appearance" : prop.Appearance,
-		};
-		
-		if (prop.Color)
-		{
-			result["Color"] =
-			{
-				"R" : prop.Color.r,
-				"G" : prop.Color.g,
-				"B" : prop.Color.b
-			}
-		}
-
+		var result = prop.GetEventObject();
 		if (contentFormat)
 		{
 			var copy_data = {
@@ -897,8 +879,7 @@
 		oPluginData["data"] = NewObject["Data"];
 		oPluginData["guid"] = NewObject["ApplicationId"];
 		oPluginData["select"] = bSelect;
-		oPluginData["plugin"] = true;
-		this.asc_addOleObject(oPluginData);
+		this.asc_addOleObject(oPluginData, true);
 	};
 
 
@@ -1297,6 +1278,27 @@
 	Api.prototype["pluginMethod_CanRedo"] = function()
 	{
 		return this.asc_getCanRedo();
+	};
+	/**
+	 * Returns the current bookmark.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @alias GetCurrentBookmark
+	 * @returns {string | null} - The current bookmarks name or null.
+	 * @since 9.0.3
+	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetCurrentBookmark.js
+	 */
+	Api.prototype["pluginMethod_GetCurrentBookmark"] = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return null;
+		
+		let bookmarks = logicDocument.GetBookmarksManager();
+		let para = logicDocument.GetCurrentParagraph();
+		let topDocument = para ? para.GetTopDocumentContent() : null;
+		let docPos = topDocument && topDocument.GetContentPosition ? topDocument.GetContentPosition(false) : null;
+		return bookmarks.GetBookmarkByDocPos(docPos);
 	};
 
 	function private_ReadContentControlCommonPr(commonPr)

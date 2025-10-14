@@ -877,6 +877,10 @@ function CDrawingDocument()
 
 	this.CheckTargetDraw = function(x, y, isFocusOnSlide)
 	{
+		function roundPxForScale(value) {
+			return ((value * AscCommon.AscBrowser.retinaPixelRatio) >> 0) / AscCommon.AscBrowser.retinaPixelRatio;
+		}
+
 		var isReporter = this.m_oWordControl.m_oApi.isReporterMode;
 		if (this.TargetHtmlElementOnSlide != isFocusOnSlide)
 		{
@@ -916,7 +920,7 @@ function CDrawingDocument()
 
 		if (oldW !== newW || oldH !== newH)
 		{
-			var pixNewW = ((newW * AscCommon.AscBrowser.retinaPixelRatio) >> 0) / AscCommon.AscBrowser.retinaPixelRatio;
+			var pixNewW = roundPxForScale(newW);
 
 			this.TargetHtmlElement.style.width = pixNewW + "px";
 			this.TargetHtmlElement.style.height = newH + "px";
@@ -950,15 +954,15 @@ function CDrawingDocument()
 				pos.Y = y * g_dKoef_mm_to_pix - this.m_oWordControl.m_oNotesApi.Scroll;
 			}
 
-			this.TargetHtmlElementLeft = pos.X >> 0;
-			this.TargetHtmlElementTop = pos.Y >> 0;
+			this.TargetHtmlElementLeft = roundPxForScale(pos.X);
+			this.TargetHtmlElementTop = roundPxForScale(pos.Y);
 
 			this.TargetHtmlElement.style["transform"] = "";
 			this.TargetHtmlElement.style["msTransform"] = "";
 			this.TargetHtmlElement.style["mozTransform"] = "";
 			this.TargetHtmlElement.style["webkitTransform"] = "";
 
-			if ((!this.m_oWordControl.MobileTouchManager && !AscCommon.AscBrowser.isSafariMacOs) || !AscCommon.AscBrowser.isWebkit)
+			if ((!this.m_oWordControl.m_oApi.isMobileVersion && !AscCommon.AscBrowser.isSafariMacOs) || !AscCommon.AscBrowser.isWebkit)
 			{
 				this.TargetHtmlElement.style.left = this.TargetHtmlElementLeft + "px";
 				this.TargetHtmlElement.style.top = this.TargetHtmlElementTop + "px";
@@ -1568,7 +1572,11 @@ function CDrawingDocument()
 	{
 
 		let thpages = this.m_oWordControl.Thumbnails.m_arrPages;
-		if(index < 0 || index >= thpages.length) return;
+		if (thpages.length > index)
+		{
+			thpages[index].IsRecalc = true;
+		}
+
 
 		if (this.m_oWordControl && this.m_oWordControl.MobileTouchManager)
 		{
@@ -1587,10 +1595,6 @@ function CDrawingDocument()
 			this.SendChangeDocumentToApi(true);
 		}
 
-		if (thpages.length > index)
-		{
-			thpages[index].IsRecalc = true;
-		}
 
 		if (index === this.SlideCurrent)
 		{
@@ -1604,6 +1608,15 @@ function CDrawingDocument()
 
 			this.m_oWordControl.OnScroll();
 			this.m_oWordControl.Thumbnails.LockMainObjType = false;
+		}
+
+		if(Asc.editor.isSlideShow())
+		{
+			let oDemonstration = Asc.editor.getDemoManager();
+			if(oDemonstration && oDemonstration.SlideNum === index)
+			{
+				oDemonstration.Redraw();
+			}
 		}
 	};
 
@@ -2931,7 +2944,7 @@ function CDrawingDocument()
 		var watermark = this.m_oWordControl.m_oApi.watermarkDraw;
 		let oPresentation = this.m_oWordControl.m_oLogicDocument;
 
-		var pagescount = oPresentation.isVisioDocument ? oPresentation.GetSlidesCount() : oPresentation.Slides.length;
+		var pagescount = oPresentation.IsVisioEditor() ? oPresentation.GetSlidesCount() : oPresentation.Slides.length;
 
 		if (-1 == this.m_lCurrentRendererPage)
 		{
@@ -2960,7 +2973,7 @@ function CDrawingDocument()
 			if ((true === isSelection && !this.m_oLogicDocument.IsMasterMode()) && !this.m_oWordControl.Thumbnails.isSelectedPage(i))
 				continue;
 
-			if (oPresentation.isVisioDocument)
+			if (oPresentation.IsVisioEditor())
 			{
 				//todo override
 				renderer.BeginPage(this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
@@ -3353,11 +3366,22 @@ function CDrawingDocument()
 	this.CheckRasterImageOnScreen = function (src)
 	{
 		const oPresentation = oThis.m_oWordControl.m_oLogicDocument;
+		const oDemonstrationManager = oThis.m_oWordControl.DemonstrationManager;
+		let sCheckImage = AscCommon.getFullImageSrc2(src);
+		if (oDemonstrationManager && oDemonstrationManager.Mode) {
+			const oSlide = oDemonstrationManager.GetCurrentSlide();
+			if (oSlide && oSlide.checkImageDraw(sCheckImage)) {
+				const oPlayer = oSlide.getAnimationPlayer();
+				if (oPlayer) {
+					oPlayer.clearImageCache(sCheckImage);
+				}
+				oDemonstrationManager.Resize(true);
+			}
+		}
 		let oCurSlide = oPresentation.GetCurrentSlide();
 		if(!oCurSlide)
 			return;
 		let bRedraw = false;
-		let sCheckImage = AscCommon.getFullImageSrc2(src);
 		let nCurIdx = oPresentation.GetSlideIndex(oCurSlide);
 		if(oCurSlide.checkImageDraw(sCheckImage))
 		{
@@ -3502,13 +3526,14 @@ function DrawBackground(graphics, unifill, w, h)
 
 	graphics.SetIntegerGrid(false);
 
-	var _shape = {};
+	var _shape = AscFormat.ExecuteNoHistory(function(){ return new AscFormat.CShape();}, this, [], false);
 
 	_shape.brush           = unifill;
 	_shape.pen             = null;
 	_shape.TransformMatrix = new AscCommon.CMatrix();
 	_shape.extX            = w;
 	_shape.extY            = h;
+	_shape.bounds.reset(0, 0, w, h);
 	_shape.check_bounds    = function(checker)
 	{
 		checker._s();
@@ -4814,7 +4839,7 @@ function CThumbnailsManager(editorPage)
 				bPreventDefault = true;
 				break;
 			}
-			case Asc.c_oAscPresentationShortcutType.Print:
+			case Asc.c_oAscPresentationShortcutType.PrintPreviewAndPrint:
 			{
 				oApi.onPrint();
 				bReturnValue = false;
@@ -4831,7 +4856,7 @@ function CThumbnailsManager(editorPage)
 				bPreventDefault = true;
 				break;
 			}
-			case Asc.c_oAscPresentationShortcutType.ShowContextMenu:
+			case Asc.c_oAscPresentationShortcutType.OpenContextMenu:
 			{
 				oThis.showContextMenu(true);
 				bReturnValue = false;
@@ -5111,6 +5136,18 @@ function CThumbnailsManager(editorPage)
 
 		ctx.beginPath();
 	};
+	this.OutlineRect = function(_color, ctx, x, y, r, b)
+	{
+			ctx.beginPath();
+			ctx.strokeStyle = "#C0C0C0";
+			const lineW = Math.max(1, Math.round(1 * AscCommon.AscBrowser.retinaPixelRatio));
+			ctx.lineWidth = lineW;
+			const extend = lineW / 2;
+			ctx.rect(x - extend, y - extend, r - x + (2 * extend), b - y + (2 * extend));
+			ctx.stroke();
+
+			ctx.beginPath();
+	};
 
 	this.DrawAnimLabel = function(oGraphics, nX, nY, oColor)
 	{
@@ -5224,7 +5261,7 @@ function CThumbnailsManager(editorPage)
 
 		this.m_oWordControl.m_oApi.clearEyedropperImgData();
 
-		const context = canvas.getContext("2d");
+		const context = AscCommon.AscBrowser.getContext2D(canvas);
 		context.clearRect(0, 0, canvas.width, canvas.height);
 
 		const digitDistance = this.const_offset_x * g_dKoef_pix_to_mm;
@@ -5435,7 +5472,7 @@ function CThumbnailsManager(editorPage)
 				var g = new AscCommon.CGraphics();
 				g.IsNoDrawingEmptyPlaceholder = true;
 				g.IsThumbnail = true;
-				if (this.m_oWordControl.m_oLogicDocument.isVisioDocument)
+				if (this.m_oWordControl.m_oLogicDocument.IsVisioEditor())
 				{
 					//todo override CThumbnailsManager
 					let SlideWidth = this.m_oWordControl.m_oLogicDocument.GetWidthMM(i);
@@ -5527,6 +5564,8 @@ function CThumbnailsManager(editorPage)
 
 			if (color) {
 				this.FocusRectFlat(color, context, page.left, page.top, page.right, page.bottom, isFocus);
+			} else {
+				this.OutlineRect(color, context, page.left, page.top, page.right, page.bottom);
 			}
 		}
 	};
@@ -5960,6 +5999,14 @@ function CThumbnailsManager(editorPage)
 			startOffset = this.const_offset_x;
 		}
 
+		if (this.m_bIsScrollVisible) {
+			const scrollApi = editor.WordControl.m_oScrollThumbApi;
+			if (scrollApi) {
+				this.m_dScrollY_max = isVerticalThumbnails ? scrollApi.getMaxScrolledY() : scrollApi.getMaxScrolledX();
+				this.m_dScrollY = isVerticalThumbnails ? scrollApi.getCurScrolledY() : scrollApi.getCurScrolledX();
+			}
+		}
+
 		const currentScrollPx = isRightToLeft && !isVerticalThumbnails
 			? this.m_dScrollY_max - this.m_dScrollY >> 0
 			: this.m_dScrollY >> 0;
@@ -5969,7 +6016,7 @@ function CThumbnailsManager(editorPage)
 
 		const totalSlidesCount = this.GetSlidesCount();
 		for (let slideIndex = 0; slideIndex < totalSlidesCount; slideIndex++) {
-			if (this.m_oWordControl.m_oLogicDocument.isVisioDocument) {
+			if (this.m_oWordControl.m_oLogicDocument.IsVisioEditor()) {
 				let visioSlideWidthMm = this.m_oWordControl.m_oLogicDocument.GetWidthMM(slideIndex);
 				let visioSlideHeightMm = this.m_oWordControl.m_oLogicDocument.GetHeightMM(slideIndex);
 				if (isVerticalThumbnails) {
@@ -6222,7 +6269,9 @@ function CThumbnailsManager(editorPage)
 				wordControl.m_oThumbnails_scroll.HtmlElement.style.display = 'none';
 			}
 			this.m_bIsScrollVisible = false;
-			this.m_dScrollY = isHorizontalOrientation ? this.m_dScrollY_max : 0;
+			this.m_dScrollY = isHorizontalOrientation && Asc.editor.isRtlInterface
+				? this.m_dScrollY_max
+				: 0;
 
 		} else {
 			// Scrollbar is needed
@@ -6320,7 +6369,7 @@ function CThumbnailsManager(editorPage)
 
 		let cumulativeThumbnailLength = 0;
 
-		if (oPresentation.isVisioDocument) {
+		if (oPresentation.IsVisioEditor()) {
 			for (let nIdx = 0; nIdx < slidesCount; ++nIdx) {
 				const originalSlideWidth = oPresentation.GetWidthMM(nIdx);
 				const originalSlideHeight = oPresentation.GetHeightMM(nIdx);
@@ -6631,7 +6680,7 @@ function CSlideDrawer()
 				this.CachedCanvas.width  = _need_pix_width + 100;
 				this.CachedCanvas.height = _need_pix_height + 100;
 
-				this.CachedCanvasCtx = this.CachedCanvas.getContext('2d');
+				this.CachedCanvasCtx = AscCommon.AscBrowser.getContext2D(this.CachedCanvas);
 			}
 			else
 			{
@@ -6876,7 +6925,7 @@ function CNotesDrawer(page)
 	this.OnPaint = function()
 	{
 		var element = this.HtmlPage.m_oNotes.HtmlElement;
-		var ctx = element.getContext('2d');
+		var ctx = AscCommon.AscBrowser.getContext2D(element);
 		ctx.clearRect(0, 0, element.width, element.height);
 
 		if (-1 == this.Slide || this.IsEmptyDraw)
@@ -7786,87 +7835,88 @@ function CAnimationPaneDrawer(page, htmlElement)
 			// Here we need to check if all animEffects havent been changed
 			// If they were - recalculate corresponding elements
 			// If they were not - redraw animItems based on "selected" state of effects
+			return AscFormat.ExecuteNoHistory(function () {
+				const seqListContainer = oThis.list.Control;
+				if (!seqListContainer) { return; }
 
-			const seqListContainer = oThis.list.Control;
-			if (!seqListContainer) { return; }
+				// Compare number of sequences (main and interactive ones)
+				const timing = seqListContainer.getTiming();
+				const newSeqList = timing ? timing.getRootSequences() : [];
+				const oldSeqList = seqListContainer.seqList
+					? seqListContainer.seqList.children.map(function (animSequence) {
+						return animSequence.getSeq();
+					})
+					: [];
 
-			// Compare number of sequences (main and interactive ones)
-			const timing = seqListContainer.getTiming();
-			const newSeqList = timing ? timing.getRootSequences() : [];
-			const oldSeqList = seqListContainer.seqList
-				? seqListContainer.seqList.children.map(function (animSequence) {
-					return animSequence.getSeq();
-				})
-				: [];
-
-			if (oldSeqList.length !== newSeqList.length) {
-				recalculateSeqListContainer();
-				return;
-			}
-
-			oldSeqList.some(function (_, nSeq) {
-				// Compare sequences by Id
-				const oldSeq = oldSeqList[nSeq];
-				const newSeq = newSeqList[nSeq];
-
-				if (oldSeq.Id !== newSeq.Id) {
+				if (oldSeqList.length !== newSeqList.length) {
 					recalculateSeqListContainer();
-					return true;
+					return;
 				}
 
-				// Compare number of groups in current sequence
-				const oldSeqGroups = seqListContainer.seqList.children[nSeq].animGroups.map(function (animGroup) {
-					return animGroup.effects;
-				});
-				const newSeqGroupsAsObject = AscFormat.groupBy(
-					newSeq.getAllEffects(),
-					function (effect) { return effect.getIndexInSequence(); }
-				);
-				const newSeqGroups = Object.keys(newSeqGroupsAsObject).map(function (groupIndex) {
-					return newSeqGroupsAsObject[groupIndex];
-				})
+				oldSeqList.some(function (_, nSeq) {
+					// Compare sequences by Id
+					const oldSeq = oldSeqList[nSeq];
+					const newSeq = newSeqList[nSeq];
 
-				if (oldSeqGroups.length !== newSeqGroups.length) {
-					recalculateSeqListContainer();
-					return true;
-				}
-
-				for (let nGroup = 0; nGroup < oldSeqGroups.length; ++nGroup) {
-					// Compare number of effects in current group
-					const oldSeqGroup = oldSeqGroups[nGroup];
-					const newSeqGroup = newSeqGroups[nGroup];
-
-					if (oldSeqGroup.length !== newSeqGroup.length) {
+					if (oldSeq.Id !== newSeq.Id) {
 						recalculateSeqListContainer();
 						return true;
 					}
 
-					for (let nEffect = 0; nEffect < oldSeqGroup.length; ++nEffect) {
-						// Compare effects in currect group by Id
-						const oldEffect = oldSeqGroup[nEffect];
-						const newEffect = newSeqGroup[nEffect];
+					// Compare number of groups in current sequence
+					const oldSeqGroups = seqListContainer.seqList.children[nSeq].animGroups.map(function (animGroup) {
+						return animGroup.effects;
+					});
+					const newSeqGroupsAsObject = AscFormat.groupBy(
+						newSeq.getAllEffects(),
+						function (effect) { return effect.getIndexInSequence(); }
+					);
+					const newSeqGroups = Object.keys(newSeqGroupsAsObject).map(function (groupIndex) {
+						return newSeqGroupsAsObject[groupIndex];
+					})
 
-						if (oldEffect.Id !== newEffect.Id) {
+					if (oldSeqGroups.length !== newSeqGroups.length) {
+						recalculateSeqListContainer();
+						return true;
+					}
+
+					for (let nGroup = 0; nGroup < oldSeqGroups.length; ++nGroup) {
+						// Compare number of effects in current group
+						const oldSeqGroup = oldSeqGroups[nGroup];
+						const newSeqGroup = newSeqGroups[nGroup];
+
+						if (oldSeqGroup.length !== newSeqGroup.length) {
 							recalculateSeqListContainer();
 							return true;
 						}
+
+						for (let nEffect = 0; nEffect < oldSeqGroup.length; ++nEffect) {
+							// Compare effects in currect group by Id
+							const oldEffect = oldSeqGroup[nEffect];
+							const newEffect = newSeqGroup[nEffect];
+
+							if (oldEffect.Id !== newEffect.Id) {
+								recalculateSeqListContainer();
+								return true;
+							}
+						}
 					}
+
+					seqListContainer.seqList.forEachAnimItem(function (animItem) {
+						animItem.onUpdate();
+					})
+
+					return false;
+				});
+
+				function recalculateSeqListContainer() {
+					oThis.list.Control.seqList.recalculateChildren();
+					oThis.list.Control.seqList.recalculateChildrenLayout();
+					oThis.list.Control.recalculateChildrenLayout();
+					oThis.list.Control.onUpdate();
+					oThis.list.CheckScroll();
 				}
-
-				seqListContainer.seqList.forEachAnimItem(function (animItem) {
-					animItem.onUpdate();
-				})
-
-				return false;
-			});
-
-			function recalculateSeqListContainer() {
-				oThis.list.Control.seqList.recalculateChildren();
-				oThis.list.Control.seqList.recalculateChildrenLayout();
-				oThis.list.Control.recalculateChildrenLayout();
-				oThis.list.Control.onUpdate();
-				oThis.list.CheckScroll();
-			}
+			}, this, []);
 		});
 
 		Asc.editor.asc_registerCallback('asc_onFocusObject', function () {
@@ -7875,19 +7925,21 @@ function CAnimationPaneDrawer(page, htmlElement)
 				(when shape name has been changed)
 			*/
 
-			if (!oThis.list.Control) return;
+			AscFormat.ExecuteNoHistory(function () {
+				if (!oThis.list.Control) return;
 
-			let changedLabelsCount = 0;
-			oThis.list.Control.seqList.forEachAnimItem(function (animItem) {
-				if (animItem.effectLabel.string !== animItem.getEffectLabelText()) {
-					animItem.effectLabel.string = animItem.getEffectLabelText();
-					changedLabelsCount++;
+				let changedLabelsCount = 0;
+				oThis.list.Control.seqList.forEachAnimItem(function (animItem) {
+					if (animItem.effectLabel.string !== animItem.getEffectLabelText()) {
+						animItem.effectLabel.string = animItem.getEffectLabelText();
+						changedLabelsCount++;
+					}
+				});
+
+				if (changedLabelsCount > 0) {
+					oThis.list.Control.recalculateChildrenLayout();
 				}
-			});
-
-			if (changedLabelsCount > 0) {
-				oThis.list.Control.recalculateChildrenLayout();
-			}
+			}, this, []);
 		});
 	};
 	oThis.onMouseDown = function (e)

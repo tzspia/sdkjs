@@ -3052,36 +3052,26 @@
         }
         return this.collectAllMoveEffectShapes();
     };
-    CTiming.prototype.drawEffectsLabels = function (oGraphics) {
-        if (oGraphics.IsThumbnail === true || oGraphics.IsDemonstrationMode === true || AscCommon.IsShapeToImageConverter) {
-            return;
-        }
-        var oApi = editor || Asc.editor;
-        if (!oApi.isDrawAnimLabels || !oApi.isDrawAnimLabels()) {
-            return;
-        }
-        var aEffectsForDraw = this.getEffectsForLabelsDraw();
+	CTiming.prototype.drawEffectsLabels = function (oGraphics) {
+		if (oGraphics.IsThumbnail === true || oGraphics.IsDemonstrationMode === true || AscCommon.IsShapeToImageConverter) {
+			return;
+		}
+		var oApi = editor || Asc.editor;
+		if (!oApi.isDrawAnimLabels || !oApi.isDrawAnimLabels()) {
+			return;
+		}
+		var aEffectsForDraw = this.getEffectsForLabelsDraw();
 
-        if(aEffectsForDraw.length > 0) {
-            oGraphics.SaveGrState();
-            oGraphics.transform3(new AscCommon.CMatrix());
-            oGraphics.SetIntegerGrid(true);
-            var oContext = oGraphics.m_oContext;
-            var sOldFill;
-            if (oContext) {
-                var dPR = AscCommon.AscBrowser.retinaPixelRatio;
-                oContext.font = Math.round(8 * dPR) + "pt Arial";
-                oContext.textAlign = "center";
-            }
-            for (var nEffect = 0; nEffect < aEffectsForDraw.length; ++nEffect) {
-                aEffectsForDraw[nEffect].drawEffectLabel(oGraphics);
-            }
-            if (oContext) {
-                oContext.fillStyle = sOldFill;
-            }
-            oGraphics.RestoreGrState();
-        }
-    };
+		if (aEffectsForDraw.length > 0) {
+			oGraphics.SaveGrState();
+			oGraphics.transform3(new AscCommon.CMatrix());
+			oGraphics.SetIntegerGrid(true);
+			for (var nEffect = 0; nEffect < aEffectsForDraw.length; ++nEffect) {
+				aEffectsForDraw[nEffect].drawEffectLabel(oGraphics);
+			}
+			oGraphics.RestoreGrState();
+		}
+	};
     CTiming.prototype.isDrawAnimLabels = function () {
         var oApi = editor || Asc.editor;
         if (!oApi.isDrawAnimLabels || !oApi.isDrawAnimLabels()) {
@@ -7285,7 +7275,7 @@
         oHSL.L = Math.min(255, Math.max(0, 255 * (oFormatHSL.L + 100000) / 200000));
         var oRGBColor = {R: 255, G: 255, B: 255, A: 255};
         var oColorModifiers = new AscFormat.CColorModifiers();
-        oColorModifiers.HSL2RGB(oHSL, oRGBColor);
+        oColorModifiers.HSL2RGB(oHSL, oRGBColor, true);
         return oRGBColor;
     };
     CAnimClr.prototype.alignNumber = function (dVal, dMax) {
@@ -8903,111 +8893,133 @@
     };
     const ICON_TRIGGER = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTEiIGhlaWdodD0iMTQiIHZpZXdCb3g9IjAgMCAxMSAxNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTEgMEg1TDAgN0g0TDAgMTRMMTEgNUg2TDExIDBaIiBmaWxsPSIjNDQ0NDQ0Ii8+PC9zdmc+";
 
-    CTimeNodeContainer.prototype.internalDrawEffectLabel = function (oGraphics) {
-        let oRect = this.getLabelRect();
-        if (!oRect) {
-            return;
-        }
-        AscFormat.ExecuteNoHistory(function () {
-            let dX, dY, dW, dH;
-            dX = oRect.l;
-            dY = oRect.t;
-            dW = oRect.w;
-            dH = oRect.h;
+	CTimeNodeContainer.prototype.drawLabelText = function (sText, oGraphics, oRectLabel) {
+		const oWrapper = this.getLabelWrapper(sText);
+		const oApi = Asc.editor;
+		if (oWrapper && oApi) {
+			const nScaleValue = 1 / (oApi.WordControl.getZoomValue());
+			const oT = new AscCommon.CMatrix();
+			oT.sx = nScaleValue;
+			oT.sy = nScaleValue;
+			oT.tx = oRectLabel.l + (oRectLabel.w / 2 - (oWrapper.bounds.x + oWrapper.bounds.w / 2) * nScaleValue);
+			oT.ty = oRectLabel.t + (oRectLabel.h / 2 - (oWrapper.bounds.y + oWrapper.bounds.h / 2) * nScaleValue);
+			oWrapper.transform = oT;
 
-            if (oGraphics.isBoundsChecker()) {
-                oGraphics.rect(dX, dY, dW, dH);
-                return;
-            }
-            let oContext = oGraphics.m_oContext;
-            let oFullTr = oGraphics.m_oFullTransform;
-            let oT = oGraphics.m_oCoordTransform;
-            if (!oContext || !oFullTr || !oT) {
-                return;
-            }
+			const bOldViewMode = oApi.isViewMode;
+			const bOldMarks = oApi.ShowParaMarks;
+			oApi.isViewMode = true;
+			oApi.ShowParaMarks = false;
+			oWrapper.draw(oGraphics);
+			oApi.isViewMode = bOldViewMode;
+			oApi.ShowParaMarks = bOldMarks;
+		}
+	};
+	CTimeNodeContainer.prototype.getLabelWrapper = function (sText) {
+		return AscFormat.ExecuteNoHistory(function () {
+			const oApi = Asc.editor;
+			const oLogicDocument = oApi && oApi.getLogicDocument();
+			if (!oLogicDocument) {
+				return;
+			}
+			if (!oLogicDocument.cachedAnimationLabelText[sText]) {
+				const oSp = new AscFormat.CShape();
+				oSp.setBDeleted(false);
+				oSp.extX = ANIM_LABEL_WIDTH_PIX * g_dKoef_pix_to_mm;
+				oSp.extY = ANIM_LABEL_HEIGHT_PIX * g_dKoef_pix_to_mm;
+				oSp.createTextBody();
+				const oBodyPr = new AscFormat.CBodyPr();
+				oBodyPr.setInsets(0, 0, 0, 0);
+				oSp.txBody.setBodyPr(oBodyPr);
+				const oContent = oSp.txBody.content;
+				oSp.txBody.replaceContentFitText(sText);
+				oContent.ApplyToAll = true;
+				oContent.AddToParagraph(new AscCommonWord.ParaTextPr({
+					FontSize  : 8,
+					FontFamily: {Name: "Arial", Index: -1},
+					Color     : AscWord.BLACK_COLOR
+				}), false);
+				oContent.ApplyToAll = false;
+				oSp.recalculateContent();
+				const oDocStructure = oSp.getDocStructure();
+				const oWrapper = new AscCommonSlide.CObjectForDrawArrayWrapper(oDocStructure.m_aContent[0].m_aContent[0].m_aContent, oSp.transformText);
+				oLogicDocument.cachedAnimationLabelText[sText] = oWrapper;
+			}
+			return oLogicDocument.cachedAnimationLabelText[sText];
+		}, this, []);
+	};
+	CTimeNodeContainer.prototype.internalDrawEffectLabel = function (oGraphics) {
+		let oRect = this.getLabelRect();
+		if (!oRect) {
+			return;
+		}
+		AscFormat.ExecuteNoHistory(function () {
+			let dX, dY, dW, dH;
+			dX = oRect.l;
+			dY = oRect.t;
+			dW = oRect.w;
+			dH = oRect.h;
 
-            oGraphics.SaveGrState();
+			if (oGraphics.isBoundsChecker()) {
+				oGraphics.rect(dX, dY, dW, dH);
+				return;
+			}
+			var sObjectId = this.getObjectId();
+			var oObject = AscCommon.g_oTableId.Get_ById(sObjectId);
+			if (!oObject) {
+				return null;
+			}
+			oGraphics.SaveGrState();
 
-            let oMatrix = new AscCommon.CMatrix();
-            oMatrix.tx = dX;
-            oMatrix.ty = dY;
-            oGraphics.transform3(oMatrix);
-            //draw rect
+			let oMatrix = new AscCommon.CMatrix();
+			oMatrix.tx = dX;
+			oMatrix.ty = dY;
+			oGraphics.transform3(oMatrix);
+			//draw rect
 
-            oGraphics.SetIntegerGrid(true);
-            var nFillColor = this.isSelected() ? 0xCBCBCB : 0xFFFFFF;
-            var nLineColor = 0xC0C0C0;
-            oGraphics.b_color1((nFillColor >> 16) & 0xFF, (nFillColor >> 8) & 0xFF, nFillColor & 0xFF, 0xFF);
-            oGraphics.p_color((nLineColor >> 16) & 0xFF, (nLineColor >> 8) & 0xFF, nLineColor & 0xFF, 255);
-            oGraphics.p_width(0);
-            oGraphics._s();
+			oGraphics.SetIntegerGrid(true);
+			var nFillColor = this.isSelected() ? 0xCBCBCB : 0xFFFFFF;
+			var nLineColor = 0xC0C0C0;
+			oGraphics.b_color1((nFillColor >> 16) & 0xFF, (nFillColor >> 8) & 0xFF, nFillColor & 0xFF, 0xFF);
+			oGraphics.p_color((nLineColor >> 16) & 0xFF, (nLineColor >> 8) & 0xFF, nLineColor & 0xFF, 255);
+			oGraphics.p_width(0);
+			oGraphics._s();
 
+			oGraphics._s();
+			oGraphics._m(0, 0);
+			oGraphics._l(dW, 0);
+			oGraphics._l(dW, dH);
+			oGraphics._l(0, dH);
+			oGraphics._z();
+			oGraphics.df();
+			oGraphics.ds();
 
-            let _x1 = (oFullTr.TransformPointX(0, 0)) >> 0;
-            let _y1 = (oFullTr.TransformPointY(0, 0)) >> 0;
-            let _x2 = (oFullTr.TransformPointX(dW, dH)) >> 0;
-            let _y2 = (oFullTr.TransformPointY(dW, dH)) >> 0;
+			oGraphics.RestoreGrState();
 
-            oContext.lineWidth = 1;
-            oContext.rect(_x1 + 0.5, _y1 + 0.5, _x2 - _x1, _y2 - _y1);
-            //oGraphics.rect(0, 0, dW, dH);
-            oGraphics.df();
-            oGraphics.ds();
+			if (this.isPartOfMainSequence()) {
+				var nIdx = this.getIndexInSequence();
+				if (AscFormat.isRealNumber(nIdx)) {
+					const sText = nIdx + "";
+					this.drawLabelText(sText, oGraphics, oRect);
+				}
+			} else {
+				var oApi = editor || Asc.editor;
+				if (oApi && oApi.ImageLoader) {
+					var oImage = oApi.ImageLoader.map_image_index[ICON_TRIGGER];
+					if (oImage) {
+						let oNImage = oImage.Image;
+						let nNativeW = Math.round(oNImage.width / 2);
+						let nNativeH = Math.round(oNImage.height / 2);
+						const nRWidth = oObject.convertPixToMM(nNativeW);
+						const nRHeight = oObject.convertPixToMM(nNativeH);
+						let dTX = dX + (dW - nRWidth) / 2;
+						let dTY = dY + (dH - nRHeight) / 2;
 
-            // oGraphics.p_color((nLineColor >> 16) & 0xFF, (nLineColor >> 8) & 0xFF, nLineColor & 0xFF, 255);
-            // oGraphics.p_width(0);
-            // oGraphics._s();
-            // oGraphics.drawVerLine(1, 0, 0, dH, 0);
-            // oGraphics.drawVerLine(1, dW, 0, dH, 0);
-            // oGraphics.drawHorLine(1, 0, 0, dW, 0);
-            // oGraphics.drawHorLine(1, dH, 0, dW, 0);
-            // oGraphics.ds();
-            //draw internal part
-
-            oGraphics.RestoreGrState();
-
-            var sObjectId = this.getObjectId();
-            var oObject = AscCommon.g_oTableId.Get_ById(sObjectId);
-            if (this.isPartOfMainSequence()) {
-                var nIdx = this.getIndexInSequence();
-                if (AscFormat.isRealNumber(nIdx)) {
-                    if (!oObject) {
-                        return null;
-                    }
-                    var dTX = dX + dW / 2;
-                    var dTY = dY + dH - oObject.convertPixToMM(4);
-
-
-                    var nX = oT.TransformPointX(dTX, dTY);
-                    var nY = oT.TransformPointY(dTX, dTY);
-                    var sOldFill = oContext.fillStyle;
-                    oContext.fillStyle = "#000000";
-                    oContext.fillText(nIdx + "", nX, nY);
-                    oContext.fillStyle = sOldFill;
-                }
-            } else {
-
-                var oApi = editor || Asc.editor;
-                if (oApi && oApi.ImageLoader) {
-                    var oImage = oApi.ImageLoader.map_image_index[ICON_TRIGGER];
-                    if (oImage) {
-                        let oNImage = oImage.Image;
-                        let nNativeW = oNImage.width / 2;
-                        let nNativeH = oNImage.height / 2;
-                        let nWidth = AscCommon.AscBrowser.convertToRetinaValue(nNativeW, true);
-                        let nHeight = AscCommon.AscBrowser.convertToRetinaValue(nNativeH, true);
-                        let dTX = dX + (dW - oObject.convertPixToMM(nNativeW)) / 2;
-                        let dTY = dY + (dH - oObject.convertPixToMM(nNativeH)) / 2;
-                        let nX = oT.TransformPointX(dTX, dTY);
-                        let nY = oT.TransformPointY(dTX, dTY);
-                        oContext.drawImage(oImage.Image, nX, nY, nWidth, nHeight);
-                    }
-                }
-            }
-
-
-        }, this, []);
-    };
+						oGraphics.drawImage(ICON_TRIGGER, dTX, dTY, nRWidth, nRHeight);
+					}
+				}
+			}
+		}, this, []);
+	};
     CTimeNodeContainer.prototype.getObjectId = function () {
         if (this.isAnimEffect()) {
             return this.cTn.getObjectId();
@@ -9186,7 +9198,17 @@
     CTimeNodeContainer.prototype.getObjectText = function () {
         const sObjectId = this.getObjectId();
         const oObject = AscCommon.g_oTableId.Get_ById(sObjectId);
-        return oObject && oObject.getText ? oObject.getText() : "";
+				if (oObject && oObject.getText) {
+					let sText = oObject.getText();
+					if (typeof sText === 'string') {
+						const nLastIndex = sText.lastIndexOf("\r\n");
+						if (nLastIndex !== -1) {
+							return sText.slice(0, nLastIndex);
+						}
+					}
+					return sText;
+				}
+				return "";
     };
     CTimeNodeContainer.prototype.asc_getStartType = function () {
         if (this.cTn) {
@@ -9521,6 +9543,7 @@
         });
         return bValid;
     };
+
 
     function CPar() {
         CTimeNodeContainer.call(this);
@@ -11746,6 +11769,21 @@
     function CTexturesCache() {
         this.map = {};
     }
+		CTexturesCache.prototype.clearImageCache = function(sImageSrc) {
+			for (let sId in this.map) {
+				const oDrawing = AscCommon.g_oTableId.Get_ById(sId);
+				if (oDrawing && oDrawing.getAllRasterImages) {
+					const arrImages = [];
+					oDrawing.getAllRasterImages(arrImages);
+					for (let i = 0; i < arrImages.length; i++) {
+						if (AscCommon.getFullImageSrc2(arrImages[i]) === sImageSrc) {
+							this.removeTexture(sId);
+							break;
+						}
+					}
+				}
+			}
+		};
     CTexturesCache.prototype.checkTexture = function (oDrawing, fScale, bMorph, bCheckSize, oAnimParams, bNoText, oBrushPen) {
         let bCreate = false;
 				const sId = oDrawing.GetId();
@@ -11865,7 +11903,9 @@
 			this.generateParagraphCaches()
         this.collectHiddenObjects();
     }
-
+		CAnimationDrawer.prototype.clearImageCache = function(sImageSrc) {
+			this.texturesCache.clearImageCache(sImageSrc);
+		};
     CAnimationDrawer.prototype.clearSandwiches = function () {
         this.sandwiches = {};
     };
@@ -11935,7 +11975,11 @@
         oSlide.draw(oGraphics);
         oGraphics.RestoreGrState();
 
-        oSlide.getDrawingDocument().m_oWordControl.DemonstrationManager.CheckWatermarkInternal(oGraphics.m_oContext, oRect);
+				const oDemonstrationManager = oSlide.getDrawingDocument().m_oWordControl.DemonstrationManager;
+				if (oDemonstrationManager) {
+					oDemonstrationManager.CheckWatermarkInternal(oGraphics.m_oContext, oRect);
+					oDemonstrationManager.CheckAnnotationsInternal(oGraphics, oSlide);
+				}
     };
     CAnimationDrawer.prototype.isDrawingVisible = function(sDrawingId, oSandwich) {
         oSandwich = oSandwich || this.getSandwich(sDrawingId);
@@ -12207,6 +12251,9 @@
         this.timer = new CAnimationTimer(this);
         this.drawer = drawer;
     }
+		CAnimationPlayer.prototype.clearImageCache = function(sImageSrc) {
+			this.animationDrawer.clearImageCache(sImageSrc);
+		};
     CAnimationPlayer.prototype.createGraphics = function (oCanvas, oRect) {
         return this.animationDrawer.createGraphics(oCanvas, oRect);
     };
@@ -14094,137 +14141,142 @@
     MoveAnimationDrawObject.prototype.canResize = function () {
         return true;
     };
-    MoveAnimationDrawObject.prototype.draw = function (oGraphics) {
-        if (oGraphics.IsThumbnail === true ||
-            oGraphics.IsDemonstrationMode === true ||
-            AscCommon.IsShapeToImageConverter) {
-            return;
-        }
-        this.pen = this.pen1;
-        AscFormat.CShape.prototype.draw.call(this, oGraphics);
-        this.pen = this.pen2;
-        AscFormat.CShape.prototype.draw.call(this, oGraphics);
-        var oGeometry = this.spPr.geometry;
-        if (oGeometry) {
-            var oPath = oGeometry.pathLst[0];
-        }
-        if (oPath) {
-            var dStartX1, dStartX2, dStartY1, dStartY2;
-            var aCommands = oPath.ArrPathCommand, nCmd, oCmd;
-            var aPTS = [];
-            var bClosed = false;
-            for (var nCmd = 0; nCmd < aCommands.length; ++nCmd) {
-                oCmd = aCommands[nCmd];
-                if (oCmd.id === AscFormat.moveTo || oCmd.id === AscFormat.lineTo) {
-                    aPTS.push({x: oCmd.X, y: oCmd.Y})
-                } else if (oCmd.id === AscFormat.bezier4) {
-                    aPTS.push({x: oCmd.X0, y: oCmd.Y0});
-                    aPTS.push({x: oCmd.X1, y: oCmd.Y1});
-                    aPTS.push({x: oCmd.X2, y: oCmd.Y2});
-                } else if (oCmd.id === AscFormat.close) {
-                    bClosed = true;
-                }
-            }
-            if (aPTS.length > 1) {
-                oGraphics.SaveGrState();
-                // if(this.selected) {
-                //     var oTexture = this.getDrawingTexture(oGraphics);
-                //     var oTransform = null;
-                //     var dXS, dYS, dXE, dYE;
-                //     dXS = this.transform.TransformPointX(aPTS[0].x, aPTS[0].y);
-                //     dYS = this.transform.TransformPointY(aPTS[0].x, aPTS[0].y);
-                //     dXE = this.transform.TransformPointX(aPTS[aPTS.length - 1].x, aPTS[aPTS.length - 1].y);
-                //     dYE = this.transform.TransformPointY(aPTS[aPTS.length - 1].x, aPTS[aPTS.length - 1].y);
-                //     if(oTexture) {
-                //
-                //         oTransform = new AscCommon.CMatrix();
-                //         var hc = this.boundsByDrawing.w * 0.5;
-                //         var vc = this.boundsByDrawing.h * 0.5;
-                //         AscCommon.global_MatrixTransformer.TranslateAppend(oTransform, -hc + dXS, -vc + dYS);
-                //
-                //
-                //         oGraphics.put_GlobalAlpha(true, 0.5);
-                //         oTexture.draw(oGraphics, oTransform);
-                //
-                //         if(!bClosed) {
-                //             oTransform = new AscCommon.CMatrix();
-                //             AscCommon.global_MatrixTransformer.TranslateAppend(oTransform, -hc + dXE, -vc + dYE);
-                //             oTexture.draw(oGraphics, oTransform);
-                //         }
-                //         oGraphics.put_GlobalAlpha(false, 1);
-                //     }
-                // }
-                //draw start arrow
-                var dWidth = 5, dLen = 3;
-                var x0p, y0p, x1p, y1p, x2p, y2p, dx, dy, dStartLen, dWidthCoeff, dLenCoeff;
-                dx = aPTS[1].x - aPTS[0].x;
-                dy = aPTS[1].y - aPTS[0].y;
-                dStartLen = Math.sqrt(dx * dx + dy * dy);
-                dWidthCoeff = dWidth / dStartLen;
-                x0p = aPTS[0].x - dy * dWidthCoeff / 2;
-                y0p = aPTS[0].y + dx * dWidthCoeff / 2;
-                x1p = aPTS[0].x + dy * dWidthCoeff / 2;
-                y1p = aPTS[0].y - dx * dWidthCoeff / 2;
+	MoveAnimationDrawObject.prototype.draw = function (oGraphics) {
+		if (oGraphics.IsThumbnail === true ||
+			oGraphics.IsDemonstrationMode === true ||
+			AscCommon.IsShapeToImageConverter) {
+			return;
+		}
 
-                dLenCoeff = dLen / dStartLen;
-                x2p = aPTS[0].x + dx * dLenCoeff;
-                y2p = aPTS[0].y + dy * dLenCoeff;
-                oGraphics.transform3(this.transform);
-                oGraphics.b_color1(43, 166, 15, 128);
-                oGraphics.p_color(43, 166, 15, 255);
-                oGraphics._s()
-                oGraphics._m(x0p, y0p);
-                oGraphics._l(x1p, y1p);
-                oGraphics._l(x2p, y2p);
-                oGraphics._z();
-                oGraphics.df();
-                oGraphics.ds();
-                oGraphics._e();
+		// Draw dashed line (path itself)
+		this.pen = this.pen1;
+		AscFormat.CShape.prototype.draw.call(this, oGraphics);
+		this.pen = this.pen2;
+		AscFormat.CShape.prototype.draw.call(this, oGraphics);
 
+		const path = this.spPr.geometry && this.spPr.geometry.pathLst[0];
+		if (!path) return;
 
-                if (!bClosed) {
-                    dx = aPTS[aPTS.length - 2].x - aPTS[aPTS.length - 1].x;
-                    dy = aPTS[aPTS.length - 2].y - aPTS[aPTS.length - 1].y;
-                    dStartLen = Math.sqrt(dx * dx + dy * dy);
-                    dLenCoeff = dLen / dStartLen;
-                    dWidthCoeff = dWidth / dStartLen;
-                    var xp = aPTS[aPTS.length - 1].x + dx * dLenCoeff;
-                    var yp = aPTS[aPTS.length - 1].y + dy * dLenCoeff;
+		// Collect key points array
+		let aPTS = [];
+		let bClosed = false;
+		path.ArrPathCommand.forEach(function (command, index) {
+			switch (command.id) {
+				case AscFormat.moveTo:
+				case AscFormat.lineTo:
+					aPTS.push({ x: command.X, y: command.Y });
+					break;
 
+				case AscFormat.bezier4:
+					aPTS.push({ x: command.X0, y: command.Y0 });
+					aPTS.push({ x: command.X1, y: command.Y1 });
+					aPTS.push({ x: command.X2, y: command.Y2 });
+					break;
 
-                    x0p = xp - dy * dWidthCoeff / 2;
-                    y0p = yp + dx * dWidthCoeff / 2;
-                    x1p = xp + dy * dWidthCoeff / 2;
-                    y1p = yp - dx * dWidthCoeff / 2;
+				case AscFormat.close:
+					bClosed = true;
+					break;
+			}
+		});
 
-                    x2p = aPTS[aPTS.length - 1].x;
-                    y2p = aPTS[aPTS.length - 1].y;
-                    oGraphics.b_color1(222, 5, 5, 128);
-                    oGraphics.p_color(222, 5, 5, 255);
-                    oGraphics._s()
-                    oGraphics._m(x0p, y0p);
-                    oGraphics._l(x1p, y1p);
-                    oGraphics._l(x2p, y2p);
-                    oGraphics._z()
+		if (aPTS.length > 1) {
+			oGraphics.SaveGrState();
 
+			// Draw preview start and end shapes
+			if (this.selected) {
+				const dXS = this.transform.TransformPointX(aPTS[0].x, aPTS[0].y);
+				const dYS = this.transform.TransformPointY(aPTS[0].x, aPTS[0].y);
+				const dXE = this.transform.TransformPointX(aPTS[aPTS.length - 1].x, aPTS[aPTS.length - 1].y);
+				const dYE = this.transform.TransformPointY(aPTS[aPTS.length - 1].x, aPTS[aPTS.length - 1].y);
 
-                    x0p = aPTS[aPTS.length - 1].x - dy * dWidthCoeff / 2;
-                    y0p = aPTS[aPTS.length - 1].y + dx * dWidthCoeff / 2;
+				const texture = this.getDrawingTexture(oGraphics);
+				if (texture) {
 
-                    x1p = aPTS[aPTS.length - 1].x + dy * dWidthCoeff / 2;
-                    y1p = aPTS[aPTS.length - 1].y - dx * dWidthCoeff / 2;
-                    oGraphics._m(x0p, y0p);
-                    oGraphics._l(x1p, y1p);
+					oGraphics.put_GlobalAlpha(true, 0.5);
+					const horizontalCenter = this.boundsByDrawing.w * 0.5;
+					const verticalCenter = this.boundsByDrawing.h * 0.5;
 
-                    oGraphics.df();
-                    oGraphics.ds();
-                    oGraphics._e();
-                }
+					let oTransform = new AscCommon.CMatrix();
+					AscCommon.global_MatrixTransformer.TranslateAppend(oTransform, -horizontalCenter + dXS, -verticalCenter + dYS);
+					texture.draw(oGraphics, oTransform);
 
-                oGraphics.RestoreGrState();
-            }
-        }
-    };
+					if (!bClosed) {
+						oTransform = new AscCommon.CMatrix();
+						AscCommon.global_MatrixTransformer.TranslateAppend(oTransform, -horizontalCenter + dXE, -verticalCenter + dYE);
+						texture.draw(oGraphics, oTransform);
+					}
+					oGraphics.put_GlobalAlpha(false, 1);
+				}
+			}
+
+			// Draw start arrow
+			const dWidth = 5, dLen = 3;
+			var x0p, y0p, x1p, y1p, x2p, y2p, dx, dy, dStartLen, dWidthCoeff, dLenCoeff;
+			dx = aPTS[1].x - aPTS[0].x;
+			dy = aPTS[1].y - aPTS[0].y;
+			dStartLen = Math.sqrt(dx * dx + dy * dy);
+			dWidthCoeff = dWidth / dStartLen;
+			x0p = aPTS[0].x - dy * dWidthCoeff / 2;
+			y0p = aPTS[0].y + dx * dWidthCoeff / 2;
+			x1p = aPTS[0].x + dy * dWidthCoeff / 2;
+			y1p = aPTS[0].y - dx * dWidthCoeff / 2;
+
+			dLenCoeff = dLen / dStartLen;
+			x2p = aPTS[0].x + dx * dLenCoeff;
+			y2p = aPTS[0].y + dy * dLenCoeff;
+			oGraphics.transform3(this.transform);
+			oGraphics.b_color1(43, 166, 15, 128);
+			oGraphics.p_color(43, 166, 15, 255);
+			oGraphics._s();
+			oGraphics._m(x0p, y0p);
+			oGraphics._l(x1p, y1p);
+			oGraphics._l(x2p, y2p);
+			oGraphics._z();
+			oGraphics.df();
+			oGraphics.ds();
+			oGraphics._e();
+
+			if (!bClosed) {
+				// Draw end arrow
+				dx = aPTS[aPTS.length - 2].x - aPTS[aPTS.length - 1].x;
+				dy = aPTS[aPTS.length - 2].y - aPTS[aPTS.length - 1].y;
+				dStartLen = Math.sqrt(dx * dx + dy * dy);
+				dLenCoeff = dLen / dStartLen;
+				dWidthCoeff = dWidth / dStartLen;
+				var xp = aPTS[aPTS.length - 1].x + dx * dLenCoeff;
+				var yp = aPTS[aPTS.length - 1].y + dy * dLenCoeff;
+
+				x0p = xp - dy * dWidthCoeff / 2;
+				y0p = yp + dx * dWidthCoeff / 2;
+				x1p = xp + dy * dWidthCoeff / 2;
+				y1p = yp - dx * dWidthCoeff / 2;
+
+				x2p = aPTS[aPTS.length - 1].x;
+				y2p = aPTS[aPTS.length - 1].y;
+				oGraphics.b_color1(222, 5, 5, 128);
+				oGraphics.p_color(222, 5, 5, 255);
+				oGraphics._s()
+				oGraphics._m(x0p, y0p);
+				oGraphics._l(x1p, y1p);
+				oGraphics._l(x2p, y2p);
+				oGraphics._z()
+
+				x0p = aPTS[aPTS.length - 1].x - dy * dWidthCoeff / 2;
+				y0p = aPTS[aPTS.length - 1].y + dx * dWidthCoeff / 2;
+
+				x1p = aPTS[aPTS.length - 1].x + dy * dWidthCoeff / 2;
+				y1p = aPTS[aPTS.length - 1].y - dx * dWidthCoeff / 2;
+				oGraphics._m(x0p, y0p);
+				oGraphics._l(x1p, y1p);
+
+				oGraphics.df();
+				oGraphics.ds();
+				oGraphics._e();
+			}
+
+			oGraphics.RestoreGrState();
+		}
+	};
     MoveAnimationDrawObject.prototype.recalculate = function () {
         var oPresentation = editor.WordControl.m_oLogicDocument;
         var sPath = this.anim.path;
