@@ -15885,13 +15885,27 @@ function RangeDataManagerElem(bbox, data)
 					externalSheetDataSet.SheetId = this.SheetNames.length - 1;
 					this.SheetDataSet.push(externalSheetDataSet);
 				}
-
-				for (var i = range.bbox.r1; i <= range.bbox.r2; i++) {
+				//init cells in update time
+				let _updateRanges = externalSheetDataSet.updateRanges;
+				if (!_updateRanges.length) {
+					_updateRanges.push(range.bbox);
+				} else {
+					for (let i = 0; i < _updateRanges.length; i++) {
+						if (_updateRanges[i].containsRange(range.bbox)) {
+							return;
+						} else if (range.bbox.containsRange(_updateRanges[i])) {
+							_updateRanges[i] = range.bbox;
+							return;
+						}
+					}
+					_updateRanges.push(range.bbox);
+				}
+				/*for (var i = range.bbox.r1; i <= range.bbox.r2; i++) {
 					var row = externalSheetDataSet.getRow(i + 1, true);
 					for (var j = range.bbox.c1; j <= range.bbox.c2; j++) {
 						row.getCell(j, true);
 					}
-				}
+				}*/
 			}
 		}
 	};
@@ -16058,6 +16072,8 @@ function RangeDataManagerElem(bbox, data)
 		this.SheetId = null;
 		this.RefreshError = null;
 		this.Row = [];
+
+		this.updateRanges = [];
 	}
 
 	ExternalSheetDataSet.prototype.Read_FromBinary2 = function(r) {
@@ -16153,33 +16169,48 @@ function RangeDataManagerElem(bbox, data)
 			var wbView = api_sheet.wb;
 			const aRanges = [];
 			//TODO пока обновлю ячейки по одной, в дальнейшем нужно объединить ячейки в диапазоны
-			for (var i = 0; i < this.Row.length; i++) {
-				var row = this.Row[i];
-				if (!row) {
-					continue;
-				}
-				for (var j = 0; j < this.Row[i].Cell.length; j++) {
-					var externalCell = this.Row[i].Cell[j];
-					if (!externalCell) {
-						continue;
+			for (let i = 0; i < this.updateRanges.length; i++) {
+				sheet.getRange3(this.updateRanges[i].r1, this.updateRanges[i].c1, this.updateRanges[i].r2, this.updateRanges[i].c2)._foreachNoEmpty(function (cell) {
+					var row = t.getRow(cell.nRow + 1, true);
+					let externalCell = row.getCell(cell.nCol, true);
+					let changedCell = externalCell.initFromCell(cell, true, noData);
+					if (!isChanged) {
+						isChanged = changedCell;
 					}
-					var range = sheet.getRange2(externalCell.Ref);
-					aRanges.push(range);
-					range._foreach(function (cell) {
+					/* if we haven't received data from an external source, put #REF error for all cells */
+					if (noData) {
+						cell._setValue("#REF!");
+					}
 
-						let changedCell = externalCell.initFromCell(cell, true, noData);
-						if (!isChanged) {
-							isChanged = changedCell;
-						}
-						/* if we haven't received data from an external source, put #REF error for all cells */
-						if (noData) {
-							cell._setValue("#REF!");
-						}
-
-						wb.dependencyFormulas.addToChangedCell(cell);
-					});
-				}
+					wb.dependencyFormulas.addToChangedCell(cell);
+				});
 			}
+			// for (var i = 0; i < this.Row.length; i++) {
+			// 	var row = this.Row[i];
+			// 	if (!row) {
+			// 		continue;
+			// 	}
+			// 	for (var j = 0; j < this.Row[i].Cell.length; j++) {
+			// 		var externalCell = this.Row[i].Cell[j];
+			// 		if (!externalCell) {
+			// 			continue;
+			// 		}
+			// 		var range = sheet.getRange2(externalCell.Ref);
+			// 		aRanges.push(range);
+			// 		range._foreach(function (cell) {
+			//
+			// 			let changedCell = externalCell.initFromCell(cell, true, noData);
+			// 			if (!isChanged) {
+			// 				isChanged = changedCell;
+			// 			}
+			// 			if (noData) {
+			// 				cell._setValue("#REF!");
+			// 			}
+			//
+			// 			wb.dependencyFormulas.addToChangedCell(cell);
+			// 		});
+			// 	}
+			// }
 			wbView && wbView.handleDrawingsOnWorkbookChange(aRanges);
 		}
 		return isChanged;
