@@ -49,6 +49,7 @@ jobs:
           node node_modules/node-qunit-puppeteer/cli.js tests/common/api/api.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/cell/shortcuts/shortcuts.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/cell/spreadsheet-calculation/FormulaTests.html 30000 "--no-sandbox"
+          node node_modules/node-qunit-puppeteer/cli.js tests/cell/spreadsheet-calculation/formula-tests/databaseTests.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/cell/spreadsheet-calculation/PivotTests.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/cell/spreadsheet-calculation/copy-paste-tests.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/cell/spreadsheet-calculation/SheetStructureTests.html 30000 "--no-sandbox"
