@@ -13670,7 +13670,7 @@ function isAllowPasteLink(pastedWb) {
 				if (false !== this.collaborativeEditing.getLockIntersection(lockInfo, c_oAscLockTypes.kLockTypeOther,
 						/*bCheckOnlyLockAll*/false)) {
 					// Уже таблицу кто-то редактирует
-					cell_info.isLockedTable = true;
+					//cell_info.isLockedTable = true;
 				}
 			}
 		}
