@@ -31,6 +31,12 @@
  */
 
 $(function () {
+    window["AscCommonExcel"] = window["AscCommonExcel"] || {};
+    window["AscCommonExcel"].Font = function () {
+    };
+    window["AscCommonExcel"].RgbColor = function () {
+    };
+
     QUnit.module('NumFomat parse');
     let eps = 1e-15;
     QUnit.test('parseDate', function (assert) {
@@ -81,6 +87,91 @@ $(function () {
             let date = AscCommon.g_oFormatParser.parse(data[i][0]);
             assert.strictEqual(date.format, data[i][1], `Case format: ${data[i][0]}`);
             assert.strictEqual(Math.abs(date.value - data[i][2]) < eps, true, `Case value: ${data[i][0]}`);
+        }
+    });
+
+    QUnit.test('formatNumber', function (assert) {
+        let testCases = [
+            // Thousand separators
+            [1234, '#,##0', '1,234'],
+            [1234567, '#,##0', '1,234,567'],
+            [0, '#,##0', '0'],
+            [-1234, '#,##0', '-1,234'],
+            
+            // Decimal places
+            [1234.56, '#,##0.00', '1,234.56'],
+            [1234.5, '#,##0.00', '1,234.50'],
+            [0.5, '0.00', '0.50'],
+            [1.234, '0.00', '1.23'],
+            
+            // Percentages
+            [0.5, '0%', '50%'],
+            [0.125, '0.00%', '12.50%'],
+            [1, '0%', '100%'],
+            [0.999, '0%', '100%'],
+            
+            // Currency with text literals
+            [1234.56, '"$"#,##0.00', '$1,234.56'],
+            [0, '"$"#,##0.00', '$0.00'],
+            [-50, '"$"#,##0.00', '-$50.00'],
+            [1000, '"USD "0.00', 'USD 1000.00'],
+            
+            // Negative numbers in parentheses
+            [100, '0;(0)', '100'],
+            [-100, '0;(0)', '(100)'],
+            [0, '0;(0)', '0'],
+            [-50.5, '0.00;(0.00)', '(50.50)'],
+            
+            // Optional digits with #
+            [123, '###', '123'],
+            [0, '###', ''],
+            [12.3, '##.#', '12.3'],
+            [12, '##.#', '12.'],
+            
+            // Mandatory zeros
+            [5, '000', '005'],
+            [123, '000', '123'],
+            [5.5, '000.00', '005.50'],
+            [0, '00', '00'],
+            
+            // Space alignment with ?
+            [1, '??', '01'],
+            [10, '??', '10'],
+            [1.5, '?.??', '1.50'],
+            [10.25, '?.??', '10.25'],
+            
+            // Escaped characters
+            [100, '\\#0', '#100'],
+            [50, '0\\%', '50%'],
+            [10, '0\\-', '10-'],
+            [25, '\\+0', '+25'],
+            
+            // Mixed format
+            [1234.5, '#,##0.00;[Red](#,##0.00)', '1,234.50'],
+            [-1234.5, '#,##0.00;[Red](#,##0.00)', '(1,234.50)'],
+            
+            // Additional important cases
+            [0.75, '0.#', '0.8'],
+            [100.123, '0.0', '100.1'],
+            [1234, '"Total: "#,##0', 'Total: 1,234'],
+            [0.5555, '0.00%', '55.55%'],
+            [999999, '#,##0', '999,999'],
+            [-0.25, '0.00;(0.00)', '(0.25)']
+        ];
+        
+        for (let i = 0; i < testCases.length; i++) {
+            let value = testCases[i][0];
+            let format = testCases[i][1];
+            let expected = testCases[i][2];
+            
+            let expr = new AscCommon.CellFormat(format);
+            let formatted = expr.format(value);
+            let text = '';
+            for (let j = 0, length = formatted.length; j < length; ++j) {
+                text += formatted[j].text;
+            }
+            
+            assert.strictEqual(text, expected, `format("${format}", ${value})`);
         }
     });
 });
