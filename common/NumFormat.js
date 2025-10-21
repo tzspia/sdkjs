@@ -1936,7 +1936,6 @@ NumFormat.prototype =
         }
     },
     setFormat: function(format, cultureInfo, formatType, useLocaleFormat) {
-    console.log(format);
 		if (null == cultureInfo) {
             cultureInfo = g_oDefaultCultureInfo;
         }
@@ -2782,7 +2781,7 @@ NumFormatCache.prototype =
 	},
     get : function(format, formatType)
     {
-    return new CellFormat(format, formatType, false);
+    //return new CellFormat(format, formatType, false);
 		var key = format + String.fromCharCode(5) + formatType;
         var res = this.oNumFormats[key];
         if(null == res)
