@@ -1317,6 +1317,10 @@ NumFormat.prototype =
                             bRightCond = true;
                         break;
                     }
+                    else if(this.aRawFormat[i].bElapsed == true)
+                    {
+                      bRightCond = true
+                    }
                 }
                 var bLeftCond = false;
                 if(false == bRightCond)
@@ -1932,6 +1936,7 @@ NumFormat.prototype =
         }
     },
     setFormat: function(format, cultureInfo, formatType, useLocaleFormat) {
+    console.log(format);
 		if (null == cultureInfo) {
             cultureInfo = g_oDefaultCultureInfo;
         }
@@ -2777,6 +2782,7 @@ NumFormatCache.prototype =
 	},
     get : function(format, formatType)
     {
+    return new CellFormat(format, formatType, false);
 		var key = format + String.fromCharCode(5) + formatType;
         var res = this.oNumFormats[key];
         if(null == res)
