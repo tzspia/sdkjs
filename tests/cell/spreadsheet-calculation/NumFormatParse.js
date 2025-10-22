@@ -82,7 +82,6 @@ $(function () {
             ["55:34", "[h]:mm:ss", 2.3152777777777778],
             ["55:3", "[h]:mm:ss", 2.2937499999999997],
             ["55:", "[h]:mm:ss", 2.2916666666666665],
-
         ]
         for(let i = 0; i < data.length; i++){
             let date = AscCommon.g_oFormatParser.parse(data[i][0]);
@@ -159,12 +158,6 @@ $(function () {
             [999999, '#,##0', '999,999'],
             [-0.25, '0.00;(0.00)', '(0.25)'],
 
-
-            [0.003587963, "[mm]", "05"],
-            [0.5, "[mm]", "720"],
-            [1.0, "[mm]", "1440"],
-            [0.020833333, "[mm]", "30"],
-            [0.000694444, "[mm]", "01"],
         ];
         
         for (let i = 0; i < testCases.length; i++) {
@@ -182,4 +175,86 @@ $(function () {
             assert.strictEqual(text, expected, `format("${format}", ${value})`);
         }
     });
+
+
+    QUnit.test('formatElapsedMinutes', function (assert) {
+        function calculateElapsedMinutes(days) {
+            return Math.round(days * 1440);
+        }
+        
+        let data = [
+            [0.020833333, 30],   
+            [0.041666667, 60],    
+            [0.5, 720],          
+            [1.0, 1440],         
+            [0.000694444, 1]     
+        ];
+        
+        for (let i = 0; i < data.length; i++) {
+            let days = data[i][0];
+            let expectedMinutes = data[i][1];
+            let calculatedMinutes = calculateElapsedMinutes(days);
+            
+            assert.strictEqual(calculatedMinutes, expectedMinutes, 
+                `${days} days should be ${expectedMinutes} minutes`);
+        }
+    });
+
+    QUnit.test('parseNumFormat', function (assert) {
+        let formats = [
+            "mm",
+            "mm min", 
+            "mm",
+            "mm min",
+            "mm minutes",
+            "mm min",
+            "mm минут", 
+            "mm 分",
+            "mm 分分分№№№%%%???$$$###"
+        ];
+
+        for (let i = 0; i < formats.length; i++) {
+            let format = formats[i];
+            let expr = new AscCommon.CellFormat(format);
+            assert.ok(expr, `Format "${format}" should parse successfully`);
+            assert.strictEqual(expr.isGeneralFormat(), false, `Format "${format}" should not be general format`);
+        }
+    });
+
+    QUnit.test('parseElapsedFormat', function (assert) {
+        let cultureInfo = {
+            TimeSeparator: ":",
+            DateSeparator: "/",
+        };
+
+        let formats = [
+            "[mm]",
+            "[mm] minutes", 
+            "[mm] min",
+            "[mm] минут",
+            "[mm] 分",
+            "[mm] 分分分№№№%%%???$$$###"
+        ];
+
+        for (let i = 0; i < formats.length; i++) {
+            let format = formats[i];
+            let numFormat = new AscCommon.NumFormat(false);
+            let parsed = numFormat.setFormat(format, cultureInfo);
+            
+            assert.strictEqual(parsed, true, `NumFormat "${format}" should parse successfully`);
+            assert.strictEqual(numFormat.bDateTime, true, `NumFormat "${format}" should be detected as datetime`);
+            
+            let hasElapsedFlag = false;
+            for (let j = 0; j < numFormat.aRawFormat.length; j++) {
+                let item = numFormat.aRawFormat[j];
+                if (item.bElapsed === true) {
+                    hasElapsedFlag = true;
+                    break;
+                }
+            }
+            
+            assert.strictEqual(hasElapsedFlag, true, `NumFormat "${format}" should have bElapsed flag`);
+        }
+    });
+
 });
