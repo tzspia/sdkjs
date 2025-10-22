@@ -1317,7 +1317,7 @@ NumFormat.prototype =
                             bRightCond = true;
                         break;
                     }
-                    else if(this.aRawFormat[i].bElapsed == true)
+                    else if(this.aRawFormat[i].bElapsed == true)  
                     {
                       bRightCond = true
                     }
@@ -2730,10 +2730,16 @@ NumFormat.prototype =
 				}
             }
             else if(numFormat_Minute == item.type)
-            {
-                for(var j = 0; j < item.val; ++j)
-                    res += minute;
+            if (item.bElapsed) {
+              res += "[";
             }
+            for(var j = 0; j < item.val; ++j)
+            {
+              res += minute;
+            }
+            if (item.bElapsed) {
+            res += "]";
+              }
             else if(numFormat_Second == item.type)
             {
                 for(var j = 0; j < item.val; ++j)
