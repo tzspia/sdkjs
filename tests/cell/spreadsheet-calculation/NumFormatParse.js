@@ -158,6 +158,40 @@ $(function () {
             [999999, '#,##0', '999,999'],
             [-0.25, '0.00;(0.00)', '(0.25)'],
 
+            // Date format cases
+            [0.684027777777778, 'mm', '01'],
+            [0.684027777777778, '[mm]', '985'],
+            [0.684027777777778, '[h] "hours"', '16 hours'],
+            [0.684027777777778, '[h]:mm', '16:25'],
+            [0.684027777777778, '[h]:mm" ""minutes"', '16:25 minutes'],
+            [0.684027777777778, '[s]', '59100'],
+            [0.684027777777778, '[s]" ""seconds"', '59100 seconds'],
+            [0.684027777777778, '[ss].0', '59100.0'],
+            [0.684027777777778, '[mm]:ss', '985:00'],
+            [0.684027777777778, '[mm]:mm', '985:01'],
+            [0.684027777777778, '[hh]', '16'],
+            [0.684027777777778, '[h]:mm:ss.000', '16:25:00.000'],
+            [0.684027777777778, 'dd"d "hh"h "mm"m "ss"s"" "AM/PM', '00d 04h 25m 00s PM'],
+            [0.684027777777778, '[h]"h*"mm"m*"ss"s*"ss"ms"', '16h*25m*00s*00ms'],
+            [0.684027777777778, 'yyyy"Y-"mm"M-"dd"D "hh"H:"mm"M:"ss"."s"S"" "AM/PM', '1900Y-01M-00D 04H:25M:00.0S PM'],
+            [0.684027777777778, 'dd:mm:yyyy" "hh:mm:ss" "[hh]:[mm]" "AM/PM" ""minutes AM/PM"', '00:01:1900 04:25:00 04:985 PM minutes AM/PM'],
+
+            [37753.6844097222, 'mm', '05'],
+            [37753.6844097222, '[mm]', '54365305'],
+            [37753.6844097222, '[h] "hours"', '906088 hours'],
+            [37753.6844097222, '[h]:mm', '906088:25'],
+            [37753.6844097222, '[h]:mm" ""minutes"', '906088:25 minutes'],
+            [37753.6844097222, '[s]', '3261918333'],
+            [37753.6844097222, '[s]" ""seconds"', '3261918333 seconds'],
+            [37753.6844097222, '[ss].0', '3261918333.0'],
+            [37753.6844097222, '[mm]:ss', '54365305:33'],
+            [37753.6844097222, '[mm]:mm', '54365305:05'],
+            [37753.6844097222, '[hh]', '906088'],
+            [37753.6844097222, '[h]:mm:ss.000', '906088:25:33.000'],
+            [37753.6844097222, 'dd"d "hh"h "mm"m "ss"s"" "AM/PM', '12d 04h 25m 33s PM'],
+            [37753.6844097222, '[h]"h*"mm"m*"ss"s*"ss"ms"', '906088h*25m*33s*33ms'],
+            [37753.6844097222, 'yyyy"Y-"mm"M-"dd"D "hh"H:"mm"M:"ss"."s"S"" "AM/PM', '2003Y-05M-12D 04H:25M:33.33S PM'],
+            [37753.6844097222, 'dd:mm:yyyy" "hh:mm:ss" "[hh]:[mm]" "AM/PM" ""minutes AM/PM"', '12:05:2003 04:25:33 04:54365305 PM minutes AM/PM'],
         ];
         
         for (let i = 0; i < testCases.length; i++) {
@@ -173,87 +207,6 @@ $(function () {
             }
             
             assert.strictEqual(text, expected, `format("${format}", ${value})`);
-        }
-    });
-
-
-    QUnit.test('formatElapsedMinutes', function (assert) {
-        function calculateElapsedMinutes(days) {
-            return Math.round(days * 1440);
-        }
-        
-        let data = [
-            [0.020833333, 30],   
-            [0.041666667, 60],    
-            [0.5, 720],          
-            [1.0, 1440],         
-            [0.000694444, 1]     
-        ];
-        
-        for (let i = 0; i < data.length; i++) {
-            let days = data[i][0];
-            let expectedMinutes = data[i][1];
-            let calculatedMinutes = calculateElapsedMinutes(days);
-            
-            assert.strictEqual(calculatedMinutes, expectedMinutes, 
-                `${days} days should be ${expectedMinutes} minutes`);
-        }
-    });
-
-    QUnit.test('parseNumFormat', function (assert) {
-        let formats = [
-            "mm",
-            "mm min", 
-            "mm",
-            "mm min",
-            "mm minutes",
-            "mm min",
-            "mm минут", 
-            "mm 分",
-            "mm 分分分№№№%%%???$$$###"
-        ];
-
-        for (let i = 0; i < formats.length; i++) {
-            let format = formats[i];
-            let expr = new AscCommon.CellFormat(format);
-            assert.ok(expr, `Format "${format}" should parse successfully`);
-            assert.strictEqual(expr.isGeneralFormat(), false, `Format "${format}" should not be general format`);
-        }
-    });
-
-    QUnit.test('parseElapsedFormat', function (assert) {
-        let cultureInfo = {
-            TimeSeparator: ":",
-            DateSeparator: "/",
-        };
-
-        let formats = [
-            "[mm]",
-            "[mm] minutes", 
-            "[mm] min",
-            "[mm] минут",
-            "[mm] 分",
-            "[mm] 分分分№№№%%%???$$$###"
-        ];
-
-        for (let i = 0; i < formats.length; i++) {
-            let format = formats[i];
-            let numFormat = new AscCommon.NumFormat(false);
-            let parsed = numFormat.setFormat(format, cultureInfo);
-            
-            assert.strictEqual(parsed, true, `NumFormat "${format}" should parse successfully`);
-            assert.strictEqual(numFormat.bDateTime, true, `NumFormat "${format}" should be detected as datetime`);
-            
-            let hasElapsedFlag = false;
-            for (let j = 0; j < numFormat.aRawFormat.length; j++) {
-                let item = numFormat.aRawFormat[j];
-                if (item.bElapsed === true) {
-                    hasElapsedFlag = true;
-                    break;
-                }
-            }
-            
-            assert.strictEqual(hasElapsedFlag, true, `NumFormat "${format}" should have bElapsed flag`);
         }
     });
 

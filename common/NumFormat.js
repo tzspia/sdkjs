@@ -1317,10 +1317,10 @@ NumFormat.prototype =
                             bRightCond = true;
                         break;
                     }
-                    else if(this.aRawFormat[i].bElapsed == true)  
-                    {
-                        bRightCond = true
-                    }
+                }
+                if(this.aRawFormat[i].bElapsed)  
+                {
+                    bRightCond = true
                 }
                 var bLeftCond = false;
                 if(false == bRightCond)
