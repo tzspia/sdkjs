@@ -9036,6 +9036,9 @@ var CPresentation = CPresentation || function(){};
             case AscPDF.ANNOTATIONS_TYPES.Redact:
                 oAnnot = new AscPDF.CAnnotationRedact(sName, aRect, oPdfDoc);
                 break;
+            case AscPDF.ANNOTATIONS_TYPES.Link:
+                oAnnot = new AscPDF.CAnnotationLink(sName, aRect, oPdfDoc);
+                break;
             default:
                 return null;
         }
