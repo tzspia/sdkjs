@@ -417,7 +417,6 @@ $(function () {
 
 	QUnit.module('Information formulas');
 
-    // TODO проверить тесты
 	QUnit.test("Test: \"CELL\"", function (assert) {
 
 		ws.getRange2("J2").setValue("1");
