@@ -68,6 +68,7 @@ AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_RC]				= CChangesPDFAnnotRC;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Orig_Page]		= CChangesPDFAnnotOrigPage;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Comment_Data]	= CChangesPDFAnnotCommentData;
 AscDFH.changesFactory[AscDFH.historyitem_type_Pdf_Annot_Reply]		= CChangesPDFAnnotReply;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Actions]			= CChangesPDFAnnotActions;
 
 // text annot
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Text_Annot_Icon]		= CChangesPDFTextAnnotIcon;
@@ -845,6 +846,89 @@ CChangesPDFAnnotReply.prototype.CreateReverseChange = function(){
     return this.private_CreateReverseChange(this.constructor);
 };
 
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseStringProperty}
+ */
+function CChangesPDFAnnotActions(Class, oOldActionsInfo, oNewActionsInfo, nTriggerType, Color)
+{
+	AscDFH.CChangesBaseStringProperty.call(this, Class, JSON.stringify(oOldActionsInfo), JSON.stringify(oNewActionsInfo), Color);
+	this.TriggerType = nTriggerType;
+}
+CChangesPDFAnnotActions.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
+CChangesPDFAnnotActions.prototype.constructor = CChangesPDFAnnotActions;
+CChangesPDFAnnotActions.prototype.Type = AscDFH.historyitem_Pdf_Annot_Actions;
+CChangesPDFAnnotActions.prototype.CreateReverseChange = function() {
+	return new this.constructor(this.Class, this.New, this.Old, this.TriggerType, this.Color);
+};
+CChangesPDFAnnotActions.prototype.private_SetValue = function(Value)
+{
+	let oField = this.Class;
+	oField.SetActions(this.TriggerType, JSON.parse(Value));
+};
+
+CChangesPDFAnnotActions.prototype.WriteToBinary = function(Writer)
+{
+	let nFlags = 0;
+
+	if (false !== this.Color)
+		nFlags |= 1;
+
+	if (undefined === this.TriggerType)
+		nFlags |= 2;
+
+	if (undefined === this.New)
+		nFlags |= 4;
+
+	if (undefined === this.Old)
+		nFlags |= 8;
+	
+
+	Writer.WriteLong(nFlags);
+
+	if (undefined !== this.TriggerType)
+		Writer.WriteLong(this.TriggerType);
+
+	if (undefined !== this.New)
+		Writer.WriteString2(this.New);
+
+	if (undefined !== this.Old)
+		Writer.WriteString2(this.Old);
+};
+CChangesPDFAnnotActions.prototype.ReadFromBinary = function(Reader)
+{
+	this.FromLoad = true;
+
+	// Long  : Flag
+	// 1-bit : Подсвечивать ли данные изменения
+	// 2-bit : IsUndefined New
+	// 3-bit : IsUndefined Old
+	// long : New
+	// long : Old
+
+
+	var nFlags = Reader.GetLong();
+
+	if (nFlags & 1)
+		this.Color = true;
+	else
+		this.Color = false;
+
+	if (nFlags & 2)
+		this.TriggerType = undefined;
+	else
+		this.TriggerType = Reader.GetLong();
+
+	if (nFlags & 4)
+		this.New = undefined;
+	else
+		this.New = Reader.GetString2();
+
+	if (nFlags & 8)
+		this.Old = undefined;
+	else
+		this.Old = Reader.GetString2();
+};
 // text annot
 
 /**

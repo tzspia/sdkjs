@@ -40,10 +40,12 @@
     function CAnnotationLink(sName, aRect, oDoc)
     {
         AscPDF.CPdfShape.call(this);
-        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Line, aRect, oDoc);
+        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Link, aRect, oDoc);
         
         AscPDF.initShape(this);
         this.spPr.setGeometry(AscFormat.CreateGeometry("rect"));
+
+        this._triggers = new AscPDF.CPdfTriggers();
 
         // states
         this._pressed = false;
@@ -54,19 +56,10 @@
     AscFormat.InitClass(CAnnotationLink, AscPDF.CPdfShape, AscDFH.historyitem_type_Pdf_Annot_Link);
     Object.assign(CAnnotationLink.prototype, AscPDF.CAnnotationBase.prototype);
 
-    CAnnotationLink.prototype.Draw = function(oGraphicsPDF, oGraphicsWord) {
-        if (this.IsHidden() && !Asc.editor.IsEditFieldsMode())
-            return;
-
-        this.DrawBackground(oGraphicsPDF);
-        this.DrawBorders(oGraphicsPDF);
-
-        if (true == this.IsChecked())
-            this.DrawCheckedSymbol(oGraphicsPDF);
-
-        this.DrawLocks(oGraphicsPDF);
-        this.DrawEdit(oGraphicsWord);
+    CAnnotationLink.prototype.IsLink = function() {
+        return true;
     };
+    CAnnotationLink.prototype.RefillGeometry = function() {};
     CAnnotationLink.prototype.SetPressed = function(bValue) {
         this._pressed = bValue;
         this.AddToRedraw();
@@ -82,22 +75,17 @@
     };
 
     CAnnotationLink.prototype.onMouseDown = function(x, y, e) {
-        let oDoc = this.GetDocument();
-
-        if (oDoc.IsEditFieldsMode()) {
-            this.editShape.onMouseDown(x, y, e);
+        if (Asc.editor.canEdit()) {
+            AscPDF.CPdfShape.prototype.onMouseDown.call(this, x, y, e);
             return;
         }
 
         this.DrawPressed();
-        this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
     };
     CAnnotationLink.prototype.onMouseEnter = function() {
-        this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseEnter);
         this.SetHovered(true);
     };
     CAnnotationLink.prototype.onMouseExit = function() {
-        this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseExit);
         this.SetHovered(false);
     };
     CAnnotationLink.prototype.DrawPressed = function() {
@@ -109,424 +97,228 @@
         Asc.editor.getDocumentRenderer()._paint();
     };
     CAnnotationLink.prototype.onMouseUp = function() {
-        let oDoc = this.GetDocument();
-
-        let oThis = this;
-        let bCommit = false;
-        if (oThis.IsChecked()) {
-            if (oThis.IsNoToggleToOff() == false) {
-                oThis.SetChecked(false);
-                bCommit = true;
-            }
-        }
-        else {
-            oThis.SetChecked(true);
-            bCommit = true;
-        }
-        
         this.DrawUnpressed();
+        this.AddActionsToQueue(AscPDF.PDF_TRIGGERS_TYPES.MouseUp);
     };
-    /**
-	 * The value application logic for all fields with the same name has been changed for this field type.
-     * The method was left for compatibility.
-	 * @memberof CRadioButtonField
-	 * @typeofeditors ["PDF"]
-	 */
-    CAnnotationLink.prototype.Commit = function() {
-        this.SetNeedCommit(false);
-
-        let oParent = this.GetParent();
-        let aOpt    = oParent ? oParent.GetOptions() : undefined;
-        let aKids   = oParent ? oParent.GetKids() : undefined;
-        if (this.IsChecked()) {
-            if (aOpt && aKids) {
-                if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton && this.IsRadiosInUnison() || this.GetType() == AscPDF.FIELD_TYPES.checkbox) {
-                    this.SetParentValue(aOpt.indexOf(this.GetExportValue()));
-                }
-                else {
-                    this.SetParentValue(String(aKids.indexOf(this)));
-                }
-            }
-            else {
-                this.SetParentValue(this.GetExportValue());
-            }
-        }
-        else {
-            this.SetParentValue("Off");
-        }
-
-        this.Commit2();
-    };
-    CAnnotationLink.prototype.SetNoToggleToOff = function(bValue) {
-        let oParent = this.GetParent();
-        if (oParent && oParent.IsAllKidsWidgets()) {
-            return oParent.SetNoToggleToOff(bValue);
-        }
-
-        if (this._noToggleToOff === bValue) {
-            return true;
-        }
-
-        AscCommon.History.Add(new CChangesPDFCheckboxNoToggleToOff(this, this._noToggleToOff, bValue));
-
-        this._noToggleToOff = bValue;
-        this.SetWasChanged(true);
-
-        return true;
-    };
-    CAnnotationLink.prototype.IsNoToggleToOff = function(bInherit) {
-        let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
-            return oParent.IsNoToggleToOff();
-
-        return this._noToggleToOff;
-    };
-    CAnnotationLink.prototype.SetOptions = function(aOpt) {
-        let oParent = this.GetParent();
-        if (oParent && oParent.IsAllKidsWidgets()) {
-            oParent.SetOptions(aOpt);
-        }
-        
-        let hasOptions = !!this._options;
-        
-        AscCommon.History.Add(new CChangesPDFCheckOptions(this, this._options, aOpt));
-
-        if (this._options == aOpt) {
-            return true;
-        }
-        
-        this._options = aOpt;
-
-        let aAllWidgets = this.GetAllWidgets();
-        aAllWidgets.forEach(function(widget) {
-            widget.SetExportValue(undefined, true);
-        });
-
-        let sDefValue = this.GetDefaultValue();
-        let sCurExpValue;
-
-        if (sDefValue) {
-            if (!hasOptions) {
-                sCurExpValue = this.GetDefaultValue();
-            }
-            else {
-                sCurExpValue = aOpt[sDefValue];
-            }
-
-            this.SetDefaultValue(String(aOpt.indexOf(sCurExpValue)));
-        }
-
-        return true;
-    };
-    CAnnotationLink.prototype.GetOptions = function(bInherit) {
-        let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
-            return oParent.GetOptions();
-
-        return this._options;
-    };
-    CAnnotationLink.prototype.GetOptionsIndex = function() {
-        let oParent = this.GetParent();
-        let aOptions = oParent ? oParent.GetOptions() : null;
-        if (aOptions) {
-            let aKids = oParent.GetKids();
-            return aKids.indexOf(this);
-        }
-
-        return -1;
-    };
-    CAnnotationLink.prototype.AddKid = function(oField) {
-        let aOptions = this.GetOptions();
-        let aNewOptions = aOptions ? aOptions.slice() : null;
-        if (aNewOptions) {
-            aNewOptions.push(oField.GetExportValue())
-        }
-        
-        AscCommon.History.Add(new CChangesPDFFormKidsContent(this, this._kids.length, [oField], true))
-
-        this._kids.push(oField);
-        oField._parent = this;
-
-        if (false == Asc.editor.getDocumentRenderer().IsOpenFormsInProgress) {
-            if (oField.IsWidget()) {
-                oField.SyncValue();
-            }
-
-            if (!aOptions) {
-                aOptions = [];
-
-                let bSetOptions = false;
-
-                this._kids.forEach(function(widget) {
-                    let sExportValue = widget.GetExportValue();
-                    if (aOptions.includes(sExportValue)) {
-                        bSetOptions = true;
-                    }
-
-                    aOptions.push(sExportValue);
-                });
-
-                if (bSetOptions) {
-                    aNewOptions = aOptions;
+    CAnnotationLink.prototype.SetActions = function(nTriggerType, aActionsInfo) {
+        let aActions = [];
+        if (aActionsInfo) {
+            for (let i = 0; i < aActionsInfo.length; i++) {
+                let oAction;
+                switch (aActionsInfo[i]["S"]) {
+                    case AscPDF.ACTIONS_TYPES.JavaScript:
+                        oAction = new AscPDF.CActionRunScript(aActionsInfo[i]["JS"]);
+                        aActions.push(oAction);
+                        break;
+                    case AscPDF.ACTIONS_TYPES.ResetForm:
+                        oAction = new AscPDF.CActionReset(aActionsInfo[i]["Fields"], Boolean(aActionsInfo[i]["Flags"]));
+                        aActions.push(oAction);
+                        break;
+                    case AscPDF.ACTIONS_TYPES.URI:
+                        oAction = new AscPDF.CActionURI(aActionsInfo[i]["URI"]);
+                        aActions.push(oAction);
+                        break;
+                    case AscPDF.ACTIONS_TYPES.HideShow:
+                        oAction = new AscPDF.CActionHideShow(Boolean(aActionsInfo[i]["H"]), aActionsInfo[i]["T"]);
+                        aActions.push(oAction);
+                        break;
+                    case AscPDF.ACTIONS_TYPES.GoTo:
+                        let oRect = {
+                            top:    aActionsInfo[i]["top"],
+                            right:  aActionsInfo[i]["right"],
+                            bottom: aActionsInfo[i]["bottom"],
+                            left:   aActionsInfo[i]["left"]
+                        }
+                        if (aActionsInfo[i]["bottom"] != null && aActionsInfo[i]["top"] != null) {
+                            oRect.top = aActionsInfo[i]["bottom"];
+                            oRect.bottom = aActionsInfo[i]["top"];
+                        }
+    
+                        oAction = new AscPDF.CActionGoTo(aActionsInfo[i]["page"], aActionsInfo[i]["kind"], aActionsInfo[i]["zoom"], oRect);
+                        aActions.push(oAction);
+                        break;
+                    case AscPDF.ACTIONS_TYPES.Named:
+                        oAction = new AscPDF.CActionNamed(AscPDF.CActionNamed.GetInternalType(aActionsInfo[i]["N"]));
+                        aActions.push(oAction);
+                        break;
                 }
             }
         }
         
-        if (aNewOptions) {
-            this.SetOptions(aNewOptions);
+        const oNewTrigger = aActions.length != 0 ? new AscPDF.CPdfTrigger(nTriggerType, aActions) : null;
+        if (oNewTrigger) {
+            oNewTrigger.SetParentField(this);
         }
-    };
-    CAnnotationLink.prototype.RemoveKid = function(oField) {
-        let nIndex = this._kids.indexOf(oField);
 
-        let aOptions = this.GetOptions();
-        let aNewOptions = aOptions ? aOptions.slice() : null;
-        let sExportValue;
-        if (aNewOptions) {
-            sExportValue = aNewOptions[nIndex];
-            aNewOptions.splice(nIndex, 1);
-            this.SetOptions(aNewOptions);
+        const aCurActionsInfo = this.GetActions(nTriggerType);
+        AscCommon.History.Add(new CChangesPDFFormActions(this, aCurActionsInfo, aActionsInfo, nTriggerType));
+
+        switch (nTriggerType) {
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseUp:
+                this._triggers.MouseUp = oNewTrigger;
+                break;
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseDown:
+                this._triggers.MouseDown = oNewTrigger;
+                break;
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseEnter:
+                this._triggers.MouseEnter = oNewTrigger;
+                break;
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseExit:
+                this._triggers.MouseExit = oNewTrigger;
+                break;
+            case AscPDF.PDF_TRIGGERS_TYPES.OnFocus:
+                this._triggers.OnFocus = oNewTrigger;
+                break;
+            case AscPDF.PDF_TRIGGERS_TYPES.OnBlur:
+                this._triggers.OnBlur = oNewTrigger;
+                break;
+        }
+
+        return aActions;
+    };
+    CAnnotationLink.prototype.GetActions = function(nTriggerType) {
+        // Get the trigger by type
+        let oTrigger = this.GetTrigger(nTriggerType);
+        if (!oTrigger || !oTrigger.Actions) {
+            return [];
         }
         
-        if (nIndex != -1) {
-            this._kids.splice(nIndex, 1);
-            AscCommon.History.Add(new CChangesPDFFormKidsContent(this, nIndex, [oField], false))
-            oField._parent = null;
-
-            if (aNewOptions) {
-                oField.SetExportValue(sExportValue);
+        let aActionsInfo = [];
+        // Iterate through all actions associated with the trigger
+        for (let i = 0; i < oTrigger.Actions.length; i++) {
+            let oAction = oTrigger.Actions[i];
+            let actionInfo = {};
+            
+            // Determine the action type and populate the object with information
+            switch (oAction.GetType()) {
+                case AscPDF.ACTIONS_TYPES.JavaScript:
+                    actionInfo["S"] = AscPDF.ACTIONS_TYPES.JavaScript;
+                    actionInfo["JS"] = oAction.GetScript();
+                    break;
+                case AscPDF.ACTIONS_TYPES.ResetForm:
+                    actionInfo["S"] = AscPDF.ACTIONS_TYPES.ResetForm;
+                    actionInfo["Fields"] = oAction.GetNames();
+                    actionInfo["Flags"] = Number(oAction.GetNeedAllExcept());
+                    break;
+                case AscPDF.ACTIONS_TYPES.URI:
+                    actionInfo["S"] = AscPDF.ACTIONS_TYPES.URI;
+                    actionInfo["URI"] = oAction.GetURI();
+                    break;
+                case AscPDF.ACTIONS_TYPES.HideShow:
+                    actionInfo["S"] = AscPDF.ACTIONS_TYPES.HideShow;
+                    actionInfo["H"] = oAction.GetHidden();
+                    actionInfo["T"] = oAction.GetNames();
+                    break;
+                case AscPDF.ACTIONS_TYPES.GoTo:
+                    actionInfo["S"] = AscPDF.ACTIONS_TYPES.GoTo;
+                    actionInfo["page"] = oAction.GetPage();
+                    actionInfo["kind"] = oAction.GetKind();
+                    actionInfo["zoom"] = oAction.GetZoom();
+                    let oRect = oAction.GetRect();
+                    actionInfo["top"] = oRect.top;
+                    actionInfo["right"] = oRect.right;
+                    actionInfo["bottom"] = oRect.bottom;
+                    actionInfo["left"] = oRect.left;
+                    break;
+                case AscPDF.ACTIONS_TYPES.Named:
+                    actionInfo["S"] = AscPDF.ACTIONS_TYPES.Named;
+                    actionInfo["N"] = oAction.GetName();
+                    break;
+                default:
+                    // If the type is not recognized, add handling or skip
+                    break;
             }
-
-            return true;
+            
+            aActionsInfo.push(actionInfo);
         }
-
-        return false;
+        
+        return aActionsInfo;
     };
-    CAnnotationLink.prototype.SetExportValue = function(sValue) {
-        let oParent = this.GetParent();
-    
-        if (oParent && sValue !== undefined) {
-            let aWidgets        = oParent.GetAllWidgets();
-            let nIndex          = aWidgets.indexOf(this);
-            let aExpValues      = aWidgets.map(function(w) { return w.GetExportValue() });
-            let aCurOptions     = oParent.GetOptions();
-
-            const newValues = aExpValues.slice();
-            newValues[nIndex] = sValue;
-    
-            if (aExpValues.includes(sValue) || aCurOptions) {
-                oParent.SetOptions(newValues);
-                return true;
-            }
+    CAnnotationLink.prototype.GetTrigger = function(nType) {
+        switch (nType) {
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseUp:
+                return this._triggers.MouseUp;
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseDown:
+                return this._triggers.MouseDown;
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseEnter:
+                return this._triggers.MouseEnter;
+            case AscPDF.PDF_TRIGGERS_TYPES.MouseExit:
+                return this._triggers.MouseExit;
+            case AscPDF.PDF_TRIGGERS_TYPES.OnFocus:
+                return this._triggers.OnFocus;
+            case AscPDF.PDF_TRIGGERS_TYPES.OnBlur:
+                return this._triggers.OnBlur;
         }
+
+        return null;
+    };
+    CAnnotationLink.prototype.GetListActions = function() {
+        let aActions = [];
+
+        let oAction = this.GetTrigger(AscPDF.PDF_TRIGGERS_TYPES.MouseUp);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+        
+        oAction = this.GetTrigger(AscPDF.PDF_TRIGGERS_TYPES.MouseDown);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.PDF_TRIGGERS_TYPES.MouseEnter);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.PDF_TRIGGERS_TYPES.MouseExit);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.PDF_TRIGGERS_TYPES.OnFocus);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.PDF_TRIGGERS_TYPES.OnBlur);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        return aActions;
+    };
+    CAnnotationLink.prototype.AddActionsToQueue = function() {
+        let oThis           = this;
+        let oDoc            = this.GetDocument();
+        let oActionsQueue   = oDoc.GetActionsQueue();
+
+        Object.values(arguments).forEach(function(type) {
+            let oTrigger = oThis.GetTrigger(type);
+        
+            if (oTrigger && oTrigger.Actions.length > 0 && false == AscCommon.History.UndoRedoInProgress) {
+                oActionsQueue.AddActions(oTrigger.Actions);
+            }
+        })
+        
+        if (oActionsQueue.actions.length !== 0) {
+            oActionsQueue.Start();
+        }
+    };
     
-        if (this._exportValue == sValue) {
+    CAnnotationLink.prototype.hitInPath = function(x, y) {
+        let invert_transform = this.getInvertTransform();
+        if (!invert_transform) {
             return false;
         }
-
-        AscCommon.History.Add(new CChangesPDFCheckboxExpValue(this, this._exportValue, sValue));
-        this._exportValue = sValue;
-        this.SetWasChanged(true);
+        let x_t = invert_transform.TransformPointX(x, y);
+        let y_t = invert_transform.TransformPointY(x, y);
+        let oGeometry = this.getGeometry();
+        return oGeometry.hitInInnerArea(this.getCanvasContext(), x_t, y_t);
     };
-    CAnnotationLink.prototype.GetExportValue = function(bInherit) {
-        if (bInherit !== false) {
-            let oParent = this.GetParent();
-            let aParentOpt = oParent ? oParent.GetOptions() : null;
 
-            if (aParentOpt) {
-                return aParentOpt[oParent.GetKids().indexOf(this)];
-            }
-        }
-
-        return this._exportValue;
-    };
-    /**
-     * Sets the checkbox style
-     * @memberof CAnnotationLink
-     * @param {number} nType - checkbox style type (CHECKBOX_STYLES)
-     * @typeofeditors ["PDF"]
-     */
-    CAnnotationLink.prototype.SetStyle = function(nType) {
-        AscCommon.History.Add(new CChangesPDFCheckboxStyle(this, this._chStyle, nType));
-
-        this._chStyle = nType;
-        this.SetWasChanged(true);
-        this.AddToRedraw(true);
-    };
-    CAnnotationLink.prototype.GetStyle = function() {
-        return this._chStyle;
-    };
-    CAnnotationLink.prototype.SetValue = function(value) {
-        let oParent     = this.GetParent();
-        let aParentOpt  = oParent ? oParent.GetOptions() : undefined;
-
-        let sExportValue;
-        if (aParentOpt && aParentOpt[value]) {
-            sExportValue = aParentOpt[value];
-        }
-        else {
-            sExportValue = value;
-        }
-
-        if (this.GetExportValue() == sExportValue)
-            this.SetChecked(true);
-        else
-            this.SetChecked(false);
-        
-        if (editor.getDocumentRenderer().IsOpenFormsInProgress && this.GetParent() == null)
-            this.SetParentValue(value);
-    };
-    CAnnotationLink.prototype.private_SetValue = CAnnotationLink.prototype.SetValue;
-    CAnnotationLink.prototype.GetValue = function() {
-        return this.IsChecked() ? this.GetExportValue() : "Off";
-    };
-    CAnnotationLink.prototype.SetDrawFromStream = function() {
-    };
-    
-    /**
-     * Set checked to this field (not for all with the same name).
-     * @memberof CAnnotationLink
-     * @typeofeditors ["PDF"]
-     */
-    CAnnotationLink.prototype.SetChecked = function(bChecked) {
-        if (bChecked == this.IsChecked())
-            return;
-
-        this.SetWasChanged(true);
-        this.AddToRedraw();
-
-        if (bChecked) {
-            AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetValue(), this.GetExportValue()));
-            this._checked = true;
-        }
-        else {
-            AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetValue(), "Off"));
-            this._checked = false;
-        }
-    };
-    /**
-	 * Synchronizes this field with fields with the same name.
-	 * @memberof CCheckBoxField
-	 * @typeofeditors ["PDF"]
-	 */
-    CAnnotationLink.prototype.SyncValue = function() {
-        if (this.GetExportValue() == this.GetParentValue()) {
-            this.SetChecked(true);
-            this.AddToRedraw();
-        }
-        else {
-            this.SetChecked(false);
-            this.AddToRedraw();
-        }
-    };
-    CAnnotationLink.prototype.DrainLogicFrom = function(oFieldToInherit, bClearFrom) {
-        AscPDF.CBaseField.prototype.DrainLogicFrom.call(this, oFieldToInherit, bClearFrom);
-
-        this.SetNoToggleToOff(oFieldToInherit.IsNoToggleToOff());
-        if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
-            this.SetRadiosInUnison(oFieldToInherit.IsRadiosInUnison());
-        }
-
-        if (bClearFrom !== false) {
-            oFieldToInherit.SetNoToggleToOff(false);
-
-            if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
-                oFieldToInherit.SetRadiosInUnison(false);
-            }
-        }
-    };
-    CAnnotationLink.prototype.DrainViewPropsFrom = function(oField) {
-        AscPDF.CBaseField.prototype.DrainViewPropsFrom.call(this, oField);
-
-        this.SetStyle(oField.GetStyle());
-    };
-    CAnnotationLink.prototype.WriteToBinary = function(memory) {
-        memory.WriteByte(AscCommon.CommandType.ctAnnotField);
-
-        // длина комманд
-        let nStartPos = memory.GetCurPosition();
-        memory.Skip(4);
-
-        this.WriteToBinaryBase(memory);
-        this.WriteToBinaryBase2(memory);
-
-        // checked
-        let isChecked = this.IsChecked();
-        // не пишем значение, если есть родитель с такими же видджет полями,
-        // т.к. значение будет хранить родитель
-        let oParent = this.GetParent();
-        if (oParent == null || oParent.IsAllKidsWidgets() == false) {
-            memory.fieldDataFlags |= (1 << 9);
-            if (isChecked) {
-                memory.WriteString("Yes");
-            }
-            else
-                memory.WriteString("Off");
-        }
-        
-        // check symbol
-        memory.WriteByte(this.GetStyle());
-
-        let sExportValue = this.GetExportValue(memory.isCopyPaste);
-        if (sExportValue != null) {
-            memory.fieldDataFlags |= (1 << 14);
-            memory.WriteString(sExportValue);
-        }
-
-        if (this.IsNoToggleToOff(memory.isCopyPaste)) {
-            memory.widgetFlags |= (1 << 14);
-        }
-
-        if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton) {
-            if (this.IsRadiosInUnison(memory.isCopyPaste)) {
-                memory.widgetFlags |= (1 << 25);
-            }
-        }
-        let nEndPos = memory.GetCurPosition();
-
-        // запись флагов
-        memory.Seek(memory.posForWidgetFlags);
-        memory.WriteLong(memory.widgetFlags);
-        memory.Seek(memory.posForFieldDataFlags);
-        memory.WriteLong(memory.fieldDataFlags);
-
-        // запись длины комманд
-        memory.Seek(nStartPos);
-        memory.WriteLong(nEndPos - nStartPos);
-        memory.Seek(nEndPos);
-
-        this.CheckWidgetFlags(memory);
-    };
     if (!window["AscPDF"])
 	    window["AscPDF"] = {};
     
-    let CHECK_SVG = "<svg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'>\
-    <path d='M5.2381 8.8L4 11.8L7.71429 16C12.0476 9.4 13.2857 8.2 17 4C14.5238 4 9.77778 8.8 7.71429 11.8L5.2381 8.8Z' fill='black'/>\
-    </svg>";
-
-    function toBase64(str) {
-		return window.btoa(unescape(encodeURIComponent(str)));
-	}
-	
-	function getSvgImage(svg) {
-		let image = new Image();
-		if (!AscCommon.AscBrowser.isIE || AscCommon.AscBrowser.isIeEdge) {
-			image.src = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
-		}
-		else {
-			image.src = "data:image/svg+xml;base64," + toBase64(svg);
-			image.onload = function() {
-				// Почему-то IE не определяет размеры сам
-				this.width = 20;
-				this.height = 20;
-			};
-		}
-		
-		return image;
-	}
-
-    const CHECKED_ICON = getSvgImage(CHECK_SVG);
-
 	window["AscPDF"].CAnnotationLink = CAnnotationLink;
 })();
 

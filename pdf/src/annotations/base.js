@@ -120,12 +120,12 @@
                 oCopy = new AscPDF.CAnnotationInk(AscCommon.CreateGUID(), this.GetRect().slice(), this.GetDocument());
                 break;
             }
-            case AscPDF.ANNOTATIONS_TYPES.Ink: {
-                oCopy = new AscPDF.CAnnotationInk(AscCommon.CreateGUID(), this.GetRect().slice(), this.GetDocument());
-                break;
-            }
             case AscPDF.ANNOTATIONS_TYPES.Line: {
                 oCopy = new AscPDF.CAnnotationLine(AscCommon.CreateGUID(), this.GetRect().slice(), this.GetDocument());
+                break;
+            }
+            case AscPDF.ANNOTATIONS_TYPES.Link: {
+                oCopy = new AscPDF.CAnnotationLink(AscCommon.CreateGUID(), this.GetRect().slice(), this.GetDocument());
                 break;
             }
             case AscPDF.ANNOTATIONS_TYPES.Polygon: {
@@ -790,6 +790,9 @@
         return false;
     };
     CAnnotationBase.prototype.IsStamp = function() {
+        return false;
+    };
+    CAnnotationBase.prototype.IsLink = function() {
         return false;
     };
     CAnnotationBase.prototype.SetNeedRecalc = function(bRecalc, bSkipAddToRedraw) {
