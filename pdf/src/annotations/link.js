@@ -43,9 +43,12 @@
         AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Link, aRect, oDoc);
         
         AscPDF.initShape(this);
-        this.spPr.setGeometry(AscFormat.CreateGeometry("rect"));
+        let oGeometry = AscFormat.CreateGeometry("rect");
+        oGeometry.preset = undefined;
+        this.spPr.setGeometry(oGeometry);
 
-        this._triggers = new AscPDF.CPdfTriggers();
+        this._triggers      = new AscPDF.CPdfTriggers();
+        this._quads         = [];
 
         // states
         this._pressed = false;
@@ -59,6 +62,20 @@
     CAnnotationLink.prototype.IsLink = function() {
         return true;
     };
+    CAnnotationLink.prototype.SetQuads = function(aFullQuads) {
+        let oThis = this;
+        aFullQuads.forEach(function(aQuads) {
+            oThis.AddQuads(aQuads);
+        });
+    };
+    CAnnotationLink.prototype.GetQuads = function() {
+        return this._quads;
+    };
+    CAnnotationLink.prototype.AddQuads = function(aQuads) {
+        AscCommon.History.Add(new CChangesPDFAnnotQuads(this, this._quads.length, aQuads, true));
+        this._quads.push(aQuads);
+    };
+
     CAnnotationLink.prototype.RefillGeometry = function() {};
     CAnnotationLink.prototype.SetPressed = function(bValue) {
         this._pressed = bValue;
