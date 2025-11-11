@@ -9324,6 +9324,7 @@ background-repeat: no-repeat;\
 		return oContentControl.IsCheckBoxChecked();
 	};
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, sToken) {
+		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
 			if (!sUrl) {
@@ -9341,6 +9342,7 @@ background-repeat: no-repeat;\
 
 			// 查找指定书签
 			var oBookmark = oLogicDocument.GetBookmark(sId);
+			console.log("🚀 ~ oBookmark:", oBookmark)
 			if (!oBookmark) {
 				console.warn(`未找到书签: ${sId}`);
 				return false;
