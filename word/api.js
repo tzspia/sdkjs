@@ -9336,7 +9336,9 @@ background-repeat: no-repeat;\
 				return false;
 			}
 
-			var oDocument = new ApiDocument(oLogicDocument);
+			var oDocument = new window["asc_docs_api"](oLogicDocument);
+			console.log(`🚀 ~ new window["asc_docs_api"]:`, new window["asc_docs_api"])
+
 			// 查找指定书签
 			var oBookmark = oLogicDocument.GetBookmark(sId);
 			if (!oBookmark) {
@@ -9348,9 +9350,10 @@ background-repeat: no-repeat;\
 			var oParas = oBookmarkRange.GetAllParagraphs();
 			var width = 40 * 36000;
 			var height = null;
-			var oImage = Api.CreateImage(sUrl, width, height);
+			var oImage = window["asc_docs_api"].CreateImage(sUrl, width, height);
+			console.log(`🚀 ~ window["asc_docs_api"]:`, window["asc_docs_api"])
 			oImage.SetWrappingStyle("behind");
-			var oParagraph = Api.CreateParagraph();
+			var oParagraph = window["asc_docs_api"].CreateParagraph();
 			oParagraph.AddDrawing(oImage);
 
 			oBookmark.GoTo();
