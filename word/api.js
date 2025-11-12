@@ -9337,8 +9337,8 @@ background-repeat: no-repeat;\
 				return false;
 			}
 
-			var oDocument = new window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument ? window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument(oLogicDocument) : new ApiDocument(oLogicDocument);
-			console.log(`🚀 ~ new window["asc_docs_api"]:`, new window["asc_docs_api"])
+			var oDocument = window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument ? window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument(oLogicDocument) : new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
+			console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
 
 			// 查找指定书签
 			var oBookmark = oLogicDocument.GetBookmark(sId);
@@ -9353,7 +9353,7 @@ background-repeat: no-repeat;\
 			var width = 40 * 36000;
 			var height = null;
 			var oImage = this.CreateImage(sUrl, width, height);
-			console.log(`🚀 ~ window["asc_docs_api"]:`, window["asc_docs_api"])
+			console.log(`🚀 ~ window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
 			oImage.SetWrappingStyle("behind");
 			var oParagraph = this.CreateParagraph();
 			oParagraph.AddDrawing(oImage);
