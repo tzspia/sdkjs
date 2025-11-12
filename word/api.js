@@ -9323,62 +9323,169 @@ background-repeat: no-repeat;\
 
 		return oContentControl.IsCheckBoxChecked();
 	};
+	// asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, sToken) {
+	// 	console.log("🚀 ~ sUrl:", sUrl)
+	// 	// try {
+	// 	// 	// 检查参数有效性
+	// 	// 	if (!sUrl) {
+	// 	// 		console.error("签名图片URL不能为空");
+	// 	// 		return false;
+	// 	// 	}
+	// 	// 	var oLogicDocument = this.private_GetLogicDocument();
+	// 	// 	if (!oLogicDocument) {
+	// 	// 		console.error("无法获取文档对象");
+	// 	// 		return false;
+	// 	// 	}
+
+	// 	// 	var oDocument = window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument ? window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument(oLogicDocument) : new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
+	// 	// 	console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
+
+	// 	// 	// 查找指定书签
+	// 	// 	var oBookmark = oLogicDocument.GetBookmark(sId);
+	// 	// 	console.log("🚀 ~ oBookmark:", oBookmark)
+	// 	// 	if (!oBookmark) {
+	// 	// 		console.warn(`未找到书签: ${sId}`);
+	// 	// 		return false;
+	// 	// 	}
+	// 	// 	// 获取书签范围和包含的段落
+	// 	// 	var oBookmarkRange = oBookmark.GetRange();
+	// 	// 	var oParas = oBookmarkRange.GetAllParagraphs();
+	// 	// 	var width = 40 * 36000;
+	// 	// 	var height = null;
+	// 	// 	var oImage = this.CreateImage(sUrl, width, height);
+	// 	// 	console.log(`🚀 ~ window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
+	// 	// 	oImage.SetWrappingStyle("behind");
+	// 	// 	var oParagraph = this.CreateParagraph();
+	// 	// 	oParagraph.AddDrawing(oImage);
+
+	// 	// 	oBookmark.GoTo();
+	// 	// 	oDocument.InsertContent([oParagraph]);
+
+	// 	// 	oBookmark.Delete();
+
+	// 	// 	if (oParas && oParas.length > 0) {
+	// 	// 		oParas.forEach(function (para) {
+	// 	// 			if (para && typeof para.Delete === 'function') {
+	// 	// 				para.Delete();
+	// 	// 			}
+	// 	// 		});
+	// 	// 	}
+	// 	// 	oParagraph.GetRange().AddBookmark(sId);
+	// 	// 	console.log("签名图片插入成功");
+	// 	// 	return true;
+	// 	// } catch (e) {
+	// 	// 	console.error("插入签名过程中发生错误:", e);
+	// 	// 	return false;
+	// 	// }
+	// };
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, sToken) {
 		console.log("🚀 ~ sUrl:", sUrl)
-		try {
-			// 检查参数有效性
-			if (!sUrl) {
-				console.error("签名图片URL不能为空");
-				return false;
+		if (this.WordControl && this.WordControl.m_oDrawingDocument) {
+			this.WordControl.m_oDrawingDocument.UnlockCursorType();
+		}
+		var oLogicDocument = this.private_GetLogicDocument();
+		if (!oLogicDocument || AscCommon.isNullOrEmptyString(sUrl))
+			return;
+
+		var oCC = oLogicDocument.GetContentControl(sId);
+		oCC.SkipSpecialContentControlLock(true);
+		oCC.SkipFillingFormModeCheck(true);
+		if (!oCC || !oCC.IsPicture() || !oCC.SelectPicture() || !oCC.CanBeEdited()) {
+			oCC.SkipFillingFormModeCheck(false);
+			oCC.SkipSpecialContentControlLock(false);
+			return;
+		}
+
+		if (!oLogicDocument.IsSelectionLocked(AscCommon.changestype_Image_Properties, undefined, false, oLogicDocument.IsFormFieldEditing())) {
+			oCC.SkipFillingFormModeCheck(false);
+			oCC.SkipSpecialContentControlLock(false);
+
+			var oImagePr = {
+				ImageUrl: sUrl
+			};
+
+			var sImageUrl = null, fReplaceCallback = null, sImageToDownLoad = "";
+
+			if (!g_oDocumentUrls.getImageLocal(sUrl)) {
+				sImageUrl = sUrl;
+				fReplaceCallback = function (sUrl) {
+					oImagePr.ImageUrl = sUrl;
+					sImageToDownLoad = sUrl;
+				}
 			}
-			var oLogicDocument = this.private_GetLogicDocument();
-			if (!oLogicDocument) {
-				console.error("无法获取文档对象");
-				return false;
-			}
 
-			var oDocument = window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument ? window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument(oLogicDocument) : new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
-			console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
+			sImageToDownLoad = sUrl;
 
-			// 查找指定书签
-			var oBookmark = oLogicDocument.GetBookmark(sId);
-			console.log("🚀 ~ oBookmark:", oBookmark)
-			if (!oBookmark) {
-				console.warn(`未找到书签: ${sId}`);
-				return false;
-			}
-			// 获取书签范围和包含的段落
-			var oBookmarkRange = oBookmark.GetRange();
-			var oParas = oBookmarkRange.GetAllParagraphs();
-			var width = 40 * 36000;
-			var height = null;
-			var oImage = this.CreateImage(sUrl, width, height);
-			console.log(`🚀 ~ window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
-			oImage.SetWrappingStyle("behind");
-			var oParagraph = this.CreateParagraph();
-			oParagraph.AddDrawing(oImage);
-
-			oBookmark.GoTo();
-			oDocument.InsertContent([oParagraph]);
-
-			oBookmark.Delete();
-
-			if (oParas && oParas.length > 0) {
-				oParas.forEach(function (para) {
-					if (para && typeof para.Delete === 'function') {
-						para.Delete();
+			var oApi = this;
+			var fApplyCallback = function () {
+				var fPropsCallback = function (_img) {
+					if (_img && _img.Image && oImagePr) {
+						var oDrawingObjects = oApi.WordControl.m_oLogicDocument.DrawingObjects;
+						if (oDrawingObjects && oDrawingObjects.selectedObjects[0]) {
+							var dWidth = oDrawingObjects.selectedObjects[0].extX;
+							var dHeight = oDrawingObjects.selectedObjects[0].extY;
+							var __w = Math.max((_img.Image.width * AscCommon.g_dKoef_pix_to_mm), 1);
+							var __h = Math.max((_img.Image.height * AscCommon.g_dKoef_pix_to_mm), 1);
+							var fKoeff = 1.0 / Math.max(__w / dWidth, __h / dHeight);
+							var _w = Math.max(5, __w * fKoeff);
+							var _h = Math.max(5, __h * fKoeff);
+							oImagePr.Width = _w;
+							oImagePr.Height = _h;
+						}
 					}
-				});
+					oApi.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Document_ApplyImagePrWithUrl);
+					oApi.WordControl.m_oLogicDocument.SetImageProps(oImagePr);
+					oCC.SetShowingPlcHdr(false);
+
+					if (oCC.IsPictureForm()) {
+						oCC.UpdatePictureFormLayout();
+
+						var oShape = oCC.GetFixedFormWrapperShape();
+						if (oShape && oShape.parent instanceof AscCommonWord.ParaDrawing)
+							oApi.WordControl.m_oLogicDocument.Select_DrawingObject(oShape.parent.GetId());
+					}
+
+					oApi.WordControl.m_oLogicDocument.UpdateTracks();
+					oApi.WordControl.m_oLogicDocument.FinalizeAction();
+				};
+				var _img = oApi.ImageLoader.LoadImage(sImageToDownLoad, 1);
+				if (null != _img) {
+					fPropsCallback(_img);
+				}
+				else {
+					oApi.asyncImageEndLoaded2 = function (_img) {
+						fPropsCallback(_img);
+					}
+				}
+			};
+
+			if (sImageUrl) {
+				if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]()) {
+					var _url = window["AscDesktopEditor"]["LocalFileGetImageUrl"](sImageToDownLoad);
+					_url = g_oDocumentUrls.getImageUrl(_url);
+					fReplaceCallback(_url);
+					fApplyCallback();
+					return;
+				}
+
+				AscCommon.sendImgUrls(this, [sImageToDownLoad], function (data) {
+					if (data && data[0] && data[0].url !== "error") {
+						fReplaceCallback(data[0].url);
+						fApplyCallback();
+					}
+				}, undefined, sToken);
 			}
-			oParagraph.GetRange().AddBookmark(sId);
-			console.log("签名图片插入成功");
-			return true;
-		} catch (e) {
-			console.error("插入签名过程中发生错误:", e);
-			return false;
+			else {
+				fApplyCallback();
+			}
+		}
+		else {
+			oCC.SkipFillingFormModeCheck(false);
+			oCC.SkipSpecialContentControlLock(false);
 		}
 	};
 	asc_docs_api.prototype.asc_SetContentControlPictureUrl = function (sUrl, sId, sToken) {
+		console.log("🚀 ~ sUrl:", sUrl)
 		if (this.WordControl && this.WordControl.m_oDrawingDocument) {
 			this.WordControl.m_oDrawingDocument.UnlockCursorType();
 		}
