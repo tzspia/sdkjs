@@ -9332,13 +9332,15 @@ background-repeat: no-repeat;\
 				return false;
 			}
 			var oLogicDocument = this.private_GetLogicDocument();
+			console.log("🚀 ~ oLogicDocument:", oLogicDocument)
 			if (!oLogicDocument) {
 				console.error("无法获取文档对象");
 				return false;
 			}
+			console.log(`🚀 ~ window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
+			// var oDocument = window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument ? window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument(oLogicDocument) : new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
 
-			var oDocument = window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument ? window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument(oLogicDocument) : new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
-			console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
+			// console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
 
 			// 查找指定书签
 			var oBookmark = oLogicDocument.GetBookmark(sId);
@@ -9349,18 +9351,19 @@ background-repeat: no-repeat;\
 			}
 			// 获取书签范围和包含的段落
 			var oBookmarkRange = oBookmark.GetRange();
+			console.log("🚀 ~ oBookmarkRange:", oBookmarkRange)
 			var oParas = oBookmarkRange.GetAllParagraphs();
+			console.log("🚀 ~ oParas:", oParas)
 			var width = 40 * 36000;
 			var height = null;
 			var oImage = this.CreateImage(sUrl, width, height);
-			console.log(`🚀 ~ window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
 			oImage.SetWrappingStyle("behind");
 			var oParagraph = this.CreateParagraph();
+			console.log("🚀 ~ oParagraph:", oParagraph)
 			oParagraph.AddDrawing(oImage);
 
 			oBookmark.GoTo();
-			oDocument.InsertContent([oParagraph]);
-
+			// oDocument.InsertContent([oParagraph]);
 			oBookmark.Delete();
 
 			if (oParas && oParas.length > 0) {
