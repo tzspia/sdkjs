@@ -9336,30 +9336,19 @@ background-repeat: no-repeat;\
 				console.error("无法获取文档对象");
 				return false;
 			}
-			// 使用ApiDocument创建文档对象
-
-			// console.log(`🚀 ~ new window["Asc"]["asc_docs_api"].prototype:`, new window["Asc"]["asc_docs_api"].prototype)
-			// console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, new window["Asc"]["asc_docs_api"])
-			// console.log(`🚀 ~ new window["Asc"]:`, new window["Asc"])
-			// // console.log("🚀 ~ oDocument:", oDocument)
-			// var oDocument = new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
-			// console.log("🚀 ~ oDocument1111111111:", oDocument)
-			// // // 使用ApiDocument创建文档对象
-			// var oDocument = new ApiDocument(oLogicDocument);
-
 			// 通过GetBookmarksManager查找指定书签
 			var oBookmarksManager = this.asc_GetBookmarksManager();
 			console.log("🚀 ~ oBookmarksManager:", oBookmarksManager)
-			var oBookmark = oBookmarksManager.GetBookmark(sId);
+			var oBookmark = oBookmarksManager.GetBookmarkByName(sId);
 			console.log("🚀 ~ oBookmark:", oBookmark)
 			if (!oBookmark) {
 				console.warn(`未找到书签: ${sId}`);
 				return false;
 			}
 			// 获取书签范围和包含的段落
-			var oBookmarkRange = oBookmark.GetRange();
-			console.log("🚀 ~ oBookmarkRange:", oBookmarkRange)
-			var oParas = oBookmarkRange.GetAllParagraphs();
+			// var oBookmarkRange = oBookmark.GetRange();
+			var oParas = oBookmark[0].GetParagraph();
+			// var oParas = oBookmarkRange.GetAllParagraphs();
 			console.log("🚀 ~ oParas:", oParas)
 			var width = 40 * 36000;
 			var height = null;
@@ -9370,17 +9359,9 @@ background-repeat: no-repeat;\
 			oParagraph.AddDrawing(oImage);
 
 			oBookmark.GoTo();
-			// 使用ApiDocument插入内容
 			oLogicDocument.InsertContent([oParagraph]);
 			oBookmark.Delete();
 
-			if (oParas && oParas.length > 0) {
-				oParas.forEach(function (para) {
-					if (para && typeof para.Delete === 'function') {
-						para.Delete();
-					}
-				});
-			}
 			oParagraph.GetRange().AddBookmark(sId);
 			console.log("签名图片插入成功");
 			return true;
