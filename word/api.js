@@ -9324,7 +9324,6 @@ background-repeat: no-repeat;\
 		return oContentControl.IsCheckBoxChecked();
 	};
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, sToken) {
-		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
 			if (!sUrl) {
@@ -9337,11 +9336,17 @@ background-repeat: no-repeat;\
 				console.error("无法获取文档对象");
 				return false;
 			}
-			console.log(AscCommon)
 			// 使用ApiDocument创建文档对象
-			var oDocument = new AscCommon.ApiDocument(oLogicDocument);
-			console.log("🚀 ~ oDocument:", oDocument)
 
+			console.log(`🚀 ~ new window["Asc"]["asc_docs_api"].prototype:`, new window["Asc"]["asc_docs_api"].prototype)
+			console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, new window["Asc"]["asc_docs_api"])
+			console.log(`🚀 ~ new window["Asc"]:`, new window["Asc"])
+			// console.log("🚀 ~ oDocument:", oDocument)
+			var oDocument = new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
+			console.log("🚀 ~ oDocument1111111111:", oDocument)
+			// // 使用ApiDocument创建文档对象
+			var oDocument = new ApiDocument(oLogicDocument);
+			console.log("🚀 ~ oDocument:", oDocument)
 			// 通过GetBookmarksManager查找指定书签
 			var oBookmarksManager = this.asc_GetBookmarksManager();
 			console.log("🚀 ~ oBookmarksManager:", oBookmarksManager)
