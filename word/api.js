@@ -9337,13 +9337,15 @@ background-repeat: no-repeat;\
 				console.error("无法获取文档对象");
 				return false;
 			}
-			console.log(`🚀 ~ window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
-			// var oDocument = window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument ? window["Asc"]["asc_docs_api"].prototype.private_CreateApiDocument(oLogicDocument) : new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
+			console.log(AscCommon)
+			// 使用ApiDocument创建文档对象
+			var oDocument = new AscCommon.ApiDocument(oLogicDocument);
+			console.log("🚀 ~ oDocument:", oDocument)
 
-			// console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, window["Asc"]["asc_docs_api"])
-
-			// 查找指定书签
-			var oBookmark = oLogicDocument.GetBookmark(sId);
+			// 通过GetBookmarksManager查找指定书签
+			var oBookmarksManager = this.asc_GetBookmarksManager();
+			console.log("🚀 ~ oBookmarksManager:", oBookmarksManager)
+			var oBookmark = oBookmarksManager.GetBookmark(sId);
 			console.log("🚀 ~ oBookmark:", oBookmark)
 			if (!oBookmark) {
 				console.warn(`未找到书签: ${sId}`);
@@ -9363,7 +9365,8 @@ background-repeat: no-repeat;\
 			oParagraph.AddDrawing(oImage);
 
 			oBookmark.GoTo();
-			// oDocument.InsertContent([oParagraph]);
+			// 使用ApiDocument插入内容
+			oDocument.InsertContent([oParagraph]);
 			oBookmark.Delete();
 
 			if (oParas && oParas.length > 0) {
