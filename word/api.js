@@ -9338,15 +9338,15 @@ background-repeat: no-repeat;\
 			}
 			// 使用ApiDocument创建文档对象
 
-			console.log(`🚀 ~ new window["Asc"]["asc_docs_api"].prototype:`, new window["Asc"]["asc_docs_api"].prototype)
-			console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, new window["Asc"]["asc_docs_api"])
-			console.log(`🚀 ~ new window["Asc"]:`, new window["Asc"])
-			// console.log("🚀 ~ oDocument:", oDocument)
-			var oDocument = new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
-			console.log("🚀 ~ oDocument1111111111:", oDocument)
-			// // 使用ApiDocument创建文档对象
-			var oDocument = new ApiDocument(oLogicDocument);
-			console.log("🚀 ~ oDocument:", oDocument)
+			// console.log(`🚀 ~ new window["Asc"]["asc_docs_api"].prototype:`, new window["Asc"]["asc_docs_api"].prototype)
+			// console.log(`🚀 ~ new window["Asc"]["asc_docs_api"]:`, new window["Asc"]["asc_docs_api"])
+			// console.log(`🚀 ~ new window["Asc"]:`, new window["Asc"])
+			// // console.log("🚀 ~ oDocument:", oDocument)
+			// var oDocument = new window["Asc"]["asc_docs_api"].prototype.ApiDocument(oLogicDocument);
+			// console.log("🚀 ~ oDocument1111111111:", oDocument)
+			// // // 使用ApiDocument创建文档对象
+			// var oDocument = new ApiDocument(oLogicDocument);
+
 			// 通过GetBookmarksManager查找指定书签
 			var oBookmarksManager = this.asc_GetBookmarksManager();
 			console.log("🚀 ~ oBookmarksManager:", oBookmarksManager)
@@ -9371,7 +9371,7 @@ background-repeat: no-repeat;\
 
 			oBookmark.GoTo();
 			// 使用ApiDocument插入内容
-			oDocument.InsertContent([oParagraph]);
+			oLogicDocument.InsertContent([oParagraph]);
 			oBookmark.Delete();
 
 			if (oParas && oParas.length > 0) {
