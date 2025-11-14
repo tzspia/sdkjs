@@ -9358,7 +9358,8 @@ background-repeat: no-repeat;\
 			var oParagraph = this.CreateParagraph();
 			console.log("🚀 ~ oParagraph:", oParagraph)
 			// oParagraph.prototype.AddDrawing(oImage);
-			let oParaDrawing = oImage.getParaDrawing();
+			let oParaDrawing = oImage.parent;
+			console.log("🚀 ~ oParaDrawing:", oParaDrawing)
 			if (!oParaDrawing)
 				return false;
 
@@ -9401,7 +9402,15 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~ 3333333333333:")
 			// oLogicDocument.InsertContent([oParagraph]);
 			// oParas.Delete();
+			var oParent = oParagraph.GetParent();
+			console.log("🚀 ~ oParent:", oParent)
+			var nPosInParent = oParagraph.GetIndex();
+			console.log("🚀 ~ nPosInParent:", nPosInParent)
 
+			if (nPosInParent !== - 1) {
+				oParagraph.PreDelete();
+				oParent.Remove_FromContent(nPosInParent, 1, true);
+			}
 			// oParagraph.GetRange().AddBookmark(sId);
 			console.log("签名图片插入成功");
 			return true;
