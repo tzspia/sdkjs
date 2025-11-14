@@ -9375,7 +9375,7 @@ background-repeat: no-repeat;\
 			oRun.Add_ToContent(0, oDrawing);
 			oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
 			oParagraph.CorrectContent(undefined, undefined, true);
-			oParaDrawing.Set_Parent(oRun);
+			oDrawing.Set_Parent(oRun);
 			console.log("🚀 ~ oParagraph111111111:", oParagraph)
 
 			// oBookmark.GoTo();
