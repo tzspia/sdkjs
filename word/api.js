@@ -9352,19 +9352,27 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~ oParas:", oParas)
 			var width = 40 * 36000;
 			var height = null;
-			var oImage = this.CreateImage(sUrl, width, height);
-			oImage.SetWrappingStyle("behind");
+			// var oImage = this.CreateImage(sUrl, width, height);
+			let oDrawingObjects = oLogicDocument.DrawingObjects;
+			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
+			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
+			oImage.setParent(oDrawing);
+			oDrawing.Set_GraphicObject(oImage);
+			oDrawing.Set_DrawingType(drawing_Anchor);
+			oDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+			oDrawing.Set_BehindDoc(false);
+
+			console.log("🚀 ~ oDrawing:", oDrawing)
+			// oImage.SetWrappingStyle("behind");
 			console.log("🚀 ~ oImage:", oImage)
 			var oParagraph = this.CreateParagraph();
 			console.log("🚀 ~ oParagraph:", oParagraph)
 			// oParagraph.prototype.AddDrawing(oImage);
-			let oParaDrawing = oImage.parent;
-			console.log("🚀 ~ oParaDrawing:", oParaDrawing)
-			if (!oParaDrawing)
-				return false;
+			// if (!oParaDrawing)
+			// 	return false;
 
 			let oRun = new ParaRun(oParagraph, false);
-			oRun.Add_ToContent(0, oParaDrawing);
+			oRun.Add_ToContent(0, oDrawing);
 			oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
 			oParagraph.CorrectContent(undefined, undefined, true);
 			oParaDrawing.Set_Parent(oRun);
