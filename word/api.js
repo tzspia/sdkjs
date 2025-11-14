@@ -9357,10 +9357,10 @@ background-repeat: no-repeat;\
 			let oDrawingObjects = oLogicDocument.DrawingObjects;
 			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
 
-			console.log("🚀 ~ oImage:", oImage)
 			let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oLogicDocument.DrawingDocument, oLogicDocument, null);
-			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
 			console.log("🚀 ~ oDrawing:", oDrawing)
+			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
+			console.log("🚀 ~ oImage:", oImage)
 			oImage.setParent(oDrawing);
 			console.log("🚀 ~ oImage:111111111111111111")
 			oDrawing.Set_GraphicObject(oImage);
