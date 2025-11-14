@@ -9356,17 +9356,20 @@ background-repeat: no-repeat;\
 			// var oImage = this.CreateImage(sUrl, width, height);
 			let oDrawingObjects = oLogicDocument.DrawingObjects;
 			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
-			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
+
 			console.log("🚀 ~ oImage:", oImage)
-			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
+			let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oLogicDocument.DrawingDocument, oLogicDocument, null);
+			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
 			console.log("🚀 ~ oDrawing:", oDrawing)
 			oImage.setParent(oDrawing);
 			console.log("🚀 ~ oImage:111111111111111111")
 			oDrawing.Set_GraphicObject(oImage);
+			console.log("🚀 ~ oImage:1")
 			oDrawing.Set_DrawingType(drawing_Anchor);
+			console.log("🚀 ~ oImage:2")
 			oDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
-			oDrawing.Set_BehindDoc(false);
-
+			console.log("🚀 ~ oImage:3")
+			oDrawing.Set_BehindDoc(true);
 			console.log("🚀 ~ oDrawing22222222222222:", oDrawing)
 			// oImage.SetWrappingStyle("behind");
 			console.log("🚀 ~ oImage:", oImage)
