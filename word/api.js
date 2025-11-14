@@ -9373,7 +9373,7 @@ background-repeat: no-repeat;\
 			this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
 			console.log("🚀 ~ 111111111111111:")
 			if (oParagraph.Parent != null) {
-				oParagraph.SetParent(private_GetLogicDocument());
+				oParagraph.SetParent(this.private_GetLogicDocument());
 			}
 
 			var oSelectedContent = new AscCommonWord.CSelectedContent();
