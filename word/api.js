@@ -9354,15 +9354,55 @@ background-repeat: no-repeat;\
 			var height = null;
 			var oImage = this.CreateImage(sUrl, width, height);
 			oImage.SetWrappingStyle("behind");
+			console.log("🚀 ~ oImage:", oImage)
 			var oParagraph = this.CreateParagraph();
 			console.log("🚀 ~ oParagraph:", oParagraph)
-			oParagraph.AddDrawing(oImage);
+			// oParagraph.prototype.AddDrawing(oImage);
+			let oParaDrawing = oImage.getParaDrawing();
+			if (!oParaDrawing)
+				return false;
 
-			oBookmark.GoTo();
-			oLogicDocument.InsertContent([oParagraph]);
-			oBookmark.Delete();
+			let oRun = new ParaRun(oParagraph, false);
+			oRun.Add_ToContent(0, oParaDrawing);
+			oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
+			oParagraph.CorrectContent(undefined, undefined, true);
+			oParaDrawing.Set_Parent(oRun);
+			console.log("🚀 ~ oParagraph111111111:", oParagraph)
 
-			oParagraph.GetRange().AddBookmark(sId);
+			// oBookmark.GoTo();
+			this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
+			console.log("🚀 ~ 111111111111111:")
+			if (oParagraph.Parent != null) {
+				oParagraph.SetParent(private_GetLogicDocument());
+			}
+
+			var oSelectedContent = new AscCommonWord.CSelectedContent();
+			oSelectedContent.Add(new AscCommonWord.CSelectedElement(oParagraph, true));
+			oSelectedContent.EndCollect(oLogicDocument);
+
+			if (oLogicDocument.IsSelectionUse()) {
+				oLogicDocument.Start_SilentMode();
+				oLogicDocument.Remove(1, false, false, true);
+				oLogicDocument.End_SilentMode();
+				oLogicDocument.RemoveSelection(true);
+			}
+			var oParagraph = oLogicDocument.GetCurrentParagraph(undefined, undefined, { CheckDocContent: true });
+			if (!oParagraph)
+				return false;
+
+			var oNearestPos = {
+				Paragraph: oParagraph,
+				ContentPos: oParagraph.Get_ParaContentPos(false, false)
+			};
+			console.log("🚀 ~ 2222222222222222:")
+			oParagraph.Check_NearestPos(oNearestPos);
+			oSelectedContent.Insert(oNearestPos);
+			oParagraph.Clear_NearestPosArray();
+			console.log("🚀 ~ 3333333333333:")
+			// oLogicDocument.InsertContent([oParagraph]);
+			// oParas.Delete();
+
+			// oParagraph.GetRange().AddBookmark(sId);
 			console.log("签名图片插入成功");
 			return true;
 		} catch (e) {
