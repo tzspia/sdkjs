@@ -9419,30 +9419,30 @@ background-repeat: no-repeat;\
 				oLogicDocument.End_SilentMode();
 				oLogicDocument.RemoveSelection(true);
 			}
-			var oParagraph = oLogicDocument.GetCurrentParagraph(undefined, undefined, { CheckDocContent: true });
-			if (!oParagraph)
+			var oParagraph1 = oLogicDocument.GetCurrentParagraph(undefined, undefined, { CheckDocContent: true });
+			if (!oParagraph1)
 				return false;
 
 			var oNearestPos = {
-				Paragraph: oParagraph,
-				ContentPos: oParagraph.Get_ParaContentPos(false, false)
+				Paragraph: oParagraph1,
+				ContentPos: oParagraph1.Get_ParaContentPos(false, false)
 			};
 			console.log("🚀 ~ 2222222222222222:")
-			oParagraph.Check_NearestPos(oNearestPos);
+			oParagraph1.Check_NearestPos(oNearestPos);
 			oSelectedContent.Insert(oNearestPos);
-			oParagraph.Clear_NearestPosArray();
+			oParagraph1.Clear_NearestPosArray();
 			console.log("🚀 ~ 3333333333333:")
 			// oLogicDocument.InsertContent([oParagraph]);
 			// oParas.Delete();
-			var oParent = oParagraph.GetParent();
-			console.log("🚀 ~ oParent:", oParent)
-			var nPosInParent = oParagraph.GetIndex();
-			console.log("🚀 ~ nPosInParent:", nPosInParent)
+			// var oParent = oParagraph1.GetParent();
+			// console.log("🚀 ~ oParent:", oParent)
+			// var nPosInParent = oParagraph1.GetIndex();
+			// console.log("🚀 ~ nPosInParent:", nPosInParent)
 
-			if (nPosInParent !== - 1) {
-				oParagraph.PreDelete();
-				oParent.Remove_FromContent(nPosInParent, 1, true);
-			}
+			// if (nPosInParent !== - 1) {
+			// 	oParagraph1.PreDelete();
+			// 	oParent.Remove_FromContent(nPosInParent, 1, true);
+			// }
 			// oParagraph.GetRange().AddBookmark(sId);
 			console.log("签名图片插入成功");
 			return true;
