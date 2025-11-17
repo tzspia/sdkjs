@@ -9363,6 +9363,16 @@ background-repeat: no-repeat;\
 			oImage.setParent(oDrawing);
 			oDrawing.Set_GraphicObject(oImage);
 			console.log("🚀 ~ oDrawing:", oDrawing)
+
+			var oImageProps = new asc_CImgProperty();
+			console.log("🚀 ~ oImageProps:", oImageProps)
+			// 选择一种环绕方式
+			oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Behind);
+			console.log("🚀 ~ oImageProps:11111111111")
+			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.InFront);
+			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
+			oDrawing.Set_Props(oImageProps);
+			console.log("🚀 ~ oImageProps:2222222222222")
 			// oDrawing.Set_DrawingType(drawing_Anchor);
 			// console.log("🚀 ~ oImage:2")
 			// oDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
@@ -9373,7 +9383,8 @@ background-repeat: no-repeat;\
 			// console.log("🚀 ~ oImage:", oImage)
 			// oLogicDocument.AddSignatureLine(oDrawing);
 			console.log("🚀 ~ oImage:222222222222222222222")
-			var oParagraph = this.CreateParagraph();
+			// var oParagraph = this.CreateParagraph();
+			var oParagraph = new AscWord.Paragraph(oLogicDocument);
 			console.log("🚀 ~ oParagraph:", oParagraph)
 			// oParagraph.prototype.AddDrawing(oImage);
 			// if (!oParaDrawing)
@@ -9384,9 +9395,9 @@ background-repeat: no-repeat;\
 			// let oRun = new ParaRun(oParagraph, false);
 			let oRun = new AscCommonWord.ParaRun(oParagraph, false);
 			console.log("🚀 ~ oRun:", oRun)
-			oRun.AddToContent(0, oDrawing);
+			oRun.Add_ToContent(0, oDrawing);
 			console.log("🚀 ~ 111111111:")
-			oParagraph.AddToContent(oParagraph.Content.length - 1, oRun);
+			oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
 			console.log("🚀 ~123123123:")
 			oParagraph.CorrectContent(undefined, undefined, true);
 			console.log("🚀 ~888888:")
