@@ -9389,8 +9389,8 @@ background-repeat: no-repeat;\
 			// oParagraph.prototype.AddDrawing(oImage);
 			// if (!oParaDrawing)
 			// 	return false;
-			this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
-
+			// this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
+			oBookmark[0].GoToBookmark();
 			console.log("🚀 ~ oBookmark:88888888888888888888")
 			// let oRun = new ParaRun(oParagraph, false);
 			let oRun = new AscCommonWord.ParaRun(oParagraph, false);
@@ -9431,7 +9431,26 @@ background-repeat: no-repeat;\
 			oParagraph1.Check_NearestPos(oNearestPos);
 			oSelectedContent.Insert(oNearestPos);
 			oParagraph1.Clear_NearestPosArray();
+
+			var needDeletePara = oBookmark[0].GetParagraph();
 			console.log("🚀 ~ 3333333333333:")
+			oBookmark.RemoveBookmark();
+			// oLogicDocument.InsertContent([oParagraph]);
+			// oParas.Delete();
+			var needDeleteParaParent = needDeletePara.GetParent();
+			console.log("🚀 ~ needDeleteParaParent:", needDeleteParaParent)
+			var nPosInParent = needDeletePara.GetIndex();
+			console.log("🚀 ~ nPosInParent:", nPosInParent)
+
+			if (nPosInParent !== - 1) {
+				needDeletePara.PreDelete();
+				needDeleteParaParent.Remove_FromContent(nPosInParent, 1, true);
+			}
+			oParagraph.SelectAll(AscWord.Direction.FORWARD);
+			oLogicDocument.AddBookmark(sId);
+			// oParagraph.GetRange().AddBookmark(sId);
+			console.log("签名图片插入成功");
+			return true;
 			// oLogicDocument.InsertContent([oParagraph]);
 			// oParas.Delete();
 			// var oParent = oParagraph1.GetParent();
@@ -9444,8 +9463,6 @@ background-repeat: no-repeat;\
 			// 	oParent.Remove_FromContent(nPosInParent, 1, true);
 			// }
 			// oParagraph.GetRange().AddBookmark(sId);
-			console.log("签名图片插入成功");
-			return true;
 		} catch (e) {
 			console.error("插入签名过程中发生错误:", e);
 			return false;
