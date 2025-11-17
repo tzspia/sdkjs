@@ -9357,14 +9357,12 @@ background-repeat: no-repeat;\
 			let oDrawingObjects = oLogicDocument.DrawingObjects;
 			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
 
-			let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oLogicDocument.DrawingDocument, oLogicDocument, null);
-			console.log("🚀 ~ oDrawing:", oDrawing)
+
 			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
-			console.log("🚀 ~ oImage:", oImage)
+			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
 			oImage.setParent(oDrawing);
-			console.log("🚀 ~ oImage:111111111111111111")
 			oDrawing.Set_GraphicObject(oImage);
-			console.log("🚀 ~ oImage:1")
+			console.log("🚀 ~ oDrawing:", oDrawing)
 			// oDrawing.Set_DrawingType(drawing_Anchor);
 			// console.log("🚀 ~ oImage:2")
 			// oDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
@@ -9373,22 +9371,27 @@ background-repeat: no-repeat;\
 			// console.log("🚀 ~ oDrawing22222222222222:", oDrawing)
 			// // oImage.SetWrappingStyle("behind");
 			// console.log("🚀 ~ oImage:", oImage)
+			oLogicDocument.AddSignatureLine(oDrawing);
+			console.log("🚀 ~ oImage:222222222222222222222")
 			var oParagraph = this.CreateParagraph();
 			console.log("🚀 ~ oParagraph:", oParagraph)
 			// oParagraph.prototype.AddDrawing(oImage);
 			// if (!oParaDrawing)
 			// 	return false;
-
+			this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
+			console.log("🚀 ~ oBookmark:88888888888888888888")
 			let oRun = new ParaRun(oParagraph, false);
+			console.log("🚀 ~ oRun:", oRun)
 			oRun.Add_ToContent(0, oDrawing);
+			console.log("🚀 ~ 111111111:")
 			oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
+			console.log("🚀 ~123123123:")
 			oParagraph.CorrectContent(undefined, undefined, true);
+			console.log("🚀 ~888888:")
 			oDrawing.Set_Parent(oRun);
 			console.log("🚀 ~ oParagraph111111111:", oParagraph)
 
 			// oBookmark.GoTo();
-			this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
-			console.log("🚀 ~ 111111111111111:")
 			if (oParagraph.Parent != null) {
 				oParagraph.SetParent(this.private_GetLogicDocument());
 			}
