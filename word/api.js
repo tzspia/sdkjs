@@ -9363,15 +9363,16 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~ oImage:", oImage)
 			oImage.setParent(oDrawing);
 			console.log("🚀 ~ oImage:111111111111111111")
-			oDrawing.Set_GraphicObject(oImage);
+
 			console.log("🚀 ~ oImage:1")
-			oDrawing.Set_DrawingType(drawing_Anchor);
+			oImage.Set_DrawingType(drawing_Anchor);
 			console.log("🚀 ~ oImage:2")
-			oDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+			oImage.Set_WrappingType(WRAPPING_TYPE_NONE);
 			console.log("🚀 ~ oImage:3")
-			oDrawing.Set_BehindDoc(true);
+			oImage.Set_BehindDoc(true);
 			console.log("🚀 ~ oDrawing22222222222222:", oDrawing)
 			// oImage.SetWrappingStyle("behind");
+			oDrawing.Set_GraphicObject(oImage);
 			console.log("🚀 ~ oImage:", oImage)
 			var oParagraph = this.CreateParagraph();
 			console.log("🚀 ~ oParagraph:", oParagraph)
