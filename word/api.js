@@ -9382,7 +9382,7 @@ background-repeat: no-repeat;\
 
 			console.log("🚀 ~ oBookmark:88888888888888888888")
 			// let oRun = new ParaRun(oParagraph, false);
-			let oRun = new AscCommonWord.ParaRun(oNewParagraph, false);
+			let oRun = new AscCommonWord.ParaRun(oParagraph, false);
 			console.log("🚀 ~ oRun:", oRun)
 			oRun.Add_ToContent(0, oDrawing);
 			console.log("🚀 ~ 111111111:")
