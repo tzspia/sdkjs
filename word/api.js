@@ -9371,7 +9371,7 @@ background-repeat: no-repeat;\
 			// console.log("🚀 ~ oDrawing22222222222222:", oDrawing)
 			// // oImage.SetWrappingStyle("behind");
 			// console.log("🚀 ~ oImage:", oImage)
-			oLogicDocument.AddSignatureLine(oDrawing);
+			// oLogicDocument.AddSignatureLine(oDrawing);
 			console.log("🚀 ~ oImage:222222222222222222222")
 			var oParagraph = this.CreateParagraph();
 			console.log("🚀 ~ oParagraph:", oParagraph)
