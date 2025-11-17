@@ -9379,8 +9379,10 @@ background-repeat: no-repeat;\
 			// if (!oParaDrawing)
 			// 	return false;
 			this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
+
 			console.log("🚀 ~ oBookmark:88888888888888888888")
-			let oRun = new ParaRun(oParagraph, false);
+			// let oRun = new ParaRun(oParagraph, false);
+			let oRun = new AscCommonWord.ParaRun(oNewParagraph, false);
 			console.log("🚀 ~ oRun:", oRun)
 			oRun.Add_ToContent(0, oDrawing);
 			console.log("🚀 ~ 111111111:")
