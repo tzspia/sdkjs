@@ -9384,9 +9384,9 @@ background-repeat: no-repeat;\
 			// let oRun = new ParaRun(oParagraph, false);
 			let oRun = new AscCommonWord.ParaRun(oParagraph, false);
 			console.log("🚀 ~ oRun:", oRun)
-			oRun.Add_ToContent(0, oDrawing);
+			oRun.AddToContent(0, oDrawing);
 			console.log("🚀 ~ 111111111:")
-			oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
+			oParagraph.AddToContent(oParagraph.Content.length - 1, oRun);
 			console.log("🚀 ~123123123:")
 			oParagraph.CorrectContent(undefined, undefined, true);
 			console.log("🚀 ~888888:")
