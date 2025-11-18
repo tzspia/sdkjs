@@ -9359,9 +9359,14 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
 
 
-			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
-			// let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
-			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
+			// let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
+			// // let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
+			// let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
+
+			var oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oLogicDocument.GetDrawingDocument(), oLogicDocument, null);
+			console.log("🚀 ~ oDrawing:", oDrawing)
+			var oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
+			console.log("🚀 ~ oImage:", oImage)
 			oImage.setParent(oDrawing);
 			oDrawing.Set_GraphicObject(oImage);
 			console.log("🚀 ~ oDrawing:", oDrawing)
