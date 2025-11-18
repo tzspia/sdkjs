@@ -9323,7 +9323,8 @@ background-repeat: no-repeat;\
 
 		return oContentControl.IsCheckBoxChecked();
 	};
-	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, sToken) {
+	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken) {
+		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
 			if (!sUrl) {
@@ -9347,12 +9348,12 @@ background-repeat: no-repeat;\
 			}
 			// 获取书签范围和包含的段落
 			// var oBookmarkRange = oBookmark.GetRange();
-			var oParas = oBookmark[0].GetParagraph();
+			// var oParas = oBookmark[0].GetParagraph();
 			// var oParas = oBookmarkRange.GetAllParagraphs();
-			console.log("🚀 ~ oParas:", oParas)
-			var width = 40 * 36000;
-			console.log("🚀 ~ width:", width)
-			var height = 40 * 36000;
+			// console.log("🚀 ~ oParas:", oParas)
+			// var width = 40;
+			// console.log("🚀 ~ width:", width)
+			// var height = 20;
 			// var oImage = this.CreateImage(sUrl, width, height);
 			let oDrawingObjects = oLogicDocument.DrawingObjects;
 			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
