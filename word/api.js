@@ -9359,14 +9359,10 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
 
 
-			// let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
-			// // let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
-			// let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
+			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
+			// let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
+			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
 
-			var oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oLogicDocument.GetDrawingDocument(), oLogicDocument, null);
-			console.log("🚀 ~ oDrawing:", oDrawing)
-			var oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
-			console.log("🚀 ~ oImage:", oImage)
 			oImage.setParent(oDrawing);
 			oDrawing.Set_GraphicObject(oImage);
 			console.log("🚀 ~ oDrawing:", oDrawing)
@@ -9374,11 +9370,11 @@ background-repeat: no-repeat;\
 			var oImageProps = new asc_CImgProperty();
 			console.log("🚀 ~ oImageProps:", oImageProps)
 			// 选择一种环绕方式
-			oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Behind);
+			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Behind);
 			console.log("🚀 ~ oImageProps:11111111111")
 			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.InFront);
-			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
-			oDrawing.Set_Props(oImageProps);
+			oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
+			// oDrawing.Set_Props(oImageProps);
 			console.log("🚀 ~ oImageProps:2222222222222")
 			// oDrawing.Set_DrawingType(drawing_Anchor);
 			// console.log("🚀 ~ oImage:2")
