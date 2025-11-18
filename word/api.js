@@ -9352,7 +9352,7 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~ oParas:", oParas)
 			var width = 40 * 36000;
 			console.log("🚀 ~ width:", width)
-			var height = null;
+			var height = 40 * 36000;
 			// var oImage = this.CreateImage(sUrl, width, height);
 			let oDrawingObjects = oLogicDocument.DrawingObjects;
 			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
@@ -9434,7 +9434,8 @@ background-repeat: no-repeat;\
 
 			var needDeletePara = oBookmark[0].GetParagraph();
 			console.log("🚀 ~ 3333333333333:")
-			oBookmark.RemoveBookmark();
+			oLogicDocument.RemoveBookmark(sId);
+			console.log("🚀 ~ sId:", sId)
 			// oLogicDocument.InsertContent([oParagraph]);
 			// oParas.Delete();
 			var needDeleteParaParent = needDeletePara.GetParent();
