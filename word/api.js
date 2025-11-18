@@ -9360,7 +9360,8 @@ background-repeat: no-repeat;\
 
 
 			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
-			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
+			// let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
+			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
 			oImage.setParent(oDrawing);
 			oDrawing.Set_GraphicObject(oImage);
 			console.log("🚀 ~ oDrawing:", oDrawing)
