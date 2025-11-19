@@ -9450,7 +9450,11 @@ background-repeat: no-repeat;\
 					}
 					oParagraph.SelectAll(AscWord.Direction.FORWARD);
 					oLogicDocument.AddBookmark(sId);
+
 					// oParagraph.GetRange().AddBookmark(sId);
+					oLogicDocument.Recalculate();
+					oLogicDocument.UpdateInterface();
+					oLogicDocument.UpdateSelection();
 					console.log("签名图片插入成功");
 					return true;
 				}
