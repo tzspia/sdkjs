@@ -9358,6 +9358,7 @@ background-repeat: no-repeat;\
 
 			const oApi = this;
 			var loadImageCallBack = function (loadedImage) {
+				console.log("🚀 ~ loadImageCallBack ~ loadedImage:", loadedImage)
 				if (loadedImage.Image) {
 					let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oApi.WordControl.m_oDrawingDocument, oLogicDocument, null);
 					let oImage = oLogicDocument.DrawingObjects.createImage(loadedImage.src, 0, 0, width, height);
