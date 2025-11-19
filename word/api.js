@@ -9355,13 +9355,10 @@ background-repeat: no-repeat;\
 			// console.log("🚀 ~ width:", width)
 			// var height = 20;
 			// var oImage = this.CreateImage(sUrl, width, height);
-			let oDrawingObjects = oLogicDocument.DrawingObjects;
-			console.log("🚀 ~ oDrawingObjects:", oDrawingObjects)
-
-
-			let oImage = oDrawingObjects.createImage(sUrl, 0, 0, width, height);
-			// let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
-			let oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
+			// 按照SDK中正确的流程，先创建ParaDrawing对象，第一个参数为null
+			let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
+			// 然后创建图片对象
+			let oImage = oLogicDocument.DrawingObjects.createImage(sUrl, 0, 0, width, height);
 
 			oImage.setParent(oDrawing);
 			oDrawing.Set_GraphicObject(oImage);
@@ -9374,7 +9371,7 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~ oImageProps:11111111111")
 			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.InFront);
 			oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
-			// oDrawing.Set_Props(oImageProps);
+			oDrawing.Set_Props(oImageProps);
 			console.log("🚀 ~ oImageProps:2222222222222")
 			// oDrawing.Set_DrawingType(drawing_Anchor);
 			// console.log("🚀 ~ oImage:2")
@@ -9404,57 +9401,14 @@ background-repeat: no-repeat;\
 			console.log("🚀 ~123123123:")
 			oParagraph.CorrectContent(undefined, undefined, true);
 			console.log("🚀 ~888888:")
-			oDrawing.Set_Parent(oRun);
-			console.log("🚀 ~ oParagraph111111111:", oParagraph)
+			// 直接使用SDK提供的AddToParagraph方法将图片添加到文档中
+			oLogicDocument.AddToParagraph(oDrawing);
 
-			// oBookmark.GoTo();
-			if (oParagraph.Parent != null) {
-				oParagraph.SetParent(this.private_GetLogicDocument());
-			}
-
-			var oSelectedContent = new AscCommonWord.CSelectedContent();
-			oSelectedContent.Add(new AscCommonWord.CSelectedElement(oParagraph, true));
-			oSelectedContent.EndCollect(oLogicDocument);
-
-			if (oLogicDocument.IsSelectionUse()) {
-				oLogicDocument.Start_SilentMode();
-				oLogicDocument.Remove(1, false, false, true);
-				oLogicDocument.End_SilentMode();
-				oLogicDocument.RemoveSelection(true);
-			}
-			var oParagraph1 = oLogicDocument.GetCurrentParagraph(undefined, undefined, { CheckDocContent: true });
-			if (!oParagraph1)
-				return false;
-
-			var oNearestPos = {
-				Paragraph: oParagraph1,
-				ContentPos: oParagraph1.Get_ParaContentPos(false, false)
-			};
-			console.log("🚀 ~ 2222222222222222:")
-			oParagraph1.Check_NearestPos(oNearestPos);
-			oSelectedContent.Insert(oNearestPos);
-			oParagraph1.Clear_NearestPosArray();
-
-			var needDeletePara = oBookmark[0].GetParagraph();
-			console.log("🚀 ~ 3333333333333:")
+			// 选择刚插入的图片并重新添加书签
 			oLogicDocument.RemoveBookmark(sId);
-			console.log("🚀 ~ sId:", sId)
-			// oLogicDocument.InsertContent([oParagraph]);
-			// oParas.Delete();
-			var needDeleteParaParent = needDeletePara.GetParent();
-			console.log("🚀 ~ needDeleteParaParent:", needDeleteParaParent)
-			var nPosInParent = needDeletePara.GetIndex();
-			console.log("🚀 ~ nPosInParent:", nPosInParent)
-
-			if (nPosInParent !== - 1) {
-				needDeletePara.PreDelete();
-				needDeleteParaParent.Remove_FromContent(nPosInParent, 1, true);
-			}
-			oParagraph.SelectAll(AscWord.Direction.FORWARD);
+			oDrawing.Select();
 			oLogicDocument.AddBookmark(sId);
 			oLogicDocument.Recalculate();
-			oLogicDocument.UpdateInterface();
-			oLogicDocument.UpdateSelection();
 			// oParagraph.GetRange().AddBookmark(sId);
 			console.log("签名图片插入成功");
 			return true;
