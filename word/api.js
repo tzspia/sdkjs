@@ -9355,62 +9355,115 @@ background-repeat: no-repeat;\
 			// console.log("🚀 ~ width:", width)
 			// var height = 20;
 			// var oImage = this.CreateImage(sUrl, width, height);
-			// 按照SDK中正确的流程，先创建ParaDrawing对象，第一个参数为null
-			let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, this.WordControl.m_oDrawingDocument, oLogicDocument, null);
-			// 然后创建图片对象
-			let oImage = oLogicDocument.DrawingObjects.createImage(sUrl, 0, 0, width, height);
 
-			oImage.setParent(oDrawing);
-			oDrawing.Set_GraphicObject(oImage);
-			console.log("🚀 ~ oDrawing:", oDrawing)
+			const oApi = this;
+			var loadImageCallBack = function (loadedImage) {
+				if (loadedImage.Image) {
+					let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oApi.WordControl.m_oDrawingDocument, oLogicDocument, null);
+					let oImage = oLogicDocument.DrawingObjects.createImage(loadedImage.src, 0, 0, width, height);
+					oImage.setParent(oDrawing);
+					oDrawing.Set_GraphicObject(oImage);
+					console.log("🚀 ~ oDrawing:", oDrawing)
 
-			var oImageProps = new asc_CImgProperty();
-			console.log("🚀 ~ oImageProps:", oImageProps)
-			// 选择一种环绕方式
-			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Behind);
-			console.log("🚀 ~ oImageProps:11111111111")
-			// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.InFront);
-			oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
-			oDrawing.Set_Props(oImageProps);
-			console.log("🚀 ~ oImageProps:2222222222222")
-			// oDrawing.Set_DrawingType(drawing_Anchor);
-			// console.log("🚀 ~ oImage:2")
-			// oDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
-			// console.log("🚀 ~ oImage:3")
-			// oDrawing.Set_BehindDoc(true);
-			// console.log("🚀 ~ oDrawing22222222222222:", oDrawing)
-			// // oImage.SetWrappingStyle("behind");
-			// console.log("🚀 ~ oImage:", oImage)
-			// oLogicDocument.AddSignatureLine(oDrawing);
-			console.log("🚀 ~ oImage:222222222222222222222")
-			// var oParagraph = this.CreateParagraph();
-			var oParagraph = new AscWord.Paragraph(oLogicDocument);
-			console.log("🚀 ~ oParagraph:", oParagraph)
-			// oParagraph.prototype.AddDrawing(oImage);
-			// if (!oParaDrawing)
-			// 	return false;
-			// this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
-			oBookmark[0].GoToBookmark();
-			console.log("🚀 ~ oBookmark:88888888888888888888")
-			// let oRun = new ParaRun(oParagraph, false);
-			let oRun = new AscCommonWord.ParaRun(oParagraph, false);
-			console.log("🚀 ~ oRun:", oRun)
-			oRun.Add_ToContent(0, oDrawing);
-			console.log("🚀 ~ 111111111:")
-			oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
-			console.log("🚀 ~123123123:")
-			oParagraph.CorrectContent(undefined, undefined, true);
-			console.log("🚀 ~888888:")
-			// 直接使用SDK提供的AddToParagraph方法将图片添加到文档中
-			oLogicDocument.AddToParagraph(oDrawing);
+					var oImageProps = new asc_CImgProperty();
+					console.log("🚀 ~ oImageProps:", oImageProps)
+					// 选择一种环绕方式
+					// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Behind);
+					console.log("🚀 ~ oImageProps:11111111111")
+					// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.InFront);
+					oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
+					oDrawing.Set_Props(oImageProps);
+					console.log("🚀 ~ oImageProps:2222222222222")
+					// oDrawing.Set_DrawingType(drawing_Anchor);
+					// console.log("🚀 ~ oImage:2")
+					// oDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+					// console.log("🚀 ~ oImage:3")
+					// oDrawing.Set_BehindDoc(true);
+					// console.log("🚀 ~ oDrawing22222222222222:", oDrawing)
+					// // oImage.SetWrappingStyle("behind");
+					// console.log("🚀 ~ oImage:", oImage)
+					// oLogicDocument.AddSignatureLine(oDrawing);
+					console.log("🚀 ~ oImage:222222222222222222222")
+					// var oParagraph = this.CreateParagraph();
+					var oParagraph = new AscWord.Paragraph(oLogicDocument);
+					console.log("🚀 ~ oParagraph:", oParagraph)
+					// oParagraph.prototype.AddDrawing(oImage);
+					// if (!oParaDrawing)
+					// 	return false;
+					// this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
+					oBookmark[0].GoToBookmark();
+					console.log("🚀 ~ oBookmark:88888888888888888888")
+					// let oRun = new ParaRun(oParagraph, false);
+					let oRun = new AscCommonWord.ParaRun(oParagraph, false);
+					console.log("🚀 ~ oRun:", oRun)
+					oRun.Add_ToContent(0, oDrawing);
+					console.log("🚀 ~ 111111111:")
+					oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
+					console.log("🚀 ~123123123:")
+					oParagraph.CorrectContent(undefined, undefined, true);
+					console.log("🚀 ~888888:")
+					oDrawing.Set_Parent(oRun);
+					console.log("🚀 ~ oParagraph111111111:", oParagraph)
 
-			// 选择刚插入的图片并重新添加书签
-			oLogicDocument.RemoveBookmark(sId);
-			oDrawing.Select();
-			oLogicDocument.AddBookmark(sId);
-			oLogicDocument.Recalculate();
-			// oParagraph.GetRange().AddBookmark(sId);
-			console.log("签名图片插入成功");
+					if (oParagraph.Parent != null) {
+						oParagraph.SetParent(this.private_GetLogicDocument());
+					}
+
+					var oSelectedContent = new AscCommonWord.CSelectedContent();
+					oSelectedContent.Add(new AscCommonWord.CSelectedElement(oParagraph, true));
+					oSelectedContent.EndCollect(oLogicDocument);
+
+					if (oLogicDocument.IsSelectionUse()) {
+						oLogicDocument.Start_SilentMode();
+						oLogicDocument.Remove(1, false, false, true);
+						oLogicDocument.End_SilentMode();
+						oLogicDocument.RemoveSelection(true);
+					}
+					var oParagraph1 = oLogicDocument.GetCurrentParagraph(undefined, undefined, { CheckDocContent: true });
+					if (!oParagraph1)
+						return false;
+
+					var oNearestPos = {
+						Paragraph: oParagraph1,
+						ContentPos: oParagraph1.Get_ParaContentPos(false, false)
+					};
+					console.log("🚀 ~ 2222222222222222:")
+					oParagraph1.Check_NearestPos(oNearestPos);
+					oSelectedContent.Insert(oNearestPos);
+					oParagraph1.Clear_NearestPosArray();
+
+					var needDeletePara = oBookmark[0].GetParagraph();
+					console.log("🚀 ~ 3333333333333:")
+					oLogicDocument.RemoveBookmark(sId);
+					console.log("🚀 ~ sId:", sId)
+					// oLogicDocument.InsertContent([oParagraph]);
+					// oParas.Delete();
+					var needDeleteParaParent = needDeletePara.GetParent();
+					console.log("🚀 ~ needDeleteParaParent:", needDeleteParaParent)
+					var nPosInParent = needDeletePara.GetIndex();
+					console.log("🚀 ~ nPosInParent:", nPosInParent)
+
+					if (nPosInParent !== - 1) {
+						needDeletePara.PreDelete();
+						needDeleteParaParent.Remove_FromContent(nPosInParent, 1, true);
+					}
+					oParagraph.SelectAll(AscWord.Direction.FORWARD);
+					oLogicDocument.AddBookmark(sId);
+					// oParagraph.GetRange().AddBookmark(sId);
+					console.log("签名图片插入成功");
+					return true;
+				}
+			}
+			const image = this.ImageLoader.LoadImage(sUrl, 1);
+			console.log("🚀 ~ image111111111111:", image)
+			if (null != image) {
+				loadImageCallBack(image);
+			}
+			else {
+				this.asyncImageEndLoaded2 = function (_img) {
+					loadImageCallBack(_img);
+				}
+			}
 			return true;
 			// oLogicDocument.InsertContent([oParagraph]);
 			// oParas.Delete();
@@ -9429,7 +9482,6 @@ background-repeat: no-repeat;\
 			return false;
 		}
 	};
-
 	asc_docs_api.prototype.asc_SetContentControlPictureUrl = function (sUrl, sId, sToken) {
 		if (this.WordControl && this.WordControl.m_oDrawingDocument) {
 			this.WordControl.m_oDrawingDocument.UnlockCursorType();
