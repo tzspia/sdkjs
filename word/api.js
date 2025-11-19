@@ -9406,7 +9406,7 @@ background-repeat: no-repeat;\
 					console.log("🚀 ~ oParagraph111111111:", oParagraph)
 
 					if (oParagraph.Parent != null) {
-						oParagraph.SetParent(this.private_GetLogicDocument());
+						oParagraph.SetParent(oLogicDocument);
 					}
 
 					var oSelectedContent = new AscCommonWord.CSelectedContent();
