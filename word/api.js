@@ -9323,7 +9323,7 @@ background-repeat: no-repeat;\
 
 		return oContentControl.IsCheckBoxChecked();
 	};
-	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken) {
+	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken,) {
 		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
@@ -9408,23 +9408,6 @@ background-repeat: no-repeat;\
 					oParagraph1.Check_NearestPos(oNearestPos);
 					oSelectedContent.Insert(oNearestPos);
 					oParagraph1.Clear_NearestPosArray();
-
-
-
-
-					// oLogicDocument.InsertContent([oParagraph]);
-					// oParas.Delete();
-					// var needDeleteParaParent = needDeletePara.GetParent();
-					// console.log("🚀 ~ needDeleteParaParent:", needDeleteParaParent)
-					// var nPosInParent = needDeletePara.GetIndex();
-					// console.log("🚀 ~ nPosInParent:", nPosInParent)
-
-					// if (nPosInParent !== - 1) {
-					// 	needDeletePara.PreDelete();
-					// 	needDeleteParaParent.Remove_FromContent(nPosInParent, 1, true);
-					// }
-					// oParagraph.SelectAll(AscWord.Direction.FORWARD);
-					// oLogicDocument.AddBookmark(sId);
 					var needDeletePara = oBookmark[0].GetParagraph();
 					var needDeleteParaParent = needDeletePara.GetParent();
 					var nPosInParent = needDeletePara.GetIndex();
@@ -9434,7 +9417,8 @@ background-repeat: no-repeat;\
 						needDeleteParaParent.Remove_FromContent(nPosInParent, 1, true);
 					}
 					oLogicDocument.RemoveBookmark(sId);
-					oParagraph.GetRange().AddBookmark(sId);
+					oParagraph.SelectAll(AscWord.Direction.FORWARD);
+					oLogicDocument.AddBookmark(sId);
 					oLogicDocument.Recalculate();
 					oLogicDocument.UpdateInterface();
 					oLogicDocument.UpdateSelection();
