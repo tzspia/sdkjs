@@ -9323,7 +9323,7 @@ background-repeat: no-repeat;\
 
 		return oContentControl.IsCheckBoxChecked();
 	};
-	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken,) {
+	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken, callback) {
 		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
@@ -9424,6 +9424,9 @@ background-repeat: no-repeat;\
 					oLogicDocument.UpdateSelection();
 					oLogicDocument.FinalizeAction();
 					console.log("签名图片插入成功");
+					if (callback) {
+						callback(oApi);
+					}
 					return true;
 				}
 			}
