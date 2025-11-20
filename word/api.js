@@ -9324,7 +9324,6 @@ background-repeat: no-repeat;\
 		return oContentControl.IsCheckBoxChecked();
 	};
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken, callback) {
-		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
 			if (!sUrl) {
@@ -9332,16 +9331,13 @@ background-repeat: no-repeat;\
 				return false;
 			}
 			var oLogicDocument = this.private_GetLogicDocument();
-			console.log("🚀 ~ oLogicDocument:", oLogicDocument)
 			if (!oLogicDocument) {
 				console.error("无法获取文档对象");
 				return false;
 			}
 			// 通过GetBookmarksManager查找指定书签
 			var oBookmarksManager = this.asc_GetBookmarksManager();
-			console.log("🚀 ~ oBookmarksManager:", oBookmarksManager)
 			var oBookmark = oBookmarksManager.GetBookmarkByName(sId);
-			console.log("🚀 ~ oBookmark:", oBookmark)
 			if (!oBookmark) {
 				console.warn(`未找到书签: ${sId}`);
 				return false;
@@ -9424,8 +9420,9 @@ background-repeat: no-repeat;\
 					type == 1 ? oDrawing.Set_Parent(oRun) : '';
 
 					oParagraph.CorrectContent(undefined, undefined, true);
-
-					oLogicDocument.RemoveBookmark(sId);
+					oBookmark[1].RemoveBookmark();
+					oBookmark[0].RemoveBookmark();
+					// oLogicDocument.RemoveBookmark(sId);
 					let newBookmarkId = oBookmarksManager.GetNewBookmarkId();
 					oParagraph.Add_ToContent(insertPos + 1, new AscWord.CParagraphBookmark(false, newBookmarkId, sId));
 					oParagraph.Add_ToContent(insertPos, new AscWord.CParagraphBookmark(true, newBookmarkId, sId));
