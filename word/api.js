@@ -9358,6 +9358,7 @@ background-repeat: no-repeat;\
 
 			const oApi = this;
 			var loadImageCallBack = function (loadedImage) {
+				oLogicDocument.StartAction();
 				console.log("🚀 ~ loadImageCallBack ~ loadedImage:", loadedImage)
 				if (loadedImage.Image) {
 					let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oApi.WordControl.m_oDrawingDocument, oLogicDocument, null);
@@ -9455,6 +9456,7 @@ background-repeat: no-repeat;\
 					oLogicDocument.Recalculate();
 					oLogicDocument.UpdateInterface();
 					oLogicDocument.UpdateSelection();
+					oLogicDocument.FinalizeAction();
 					console.log("签名图片插入成功");
 					return true;
 				}
