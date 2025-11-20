@@ -9324,7 +9324,6 @@ background-repeat: no-repeat;\
 		return oContentControl.IsCheckBoxChecked();
 	};
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken, callback) {
-		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
 			if (!sUrl) {
@@ -9332,29 +9331,17 @@ background-repeat: no-repeat;\
 				return false;
 			}
 			var oLogicDocument = this.private_GetLogicDocument();
-			console.log("🚀 ~ oLogicDocument:", oLogicDocument)
 			if (!oLogicDocument) {
 				console.error("无法获取文档对象");
 				return false;
 			}
 			// 通过GetBookmarksManager查找指定书签
 			var oBookmarksManager = this.asc_GetBookmarksManager();
-			console.log("🚀 ~ oBookmarksManager:", oBookmarksManager)
 			var oBookmark = oBookmarksManager.GetBookmarkByName(sId);
-			console.log("🚀 ~ oBookmark:", oBookmark)
 			if (!oBookmark) {
 				console.warn(`未找到书签: ${sId}`);
 				return false;
 			}
-			// 获取书签范围和包含的段落
-			// var oBookmarkRange = oBookmark.GetRange();
-			// var oParas = oBookmark[0].GetParagraph();
-			// var oParas = oBookmarkRange.GetAllParagraphs();
-			// console.log("🚀 ~ oParas:", oParas)
-			// var width = 40;
-			// console.log("🚀 ~ width:", width)
-			// var height = 20;
-			// var oImage = this.CreateImage(sUrl, width, height);
 
 			const oApi = this;
 			var loadImageCallBack = function (loadedImage) {
@@ -9373,7 +9360,6 @@ background-repeat: no-repeat;\
 					oDrawing.Set_Props(oImageProps);
 					// var oParagraph = this.CreateParagraph();
 					var oParagraph = new AscWord.Paragraph(oLogicDocument);
-					console.log("🚀 ~ oParagraph:", oParagraph)
 					// oParagraph.prototype.AddDrawing(oImage);
 					// if (!oParaDrawing)
 					// 	return false;
@@ -9413,7 +9399,7 @@ background-repeat: no-repeat;\
 					var nPosInParent = needDeletePara.GetIndex();
 
 					if (nPosInParent !== - 1) {
-						nPosInParent.PreDelete();
+						needDeletePara.PreDelete();
 						needDeleteParaParent.Remove_FromContent(nPosInParent, 1, true);
 					}
 					oLogicDocument.RemoveBookmark(sId);
@@ -9440,18 +9426,6 @@ background-repeat: no-repeat;\
 				}
 			}
 			return true;
-			// oLogicDocument.InsertContent([oParagraph]);
-			// oParas.Delete();
-			// var oParent = oParagraph1.GetParent();
-			// console.log("🚀 ~ oParent:", oParent)
-			// var nPosInParent = oParagraph1.GetIndex();
-			// console.log("🚀 ~ nPosInParent:", nPosInParent)
-
-			// if (nPosInParent !== - 1) {
-			// 	oParagraph1.PreDelete();
-			// 	oParent.Remove_FromContent(nPosInParent, 1, true);
-			// }
-			// oParagraph.GetRange().AddBookmark(sId);
 		} catch (e) {
 			console.error("插入签名过程中发生错误:", e);
 			return false;
