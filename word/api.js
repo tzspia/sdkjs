@@ -9324,6 +9324,7 @@ background-repeat: no-repeat;\
 		return oContentControl.IsCheckBoxChecked();
 	};
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken, callback) {
+		console.log("🚀 ~ sUrl:", sUrl)
 		try {
 			// 检查参数有效性
 			if (!sUrl) {
@@ -9331,17 +9332,29 @@ background-repeat: no-repeat;\
 				return false;
 			}
 			var oLogicDocument = this.private_GetLogicDocument();
+			console.log("🚀 ~ oLogicDocument:", oLogicDocument)
 			if (!oLogicDocument) {
 				console.error("无法获取文档对象");
 				return false;
 			}
 			// 通过GetBookmarksManager查找指定书签
 			var oBookmarksManager = this.asc_GetBookmarksManager();
+			console.log("🚀 ~ oBookmarksManager:", oBookmarksManager)
 			var oBookmark = oBookmarksManager.GetBookmarkByName(sId);
+			console.log("🚀 ~ oBookmark:", oBookmark)
 			if (!oBookmark) {
 				console.warn(`未找到书签: ${sId}`);
 				return false;
 			}
+			// 获取书签范围和包含的段落
+			// var oBookmarkRange = oBookmark.GetRange();
+			// var oParas = oBookmark[0].GetParagraph();
+			// var oParas = oBookmarkRange.GetAllParagraphs();
+			// console.log("🚀 ~ oParas:", oParas)
+			// var width = 40;
+			// console.log("🚀 ~ width:", width)
+			// var height = 20;
+			// var oImage = this.CreateImage(sUrl, width, height);
 
 			const oApi = this;
 			var loadImageCallBack = function (loadedImage) {
@@ -9359,52 +9372,66 @@ background-repeat: no-repeat;\
 					oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
 					oDrawing.Set_Props(oImageProps);
 					// var oParagraph = this.CreateParagraph();
-					var oParagraph = new AscWord.Paragraph(oLogicDocument);
-					// oParagraph.prototype.AddDrawing(oImage);
-					// if (!oParaDrawing)
-					// 	return false;
-					// this.WordControl.m_oLogicDocument.GoToBookmark(sId, true);
-					oBookmark[0].GoToBookmark();
+					var oParagraph = oBookmark[0].GetParagraph();
+
+					var runsInBookmark = [];
+					var bookmarkStarted = false;
+					let bookmarkPos = oParagraph.Content.length - 1;
+					for (let nPos = 0; nPos < oParagraph.Content.length; nPos++) {
+						let oElement = oParagraph.Content[nPos];
+
+						if (oElement instanceof AscWord.CParagraphBookmark) {
+							if (!bookmarkStarted) {
+								bookmarkStarted = true;
+								bookmarkPos = nPos;
+							} else {
+								// 遇到结束书签，停止收集
+								break;
+							}
+						}
+
+						if (bookmarkStarted && oElement instanceof AscWord.ParaRun) {
+							runsInBookmark.push({
+								nPos: nPos,
+								oElement: oElement
+							});
+						}
+					}
+
+					// 确定插入位置
+					let insertPos = runsInBookmark.length > 0 ? runsInBookmark[0].nPos : bookmarkPos + 1;
+
+					// 从后往前删除，避免索引变化问题
+					if (runsInBookmark.length > 0) {
+						for (let i = runsInBookmark.length - 1; i >= 0; i--) {
+							// 确保删除位置有效
+							let deletePos = runsInBookmark[i].nPos;
+							if (deletePos < oParagraph.Content.length) {
+								oParagraph.Remove_FromContent(deletePos, 1);
+							}
+						}
+					}
+
 					let oRun = new AscCommonWord.ParaRun(oParagraph, false);
-					oRun.Add_ToContent(0, oDrawing);
-					oParagraph.Add_ToContent(oParagraph.Content.length - 1, oRun);
+					type == 1 ? oRun.Add_ToContent(0, oDrawing) : '';
+
+					// 确保插入位置不越界
+					if (insertPos > oParagraph.Content.length) {
+						insertPos = oParagraph.Content.length;
+					}
+
+					oParagraph.Add_ToContent(insertPos, oRun);
+					type == 1 ? oDrawing.Set_Parent(oRun) : '';
+
 					oParagraph.CorrectContent(undefined, undefined, true);
-					oDrawing.Set_Parent(oRun);
-					if (oParagraph.Parent != null) {
-						oParagraph.SetParent(oLogicDocument);
-					}
 
-					var oSelectedContent = new AscCommonWord.CSelectedContent();
-					oSelectedContent.Add(new AscCommonWord.CSelectedElement(oParagraph, true));
-					oSelectedContent.EndCollect(oLogicDocument);
-
-					if (oLogicDocument.IsSelectionUse()) {
-						oLogicDocument.Start_SilentMode();
-						oLogicDocument.Remove(1, false, false, true);
-						oLogicDocument.End_SilentMode();
-						oLogicDocument.RemoveSelection(true);
-					}
-					var oParagraph1 = oLogicDocument.GetCurrentParagraph(undefined, undefined, { CheckDocContent: true });
-					if (!oParagraph1)
-						return false;
-					var oNearestPos = {
-						Paragraph: oParagraph1,
-						ContentPos: oParagraph1.Get_ParaContentPos(false, false)
-					};
-					oParagraph1.Check_NearestPos(oNearestPos);
-					oSelectedContent.Insert(oNearestPos);
-					oParagraph1.Clear_NearestPosArray();
-					var needDeletePara = oBookmark[0].GetParagraph();
-					var needDeleteParaParent = needDeletePara.GetParent();
-					var nPosInParent = needDeletePara.GetIndex();
-
-					if (nPosInParent !== - 1) {
-						needDeletePara.PreDelete();
-						needDeleteParaParent.Remove_FromContent(nPosInParent, 1, true);
-					}
 					oLogicDocument.RemoveBookmark(sId);
-					oParagraph.SelectAll(AscWord.Direction.FORWARD);
-					oLogicDocument.AddBookmark(sId);
+					let newBookmarkId = oBookmarksManager.GetNewBookmarkId();
+					oParagraph.Add_ToContent(insertPos + 1, new AscWord.CParagraphBookmark(false, newBookmarkId, sId));
+					oParagraph.Add_ToContent(insertPos, new AscWord.CParagraphBookmark(true, newBookmarkId, sId));
+					oBookmarksManager.AddBookmark(sId);
+					oParagraph.CorrectContent(undefined, undefined, true);
+
 					oLogicDocument.Recalculate();
 					oLogicDocument.UpdateInterface();
 					oLogicDocument.UpdateSelection();
@@ -9426,6 +9453,18 @@ background-repeat: no-repeat;\
 				}
 			}
 			return true;
+			// oLogicDocument.InsertContent([oParagraph]);
+			// oParas.Delete();
+			// var oParent = oParagraph1.GetParent();
+			// console.log("🚀 ~ oParent:", oParent)
+			// var nPosInParent = oParagraph1.GetIndex();
+			// console.log("🚀 ~ nPosInParent:", nPosInParent)
+
+			// if (nPosInParent !== - 1) {
+			// 	oParagraph1.PreDelete();
+			// 	oParent.Remove_FromContent(nPosInParent, 1, true);
+			// }
+			// oParagraph.GetRange().AddBookmark(sId);
 		} catch (e) {
 			console.error("插入签名过程中发生错误:", e);
 			return false;
