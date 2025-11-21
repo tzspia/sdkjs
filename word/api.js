@@ -9403,6 +9403,7 @@ background-repeat: no-repeat;\
 							// 确保删除位置有效
 							let deletePos = runsInBookmark[i].nPos;
 							if (deletePos < oParagraph.Content.length) {
+								runsInBookmark[i].oElement.PreDelete();
 								oParagraph.Remove_FromContent(deletePos, 1);
 							}
 						}
@@ -9422,7 +9423,7 @@ background-repeat: no-repeat;\
 					oParagraph.CorrectContent(undefined, undefined, true);
 					oBookmark[1].RemoveBookmark();
 					oBookmark[0].RemoveBookmark();
-					// oLogicDocument.RemoveBookmark(sId);
+					oLogicDocument.RemoveBookmark(sId);
 					let newBookmarkId = oBookmarksManager.GetNewBookmarkId();
 					oParagraph.Add_ToContent(insertPos + 1, new AscWord.CParagraphBookmark(false, newBookmarkId, sId));
 					oParagraph.Add_ToContent(insertPos, new AscWord.CParagraphBookmark(true, newBookmarkId, sId));
