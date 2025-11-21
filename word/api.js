@@ -9323,6 +9323,7 @@ background-repeat: no-repeat;\
 
 		return oContentControl.IsCheckBoxChecked();
 	};
+
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken, callback) {
 		try {
 			if (!sUrl) {
@@ -9362,10 +9363,10 @@ background-repeat: no-repeat;\
 					}
 				}
 
-				// 删除书签范围内中间内容（简单统一：如果未找到成对书签，回退到扫描 run 的方式）
+				// 删除书签范围内中间内容（保留书签节点本身，不移除或重建书签）
 				var insertPos = content.length;
 				if (idxStart === -1 || idxEnd === -1) {
-					// 扫描第一个书签到第二个书签之间的 ParaRun（或其它元素）并删除
+					// 扫描第一个书签到第二个书签之间的元素并删除（遇到书签节点时只标记范围，不删除书签）
 					var inRange = false;
 					var firstPosAfter = content.length;
 					for (var p = 0; p < content.length; p++) {
@@ -9382,7 +9383,7 @@ background-repeat: no-repeat;\
 					}
 					if (insertPos === content.length) insertPos = firstPosAfter;
 				} else {
-					// 同段落：删除 idxStart+1 .. idxEnd-1
+					// 同段落：删除 idxStart+1 .. idxEnd-1（不删除书签本身）
 					for (var j = idxEnd - 1; j > idxStart; j--) {
 						var el2 = content[j];
 						if (el2 && el2.PreDelete) el2.PreDelete();
@@ -9393,7 +9394,7 @@ background-repeat: no-repeat;\
 
 				if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
 
-				// type === 1 时插入签名 drawing；否则仅删除内容并重建书签
+				// 仅在 type === 1 且图像有效时插入 drawing；否则只清空原有书签区内容（书签位置保持不变）
 				if (1 === type && loadedImage && loadedImage.Image) {
 					var oImage = oLogicDocument.DrawingObjects.createImage(loadedImage.src, 0, 0, width, height);
 					var oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
@@ -9410,23 +9411,14 @@ background-repeat: no-repeat;\
 					oDrawing.Set_Parent(oRun);
 				}
 
-				// 移除原书签并在新位置重建（保留名字 sId）
-				if (oBookmark[1]) oBookmark[1].RemoveBookmark();
-				if (oBookmark[0]) oBookmark[0].RemoveBookmark();
-				oLogicDocument.RemoveBookmark(sId);
-
-				var newId = oBookmarksManager.GetNewBookmarkId();
-				oParagraph.Add_ToContent(insertPos + 1, new AscWord.CParagraphBookmark(false, newId, sId));
-				oParagraph.Add_ToContent(insertPos, new AscWord.CParagraphBookmark(true, newId, sId));
-				oBookmarksManager.AddBookmark(sId);
-
+				// 不再移除或重建书签：保持原书签节点位置不变（若需要调整跨段落的复杂情况，可扩展）
 				oParagraph.CorrectContent(undefined, undefined, true);
 				oLogicDocument.Recalculate();
 				oLogicDocument.UpdateInterface();
 				oLogicDocument.UpdateSelection();
 				oLogicDocument.FinalizeAction();
-
 				if (callback) callback(oApi);
+				console.log("插入签名完成");
 			};
 
 			// 尝试同步加载图像；若未加载，使用异步回调（即使 type !== 1，也统一走回调以复用流程）
@@ -9442,6 +9434,7 @@ background-repeat: no-repeat;\
 			return false;
 		}
 	};
+
 	asc_docs_api.prototype.asc_SetContentControlPictureUrl = function (sUrl, sId, sToken) {
 		if (this.WordControl && this.WordControl.m_oDrawingDocument) {
 			this.WordControl.m_oDrawingDocument.UnlockCursorType();
