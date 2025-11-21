@@ -9344,7 +9344,7 @@ background-repeat: no-repeat;\
 			var oApi = this;
 
 			var process = function (loadedImage) {
-				oLogicDocument.StartAction(AscDFH.historydescription_Document_InsertSignatureLine);
+				oLogicDocument.StartAction();
 
 				var oParagraph = oBookmark[0].GetParagraph();
 				if (!oParagraph) {
