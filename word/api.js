@@ -9325,7 +9325,6 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.asc_InsertSignature = function (sUrl, sId, width, height, type, sToken, callback) {
 		try {
-			// 检查参数有效性
 			if (!sUrl) {
 				console.error("签名图片URL不能为空");
 				return false;
@@ -9335,134 +9334,109 @@ background-repeat: no-repeat;\
 				console.error("无法获取文档对象");
 				return false;
 			}
-			// 通过GetBookmarksManager查找指定书签
 			var oBookmarksManager = this.asc_GetBookmarksManager();
 			var oBookmark = oBookmarksManager.GetBookmarkByName(sId);
 			if (!oBookmark) {
-				console.warn(`未找到书签: ${sId}`);
+				console.warn("未找到书签: " + sId);
 				return false;
 			}
-			// 获取书签范围和包含的段落
-			// var oBookmarkRange = oBookmark.GetRange();
-			// var oParas = oBookmark[0].GetParagraph();
-			// var oParas = oBookmarkRange.GetAllParagraphs();
-			// console.log("🚀 ~ oParas:", oParas)
-			// var width = 40;
-			// console.log("🚀 ~ width:", width)
-			// var height = 20;
-			// var oImage = this.CreateImage(sUrl, width, height);
+			var oApi = this;
 
-			const oApi = this;
-			var loadImageCallBack = function (loadedImage) {
-				oLogicDocument.StartAction();
-				if (loadedImage.Image) {
-					let oDrawing = new AscCommonWord.ParaDrawing(width, height, null, oApi.WordControl.m_oDrawingDocument, oLogicDocument, null);
-					let oImage = oLogicDocument.DrawingObjects.createImage(loadedImage.src, 0, 0, width, height);
+			var process = function (loadedImage) {
+				oLogicDocument.StartAction(AscDFH.historydescription_Document_InsertSignatureLine);
+
+				var oParagraph = oBookmark[0].GetParagraph();
+				if (!oParagraph) {
+					oLogicDocument.FinalizeAction();
+					console.error("无法从书签获取段落");
+					return;
+				}
+
+				var content = oParagraph.Content;
+				// 尝试在同段落内找到一对书签索引
+				var idxStart = -1, idxEnd = -1;
+				for (var i = 0; i < content.length; i++) {
+					if (content[i] instanceof AscWord.CParagraphBookmark) {
+						if (idxStart === -1) idxStart = i;
+						else { idxEnd = i; break; }
+					}
+				}
+
+				// 删除书签范围内中间内容（简单统一：如果未找到成对书签，回退到扫描 run 的方式）
+				var insertPos = content.length;
+				if (idxStart === -1 || idxEnd === -1) {
+					// 扫描第一个书签到第二个书签之间的 ParaRun（或其它元素）并删除
+					var inRange = false;
+					var firstPosAfter = content.length;
+					for (var p = 0; p < content.length; p++) {
+						var el = content[p];
+						if (el instanceof AscWord.CParagraphBookmark) {
+							if (!inRange) { inRange = true; firstPosAfter = p + 1; continue; }
+							else { insertPos = p; break; }
+						}
+						if (inRange) {
+							if (el && el.PreDelete) el.PreDelete();
+							oParagraph.Remove_FromContent(p, 1);
+							p--; // 因为删除，当前位置要回退
+						}
+					}
+					if (insertPos === content.length) insertPos = firstPosAfter;
+				} else {
+					// 同段落：删除 idxStart+1 .. idxEnd-1
+					for (var j = idxEnd - 1; j > idxStart; j--) {
+						var el2 = content[j];
+						if (el2 && el2.PreDelete) el2.PreDelete();
+						oParagraph.Remove_FromContent(j, 1);
+					}
+					insertPos = idxStart + 1;
+				}
+
+				if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
+
+				// type === 1 时插入签名 drawing；否则仅删除内容并重建书签
+				if (1 === type && loadedImage && loadedImage.Image) {
+					var oImage = oLogicDocument.DrawingObjects.createImage(loadedImage.src, 0, 0, width, height);
+					var oDrawing = new AscCommonWord.ParaDrawing(width, height, oImage, oLogicDocument.DrawingDocument, null, null);
 					oImage.setParent(oDrawing);
 					oDrawing.Set_GraphicObject(oImage);
-
 					var oImageProps = new asc_CImgProperty();
-					// 选择一种环绕方式
-					// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Behind);
-					// oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.InFront);
 					oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
 					oDrawing.Set_Props(oImageProps);
-					// var oParagraph = this.CreateParagraph();
-					var oParagraph = oBookmark[0].GetParagraph();
 
-					var runsInBookmark = [];
-					var bookmarkStarted = false;
-					let bookmarkPos = oParagraph.Content.length - 1;
-					for (let nPos = 0; nPos < oParagraph.Content.length; nPos++) {
-						let oElement = oParagraph.Content[nPos];
-
-						if (oElement instanceof AscWord.CParagraphBookmark) {
-							if (!bookmarkStarted) {
-								bookmarkStarted = true;
-								bookmarkPos = nPos;
-							} else {
-								// 遇到结束书签，停止收集
-								break;
-							}
-						}
-
-						if (bookmarkStarted && oElement instanceof AscWord.ParaRun) {
-							runsInBookmark.push({
-								nPos: nPos,
-								oElement: oElement
-							});
-						}
-					}
-
-					// 确定插入位置
-					let insertPos = runsInBookmark.length > 0 ? runsInBookmark[0].nPos : bookmarkPos + 1;
-
-					// 从后往前删除，避免索引变化问题
-					if (runsInBookmark.length > 0) {
-						for (let i = runsInBookmark.length - 1; i >= 0; i--) {
-							// 确保删除位置有效
-							let deletePos = runsInBookmark[i].nPos;
-							if (deletePos < oParagraph.Content.length) {
-								runsInBookmark[i].oElement.PreDelete();
-								oParagraph.Remove_FromContent(deletePos, 1);
-							}
-						}
-					}
-
-					let oRun = new AscCommonWord.ParaRun(oParagraph, false);
-					type == 1 ? oRun.Add_ToContent(0, oDrawing) : '';
-
-					// 确保插入位置不越界
-					if (insertPos > oParagraph.Content.length) {
-						insertPos = oParagraph.Content.length;
-					}
-
+					var oRun = new AscCommonWord.ParaRun(oParagraph, false);
+					oRun.Add_ToContent(0, oDrawing);
+					if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
 					oParagraph.Add_ToContent(insertPos, oRun);
-					type == 1 ? oDrawing.Set_Parent(oRun) : '';
-
-					oParagraph.CorrectContent(undefined, undefined, true);
-					oBookmark[1].RemoveBookmark();
-					oBookmark[0].RemoveBookmark();
-					oLogicDocument.RemoveBookmark(sId);
-					let newBookmarkId = oBookmarksManager.GetNewBookmarkId();
-					oParagraph.Add_ToContent(insertPos + 1, new AscWord.CParagraphBookmark(false, newBookmarkId, sId));
-					oParagraph.Add_ToContent(insertPos, new AscWord.CParagraphBookmark(true, newBookmarkId, sId));
-					oBookmarksManager.AddBookmark(sId);
-					oParagraph.CorrectContent(undefined, undefined, true);
-
-					oLogicDocument.Recalculate();
-					oLogicDocument.UpdateInterface();
-					oLogicDocument.UpdateSelection();
-					oLogicDocument.FinalizeAction();
-					console.log("签名图片插入成功");
-					if (callback) {
-						callback(oApi);
-					}
-					return true;
+					oDrawing.Set_Parent(oRun);
 				}
-			}
-			const image = this.ImageLoader.LoadImage(sUrl, 1);
-			if (null != image) {
-				loadImageCallBack(image);
-			}
+
+				// 移除原书签并在新位置重建（保留名字 sId）
+				if (oBookmark[1]) oBookmark[1].RemoveBookmark();
+				if (oBookmark[0]) oBookmark[0].RemoveBookmark();
+				oLogicDocument.RemoveBookmark(sId);
+
+				var newId = oBookmarksManager.GetNewBookmarkId();
+				oParagraph.Add_ToContent(insertPos + 1, new AscWord.CParagraphBookmark(false, newId, sId));
+				oParagraph.Add_ToContent(insertPos, new AscWord.CParagraphBookmark(true, newId, sId));
+				oBookmarksManager.AddBookmark(sId);
+
+				oParagraph.CorrectContent(undefined, undefined, true);
+				oLogicDocument.Recalculate();
+				oLogicDocument.UpdateInterface();
+				oLogicDocument.UpdateSelection();
+				oLogicDocument.FinalizeAction();
+
+				if (callback) callback(oApi);
+			};
+
+			// 尝试同步加载图像；若未加载，使用异步回调（即使 type !== 1，也统一走回调以复用流程）
+			var image = this.ImageLoader.LoadImage(sUrl, 1);
+			if (null != image) process(image);
 			else {
-				this.asyncImageEndLoaded2 = function (_img) {
-					loadImageCallBack(_img);
-				}
+				this.asyncImageEndLoaded2 = function (_img) { process(_img); };
 			}
-			return true;
-			// oLogicDocument.InsertContent([oParagraph]);
-			// oParas.Delete();
-			// var oParent = oParagraph1.GetParent();
-			// console.log("🚀 ~ oParent:", oParent)
-			// var nPosInParent = oParagraph1.GetIndex();
-			// console.log("🚀 ~ nPosInParent:", nPosInParent)
 
-			// if (nPosInParent !== - 1) {
-			// 	oParagraph1.PreDelete();
-			// 	oParent.Remove_FromContent(nPosInParent, 1, true);
-			// }
-			// oParagraph.GetRange().AddBookmark(sId);
+			return true;
 		} catch (e) {
 			console.error("插入签名过程中发生错误:", e);
 			return false;
