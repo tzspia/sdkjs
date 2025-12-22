@@ -9434,7 +9434,92 @@ background-repeat: no-repeat;\
 			return false;
 		}
 	};
+	asc_docs_api.prototype.asc_InsertTimestamp = function (text, sId, type) {
+		try {
+			var oLogicDocument = this.private_GetLogicDocument();
+			if (!oLogicDocument) {
+				console.error("无法获取文档对象");
+				return false;
+			}
+			var oBookmarksManager = this.asc_GetBookmarksManager();
+			var oBookmark = oBookmarksManager.GetBookmarkByName(sId);
+			if (!oBookmark) {
+				console.warn("未找到书签: " + sId);
+				return false;
+			}
+			oLogicDocument.StartAction();
+			var oParagraph = oBookmark[0].GetParagraph();
+			if (!oParagraph) {
+				oLogicDocument.FinalizeAction();
+				console.error("无法从书签获取段落");
+				return;
+			}
 
+			var content = oParagraph.Content;
+			// 尝试在同段落内找到一对书签索引
+			var idxStart = -1, idxEnd = -1;
+			for (var i = 0; i < content.length; i++) {
+				if (content[i] instanceof AscWord.CParagraphBookmark) {
+					if (idxStart === -1) idxStart = i;
+					else { idxEnd = i; break; }
+				}
+			}
+
+			// 删除书签范围内中间内容（保留书签节点本身，不移除或重建书签）
+			var insertPos = content.length;
+			if (idxStart === -1 || idxEnd === -1) {
+				// 扫描第一个书签到第二个书签之间的元素并删除（遇到书签节点时只标记范围，不删除书签）
+				var inRange = false;
+				var firstPosAfter = content.length;
+				for (var p = 0; p < content.length; p++) {
+					var el = content[p];
+					if (el instanceof AscWord.CParagraphBookmark) {
+						if (!inRange) { inRange = true; firstPosAfter = p + 1; continue; }
+						else { insertPos = p; break; }
+					}
+					if (inRange) {
+						if (el && el.PreDelete) el.PreDelete();
+						oParagraph.Remove_FromContent(p, 1);
+						p--; // 因为删除，当前位置要回退
+					}
+				}
+				if (insertPos === content.length) insertPos = firstPosAfter;
+			} else {
+				// 同段落：删除 idxStart+1 .. idxEnd-1（不删除书签本身）
+				for (var j = idxEnd - 1; j > idxStart; j--) {
+					var el2 = content[j];
+					if (el2 && el2.PreDelete) el2.PreDelete();
+					oParagraph.Remove_FromContent(j, 1);
+				}
+				insertPos = idxStart + 1;
+			}
+
+			if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
+
+			if (1 === type) {
+				console.log("插入时间戳: " + text);
+				var oRun = new AscCommonWord.ParaRun(oParagraph, false);
+				console.log("🚀 ~ oRun:1111111111111111111111")
+				oRun.AddText(text);
+				console.log("🚀 ~ oRun:222222222222222222222222")
+				if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
+				oParagraph.Add_ToContent(insertPos, oRun);
+			}
+
+			// 不再移除或重建书签：保持原书签节点位置不变（若需要调整跨段落的复杂情况，可扩展）
+			oParagraph.CorrectContent(undefined, undefined, true);
+			oLogicDocument.Recalculate();
+			oLogicDocument.UpdateInterface();
+			oLogicDocument.UpdateSelection();
+			oLogicDocument.FinalizeAction();
+			console.log("插入签名时间完成");
+
+			return true;
+		} catch (e) {
+			console.error("插入签名过程中发生错误:", e);
+			return false;
+		}
+	}
 	asc_docs_api.prototype.asc_SetContentControlPictureUrl = function (sUrl, sId, sToken) {
 		if (this.WordControl && this.WordControl.m_oDrawingDocument) {
 			this.WordControl.m_oDrawingDocument.UnlockCursorType();
@@ -13333,6 +13418,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_gotoSignature"] = asc_docs_api.prototype.asc_gotoSignature;
 	asc_docs_api.prototype["asc_getSignatureSetup"] = asc_docs_api.prototype.asc_getSignatureSetup;
 	asc_docs_api.prototype["asc_InsertSignature"] = asc_docs_api.prototype.asc_InsertSignature;
+	asc_docs_api.prototype["asc_InsertTimestamp"] = asc_docs_api.prototype.asc_InsertTimestamp;
 	// view modes
 	asc_docs_api.prototype["asc_setContentDarkMode"] = asc_docs_api.prototype.asc_setContentDarkMode;
 
