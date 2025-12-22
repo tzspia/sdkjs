@@ -9434,6 +9434,7 @@ background-repeat: no-repeat;\
 			return false;
 		}
 	};
+
 	asc_docs_api.prototype.asc_InsertTimestamp = function (text, sId, type) {
 		try {
 			var oLogicDocument = this.private_GetLogicDocument();
