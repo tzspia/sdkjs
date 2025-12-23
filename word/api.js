@@ -9498,11 +9498,8 @@ background-repeat: no-repeat;\
 			if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
 
 			if (1 === type) {
-				console.log("插入时间戳: " + text);
 				var oRun = new AscCommonWord.ParaRun(oParagraph, false);
-				console.log("🚀 ~ oRun:1111111111111111111111")
 				oRun.AddText(text);
-				console.log("🚀 ~ oRun:222222222222222222222222")
 				if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
 				oParagraph.Add_ToContent(insertPos, oRun);
 			}
