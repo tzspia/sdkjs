@@ -9494,9 +9494,7 @@ background-repeat: no-repeat;\
 				}
 				insertPos = idxStart + 1;
 			}
-
 			if (insertPos > oParagraph.Content.length) insertPos = oParagraph.Content.length;
-
 			if (1 === type) {
 				var oRun = new AscCommonWord.ParaRun(oParagraph, false);
 				oRun.AddText(text);
