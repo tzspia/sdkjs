@@ -182,7 +182,7 @@ var CPresentation = CPresentation || function(){};
         this.Viewer     = viewer;
         this.Api        = Asc.editor;
 
-        this.annotsHidden = true;
+        this.annotsHidden = false;
 		
 		this.fontLoader             = AscCommon.g_font_loader;
 		this.defaultFontsLoaded     = -1; // -1 не загружены и не грузим, 0 - грузим, 1 - загружены
