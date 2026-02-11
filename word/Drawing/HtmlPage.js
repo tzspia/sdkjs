@@ -1589,6 +1589,10 @@ function CEditorPage(api)
 			{
 				return oThis.CorrectSpeedVerticalScroll(yPos);
 			});
+			this.m_oScrollVer_.bind("scrollVEnd", function(evt)
+			{
+				this.m_oApi.sendEvent("asc_onScrollVEnd", evt);
+			});
 			this.m_oScrollVerApi = this.m_oScrollVer_;
 		}
 
