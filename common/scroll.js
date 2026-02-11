@@ -1729,6 +1729,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		}
 
 		if ( this.that.settings.isVerticalScroll ) {
+			console.log('mousemove scroll', this.that.moveble, this.that.scrollerMouseDown);
 			if ( this.that.moveble && this.that.scrollerMouseDown ) {
 				var isTop = false, isBottom = false;
 				if (arrowHover && this.that.settings.showArrows) {
@@ -1959,6 +1960,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			}
 			else {
 				//scroll pressed, but not slider
+				console.log('scroll pressed, but not slider', mousePos, this.that.scroller, this.that.canvasH, this.that.canvasW);
 				if ( this.that.settings.isVerticalScroll ) {
 					var _tmp = this,
 						direction = mousePos.y - this.that.scroller.y - this.that.scroller.h / 2,
@@ -2168,6 +2170,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		var that = this;
 		// generic events handler
 		function handle( obj ) {
+			console.log('handleEvents', eventType, obj);
 			var el = obj.eventListeners;
 			if ( el[eventType] ) {
 				var events = el[eventType];
