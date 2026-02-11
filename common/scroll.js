@@ -756,6 +756,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			evt.pos = pos;
 			that.handleEvents( "onscrollVEnd", evt );
 		}
+		console.log("onscrollvertical", that.scrollVCurrentY, pos, this.reinit, this.moveble, this.lock);
 	};
 	ScrollObject.prototype._correctScrollV = function ( that, yPos ) {
 		if ( !this.settings.isVerticalScroll )
