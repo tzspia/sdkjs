@@ -757,7 +757,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		}
 		else if ( that.scrollVCurrentY === pos && pos > 0 && !this.reinit && !this.moveble && !this.lock ) {
 			evt.pos = pos;
-			console.log("_scrollV: scroll end, pos = " + pos);
+			console.log("_scrollV: scroll end", that.scrollVCurrentY, that.maxScrollY, pos, isTop, isBottom, this.reinit, this.moveble, this.lock);
 			that.handleEvents( "onscrollVEnd", evt );
 		}
 	};
