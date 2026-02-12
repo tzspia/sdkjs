@@ -493,10 +493,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		if(this.settings.isVerticalScroll && !this.settings.alwaysVisible) {
 			this.canvas.style.display = this.maxScrollY == 0 ? "none" : "";
 		}
-		if (this.settings.isVerticalScroll && this.maxScrollY == 0) {
-			console.log("init: no need for vertical scroll");
-			this.handleEvents("onscrollVEnd", 0);
-		}
 
 		if(this.settings.isHorizontalScroll && !this.settings.alwaysVisible) {
 			this.canvas.style.display = this.maxScrollX == 0 ? "none" : "";
@@ -872,11 +868,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		}
 
 		this.scroller.y = Math.round(this.scroller.y);
-
-		if ( destY + this.settings.bottomThreshold >= this.maxScrollY ){
-			console.log("scrollToY: scroll end, destY = " + destY);
-			this.handleEvents( "onscrollVEnd", destY + this.settings.bottomThreshold - this.maxScrollY );
-		}
 
 		this._scrollV( this, {}, destY, false, false );
 	};
