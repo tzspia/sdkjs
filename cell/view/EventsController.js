@@ -479,6 +479,10 @@
 				this.vsbApi.bind("scrollvertical", function (evt) {
 					self.handlers.trigger("scrollY", evt.scrollPositionY / self.settings.vscrollStep, !self.vsbApi.scrollerMouseDown);
 				});
+				this.vsbApi.bind("scrollVEnd", function(evt)
+				{
+					oThis.m_oApi.sendEvent("asc_onScrollVEnd", evt);
+				});
 				this.vsbApi.bind(AscCommon.getPtrEvtName("up"), function (evt) {
 					if (self.vsbApi.scrollerMouseDown) {
 						self.handlers.trigger('initRowsCount');

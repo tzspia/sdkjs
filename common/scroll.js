@@ -873,7 +873,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 
 		this.scroller.y = Math.round(this.scroller.y);
 
-		if (this.maxScrollY > 0 && destY + this.settings.bottomThreshold >= this.maxScrollY){
+		if ( destY + this.settings.bottomThreshold >= this.maxScrollY ){
 			console.log("scrollToY: scroll end, destY = " + destY);
 			this.handleEvents( "onscrollVEnd", destY + this.settings.bottomThreshold - this.maxScrollY );
 		}
