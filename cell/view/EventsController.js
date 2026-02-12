@@ -481,7 +481,7 @@
 				});
 				this.vsbApi.bind("scrollVEnd", function(evt)
 				{
-					oThis.m_oApi.sendEvent("asc_onScrollVEnd", evt);
+					self.handlers.trigger('handleScrollVEnd', evt);
 				});
 				this.vsbApi.bind(AscCommon.getPtrEvtName("up"), function (evt) {
 					if (self.vsbApi.scrollerMouseDown) {
