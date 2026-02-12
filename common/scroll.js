@@ -494,6 +494,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			this.canvas.style.display = this.maxScrollY == 0 ? "none" : "";
 		}
 		if (this.settings.isVerticalScroll && this.maxScrollY == 0) {
+			console.log("init: no need for vertical scroll");
 			this.handleEvents("onscrollVEnd", 0);
 		}
 
@@ -760,6 +761,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		}
 		else if ( that.scrollVCurrentY === pos && pos > 0 && !this.reinit && !this.moveble && !this.lock ) {
 			evt.pos = pos;
+			console.log("_scrollV: scroll end, pos = " + pos);
 			that.handleEvents( "onscrollVEnd", evt );
 		}
 	};
@@ -824,6 +826,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			isBottom = false;
 		}
 		else if ( this.scrollVCurrentY + delta > this.maxScrollY2 ) {
+			console.log("scrollByY: scroll end, destY = " + destY);
 			this.handleEvents( "onscrollVEnd", destY - this.maxScrollY );
 			vend = true;
 			destY = this.maxScrollY2;
@@ -871,6 +874,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		this.scroller.y = Math.round(this.scroller.y);
 
 		if (destY + this.settings.bottomThreshold >= this.maxScrollY){
+			console.log("scrollToY: scroll end, destY = " + destY);
 			this.handleEvents( "onscrollVEnd", destY + this.settings.bottomThreshold - this.maxScrollY );
 		}
 
@@ -1782,6 +1786,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 					destY = result.Pos;
 				}
 				if (destY + this.that.settings.bottomThreshold >= this.that.maxScrollY) {
+					console.log("evt_mousemove: scroll to end");
 					this.that.handleEvents("onscrollVEnd", destY + this.that.settings.bottomThreshold - this.that.maxScrollY);
 				}
 
