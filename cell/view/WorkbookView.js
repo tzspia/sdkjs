@@ -419,6 +419,8 @@
 				  self._onInitColsCount.apply(self, arguments);
 			  }, "scrollY": function () {
 				  self._onScrollY.apply(self, arguments);
+			  }, "handleScrollVEnd": function () {
+				  self.Api.sendEvent("asc_onScrollVEnd", arguments);
 			  }, "scrollX": function () {
 				  self._onScrollX.apply(self, arguments);
 			  },  "changeVisibleArea": function () {
