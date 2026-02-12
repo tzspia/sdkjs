@@ -264,6 +264,9 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		this.screenH = -1;
 		this.screenAddH = 0;
 
+		// bottomThreshold: 到达底部前的阈值（像素）。用于提前触发到达底部相关的事件或回调。
+		this.bottomThreshold = 20;
+
 		this.contentH = 0;
 		this.contentW = 0;
 
@@ -489,6 +492,9 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 
 		if(this.settings.isVerticalScroll && !this.settings.alwaysVisible) {
 			this.canvas.style.display = this.maxScrollY == 0 ? "none" : "";
+		}
+		if (this.settings.isVerticalScroll && this.maxScrollY == 0) {
+			this.handleEvents("onscrollVEnd", 0);
 		}
 
 		if(this.settings.isHorizontalScroll && !this.settings.alwaysVisible) {
@@ -756,7 +762,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			evt.pos = pos;
 			that.handleEvents( "onscrollVEnd", evt );
 		}
-		console.log("onscrollvertical", that.scrollVCurrentY, pos, this.reinit, this.moveble, this.lock);
 	};
 	ScrollObject.prototype._correctScrollV = function ( that, yPos ) {
 		if ( !this.settings.isVerticalScroll )
@@ -864,6 +869,10 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		}
 
 		this.scroller.y = Math.round(this.scroller.y);
+
+		if (destY + this.settings.bottomThreshold >= this.maxScrollY){
+			this.handleEvents( "onscrollVEnd", destY + this.settings.bottomThreshold - this.maxScrollY );
+		}
 
 		this._scrollV( this, {}, destY, false, false );
 	};
@@ -1730,7 +1739,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		}
 
 		if ( this.that.settings.isVerticalScroll ) {
-			console.log('mousemove scroll', this.that.moveble, this.that.scrollerMouseDown);
 			if ( this.that.moveble && this.that.scrollerMouseDown ) {
 				var isTop = false, isBottom = false;
 				if (arrowHover && this.that.settings.showArrows) {
@@ -1772,6 +1780,9 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 				var result = this.that._correctScrollV( this.that, destY );
 				if ( result != null && result.isChange === true ) {
 					destY = result.Pos;
+				}
+				if (destY + this.that.settings.bottomThreshold >= this.that.maxScrollY) {
+					this.that.handleEvents("onscrollVEnd", destY + this.that.settings.bottomThreshold - this.that.maxScrollY);
 				}
 
 				this.that._scrollV( this.that, evt, destY, isTop, isBottom );
@@ -1961,7 +1972,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			}
 			else {
 				//scroll pressed, but not slider
-				console.log('scroll pressed, but not slider', mousePos, this.that.scroller, this.that.canvasH, this.that.canvasW);
 				if ( this.that.settings.isVerticalScroll ) {
 					var _tmp = this,
 						direction = mousePos.y - this.that.scroller.y - this.that.scroller.h / 2,
@@ -2171,7 +2181,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		var that = this;
 		// generic events handler
 		function handle( obj ) {
-			console.log('handleEvents', eventType, obj);
 			var el = obj.eventListeners;
 			if ( el[eventType] ) {
 				var events = el[eventType];
