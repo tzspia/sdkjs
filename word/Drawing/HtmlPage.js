@@ -1567,7 +1567,7 @@ function CEditorPage(api)
 
 		if (this.m_oScrollVer_)
 		{
-			this.m_oScrollVer_.Repos(settings, undefined, true, undefined, undefined, this.IsInitControl);
+			this.m_oScrollVer_.Repos(settings, undefined, true, undefined, undefined, this.IsInitControl || this.InitingControl);
 		}
 		else
 		{
@@ -3733,6 +3733,7 @@ function CEditorPage(api)
 		if (this.IsInitControl)
 			return;
 
+		this.InitingControl = true;
 		console.log("InitControl");
 		this.CalculateDocumentSize();
 
@@ -3759,6 +3760,7 @@ function CEditorPage(api)
 			delete this.m_oApi.startMobileOffset;
 		}
 
+		this.InitingControl = false;
 		this.IsInitControl = true;
 	};
 
