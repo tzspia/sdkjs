@@ -946,7 +946,6 @@ function CEditorPage(api)
 
 		var posDoc = oWordControl.m_oDrawingDocument.ConvertCoordsFromCursor2(xScreen1, yScreen1, old_zoom, true);
 
-		console.log("zoom_Fire: ", type, old_zoom, oWordControl.m_nZoomValue, posDoc);
 		oWordControl.CheckZoom();
 		oWordControl.CalculateDocumentSize();
 
@@ -3113,7 +3112,6 @@ function CEditorPage(api)
 		// теперь нужно выставить размеры для скроллов
 		this.checkNeedHorScroll();
 
-		console.log("CalculateDocumentSize: " + this.m_dDocumentWidth + "x" + this.m_dDocumentHeight);
 		this.UpdateScrolls();
 
 		if (this.MobileTouchManager)
@@ -3304,7 +3302,6 @@ function CEditorPage(api)
 		this.m_oHorRuler.RepaintChecker.BlitAttack = true;
 		this.m_oVerRuler.RepaintChecker.BlitAttack = true;
 
-		console.log("OnResize: " + this.Width + "x" + this.Height + ", scroll: " + this.m_dScrollX + "," + this.m_dScrollY);
 		this.UpdateScrolls();
 
 		if (this.MobileTouchManager)
@@ -3718,7 +3715,6 @@ function CEditorPage(api)
 			this.m_oLogicDocument.LoadTestDocument();
 		}
 
-		console.log("InitDocument: " + this.m_oDrawingDocument.m_lPagesCount + " pages");
 		this.CalculateDocumentSize();
 		this.StartMainTimer();
 
@@ -3734,7 +3730,6 @@ function CEditorPage(api)
 			return;
 
 		this.InitingControl = true;
-		console.log("InitControl");
 		this.CalculateDocumentSize();
 
 		if (!this.m_oApi.isOnlyReaderMode)
@@ -3868,7 +3863,6 @@ function CEditorPage(api)
 		{
 			this.offsetTop = offset;
 
-			console.log("setOffsetTop: " + offset);
 			this.UpdateScrolls();
 
 			if (this.MobileTouchManager)

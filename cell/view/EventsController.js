@@ -290,7 +290,6 @@
 			var step = this.settings.vscrollStep;
 			this.vsbMax = Math.max(max * step, 1);
 			settings.contentH = this.vsbMax - 1;
-			console.log("reinitScrollY: pos=" + pos + ", max=" + max + ", max2=" + max2, step, this.vsbMax, settings.contentH);
 			this.vsbApi.Repos(settings, false, false, pos * step, undefined, true);
 			this.vsbApi.maxScrollY2 = Math.max(max2 * step, 1);
 		};
