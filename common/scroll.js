@@ -720,6 +720,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			}
 		}
 
+		console.log("Repos: isInitControl =", isInitControl, "isVerticalScroll =", this.settings.isVerticalScroll, "maxScrollY =", this.maxScrollY);
 		if ( isInitControl && this.settings.isVerticalScroll && this.maxScrollY == 0 ) {
 			this.handleEvents( "onscrollVEnd", 0 );
 		}
