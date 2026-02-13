@@ -697,7 +697,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			this.scrollToY(this.scrollVCurrentY);
 
 			if ( isInitControl && this.scrollVCurrentY + this.settings.bottomThreshold >= this.maxScrollY ) {
-				console.log("Repos: scroll to end");
 				this.handleEvents("onscrollVEnd", this.scrollVCurrentY + this.settings.bottomThreshold - this.maxScrollY);
 			}
 
@@ -720,7 +719,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			}
 		}
 
-		console.log("Repos: isInitControl =", isInitControl, "isVerticalScroll =", this.settings.isVerticalScroll, "maxScrollY =", this.maxScrollY);
 		if ( isInitControl && this.settings.isVerticalScroll && this.maxScrollY == 0 ) {
 			this.handleEvents( "onscrollVEnd", 0 );
 		}
@@ -833,7 +831,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			isBottom = false;
 		}
 		else if ( this.scrollVCurrentY + delta > this.maxScrollY2 ) {
-			console.log("scrollByY: scroll end, destY = " + destY);
 			this.handleEvents( "onscrollVEnd", destY - this.maxScrollY );
 			vend = true;
 			destY = this.maxScrollY2;
@@ -1788,7 +1785,6 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 					destY = result.Pos;
 				}
 				if (destY + this.that.settings.bottomThreshold >= this.that.maxScrollY) {
-					console.log("evt_mousemove: scroll to end");
 					this.that.handleEvents("onscrollVEnd", destY + this.that.settings.bottomThreshold - this.that.maxScrollY);
 				}
 
