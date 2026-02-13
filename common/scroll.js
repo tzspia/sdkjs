@@ -632,7 +632,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			this.dragMinX = this.arrowPosition;
 		}
 	};
-	ScrollObject.prototype.Repos = function ( settings, bIsHorAttack, bIsVerAttack, pos, isAttack ) {
+	ScrollObject.prototype.Repos = function ( settings, bIsHorAttack, bIsVerAttack, pos, isAttack, isInitControl ) {
 		let dPR = AscBrowser.retinaPixelRatio;
 		let isChangeTheme = settings && this.settings.scrollBackgroundColor !== settings.scrollBackgroundColor;
 
@@ -714,6 +714,10 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			}
 		}
 
+		if ( isInitControl && this.settings.isVerticalScroll && this.maxScrollY == 0 ) {
+			this.handleEvents( "onscrollVEnd", 0 );
+		}
+
 		this.reinit = true;
 		if (this.settings.isVerticalScroll && pos != null) {
 			//pos !== undefined ? this.scrollByY( pos - this.scrollVCurrentY ) : this.scrollToY( this.scrollVCurrentY );
@@ -757,8 +761,8 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		}
 		else if ( that.scrollVCurrentY === pos && pos > 0 && !this.reinit && !this.moveble && !this.lock ) {
 			evt.pos = pos;
-			console.log("_scrollV: scroll end", that.scrollVCurrentY, that.maxScrollY, pos, isTop, isBottom, this.reinit, this.moveble, this.lock);
-			that.handleEvents( "onscrollVEnd", evt );
+			// console.log("_scrollV: scroll end", that.scrollVCurrentY, that.maxScrollY, pos, isTop, isBottom, this.reinit, this.moveble, this.lock);
+			// that.handleEvents( "onscrollVEnd", evt );
 		}
 	};
 	ScrollObject.prototype._correctScrollV = function ( that, yPos ) {

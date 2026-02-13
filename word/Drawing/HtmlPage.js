@@ -1567,7 +1567,7 @@ function CEditorPage(api)
 
 		if (this.m_oScrollVer_)
 		{
-			this.m_oScrollVer_.Repos(settings, undefined, true);
+			this.m_oScrollVer_.Repos(settings, undefined, true, undefined, undefined, this.IsInitControl);
 		}
 		else
 		{
