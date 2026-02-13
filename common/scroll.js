@@ -695,6 +695,12 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 			}
 
 			this.scrollToY(this.scrollVCurrentY);
+
+			if ( isInitControl && this.scrollVCurrentY + this.settings.bottomThreshold >= this.maxScrollY ) {
+				console.log("Repos: scroll to end");
+				this.handleEvents("onscrollVEnd", this.scrollVCurrentY + this.settings.bottomThreshold - this.maxScrollY);
+			}
+
 			if (this.maxScrollY == 0) {
 				this.canvas.style.display = "none";
 			} else {
