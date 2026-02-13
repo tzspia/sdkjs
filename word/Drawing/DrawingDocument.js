@@ -6602,6 +6602,7 @@ function CDrawingDocument()
 
 		this.m_oWordControl.CalculateDocumentSize();
 		this.m_oWordControl.OnScroll();
+		console.log("Document opened");
 	};
 
 	this.CloseFile = function ()
