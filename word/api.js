@@ -9405,6 +9405,18 @@ background-repeat: no-repeat;\
 						oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.Inline);
 					} else if (0 === type){
 						oImageProps.asc_putWrappingStyle(c_oAscWrapStyle2.InFront);
+						
+                		var oPositionH;
+                        oPositionH = new Asc.CImagePositionH();
+                        oImageProps.asc_putPositionH(oPositionH);
+                        oPositionH.put_Value(0);
+                        oPositionH.put_RelativeFrom(Asc.c_oAscRelativeFromH.Character);
+
+                		var oPositionV;
+                        oPositionV = new Asc.CImagePositionV();
+                        oImageProps.asc_putPositionV(oPositionV);
+                        oPositionV.put_Value(0);
+                        oPositionV.put_RelativeFrom(Asc.c_oAscRelativeFromV.Line);
 					}
 					oDrawing.Set_Props(oImageProps);
 
